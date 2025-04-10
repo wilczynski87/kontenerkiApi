@@ -1,0 +1,31 @@
+ktor:
+  application:
+    modules:
+      - com.kontenery.ApplicationKt.module
+  deployment:
+    port: 100
+
+postgres:
+  url: "$DB_URL:jdbc:postgresql://localhost:5431/db1"
+  user: "$DB_USER:postgres"
+  password: "$DB_PASSWORD:postgres"
+#  driver: "org.postgresql.Driver"
+  domain: "https://jwt-provider-domain/"
+  audience: "jwt-audience"
+  realm: "ktor sample app"
+
+#ktor:
+#    application:
+#        modules:
+#            - com.kontenery.ApplicationKt.module
+#    deployment:
+#        port: 100
+#postgres:
+#  url: "jdbc:postgresql://localhost:5431/db1"
+#  user: "postgres"
+#  password: "postgres"
+#  domain: "https://jwt-provider-domain/"
+#  audience: "jwt-audience"
+#  realm: "ktor sample app"
+
+

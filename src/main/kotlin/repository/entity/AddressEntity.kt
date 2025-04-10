@@ -1,0 +1,52 @@
+package com.kontenery.repository.entity
+
+import com.kontenery.model.Address
+import kotlinx.coroutines.Dispatchers
+import org.jetbrains.exposed.dao.EntityClass
+import org.jetbrains.exposed.dao.LongEntity
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.dao.id.LongIdTable
+import org.jetbrains.exposed.sql.Transaction
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+
+object AddressTable: LongIdTable("address") {
+    val street = varchar("street", 255).nullable() // Nullable as per the class definition
+    val house = varchar("house", 50).nullable() // Nullable
+    val city = varchar("city", 255).nullable() // Nullable
+    val postCode = varchar("post_code", 20).nullable() // Nullable
+    val country = varchar("country", 2).default("PL") // Default value for country is "PL"
+}
+
+class AddressDAO(id: EntityID<Long>): LongEntity(id) {
+    companion object: EntityClass<Long, AddressDAO>(AddressTable)
+
+    var street by AddressTable.street
+    var house by AddressTable.house
+    var city by AddressTable.city
+    var postcode by AddressTable.postCode
+    var country by AddressTable.country
+
+}
+
+suspend fun <T> suspendTransaction(block: Transaction.() -> T): T =
+    newSuspendedTransaction(Dispatchers.IO, statement = block)
+
+fun addressDAOToAddress(dao: AddressDAO) = Address (
+    id = dao.id.value,
+    street = dao.street,
+    house = dao.house,
+    city = dao.city,
+    country = dao.country,
+    postCode = dao.postcode,
+)
+
+fun AddressDAO.toAddress(): Address {
+    return Address (
+        id = this.id.value,
+        street = this.street,
+        house = this.house,
+        city = this.city,
+        country = this.country,
+        postCode = this.postcode,
+    )
+}
