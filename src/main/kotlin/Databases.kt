@@ -1,9 +1,6 @@
 package com.kontenery
 
-import com.kontenery.repository.entity.AddressTable
-import com.kontenery.repository.entity.ClientCompanyDataTable
-import com.kontenery.repository.entity.ClientPersonalDataTable
-import com.kontenery.repository.entity.ClientTable
+import com.kontenery.repository.entity.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -46,7 +43,8 @@ fun Application.configureDatabases() {
         SchemaUtils.create(
             AddressTable,
             ClientPersonalDataTable, ClientCompanyDataTable, ClientTable,
-
+            ProductTable,
+            ContractTable,
         )
     }
 }

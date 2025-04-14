@@ -9,7 +9,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 fun Route.addressRouting(addressService: AddressService) {
-
     route("/address") {
         post {
             println("save ENDPOINT")

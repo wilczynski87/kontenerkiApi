@@ -1,6 +1,5 @@
 package com.kontenery.controller
 
-import com.kontenery.model.Address
 import com.kontenery.model.Client
 import com.kontenery.service.ClientService
 import io.ktor.http.*
@@ -8,16 +7,24 @@ import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
-import io.ktor.util.reflect.*
 
 fun Route.clientRoute(clientService: ClientService) {
     route("/client") {
 
         post {
+            println("zaczynamy SAVE klienta: ")
+//            println(call.receiveText())
+            try {
             val client: Client = call.receive<Client>()
+
+            println(client)
             val saveClient:Client? = clientService.save(client)
+            println("zapisany")
             if(saveClient != null) call.respond(saveClient)
             else call.respond(HttpStatusCode.ExpectationFailed)
+            } catch (e:Exception) {
+                println(e)
+            }
         }
 
         get("/findAll") {
@@ -35,15 +42,17 @@ fun Route.clientRoute(clientService: ClientService) {
             println("Otrzymałem id: $id\n")
             val client: Client? = clientService.findClientById(id!!)
 
-            if(client == null) call.respond(HttpStatusCode.ExpectationFailed, "id: $id")
+            if(client == null) call.respond(HttpStatusCode.ExpectationFailed, "Brak klienta o id: $id")
             else call.respond(client)
         }
 
-        put("{id}") {
-            val id = call.pathParameters["id"]?.toLongOrNull()
-                ?: throw BadRequestException("Invalid ID format")
+        put("/") {
+            println("zaczynamy PUT client: ")
+//            val id = call.pathParameters["id"]?.toLongOrNull()
+//                ?: throw BadRequestException("Invalid ID format")
 
             val clientUpdate = call.receive<Client>()
+            println(clientUpdate)
             val updatedClient = clientService.updateClient(clientUpdate)
                 ?: throw NotFoundException("Client not found")
 

@@ -4,8 +4,12 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.kontenery.controller.addressRouting
 import com.kontenery.controller.clientRoute
+import com.kontenery.controller.contractRoutes
+import com.kontenery.controller.productRouting
 import com.kontenery.service.AddressService
 import com.kontenery.service.ClientService
+import com.kontenery.service.ContractService
+import com.kontenery.service.ProductService
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -26,7 +30,8 @@ import org.koin.logger.slf4jLogger
 fun Application.configureRouting(
     addressService: AddressService,
     clientService: ClientService,
-
+    productService: ProductService,
+    contractService: ContractService
 ) {
     routing {
         get("/") {
@@ -37,5 +42,7 @@ fun Application.configureRouting(
         }
         addressRouting(addressService)
         clientRoute(clientService)
+        productRouting(productService)
+        contractRoutes(contractService)
     }
 }

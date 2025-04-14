@@ -38,8 +38,8 @@ object ClientTable : LongIdTable("clients") {
     val personalDataId = optReference("personal_data_id", ClientPersonalDataTable, onDelete = ReferenceOption.SET_NULL)
     val companyDataId = optReference("company_data_id", ClientCompanyDataTable, onDelete = ReferenceOption.SET_NULL)
     val isActive = bool("is_active").nullable()
-    val createdAt = date("created_at")
-    val updatedAt = date("updated_at")
+    val createdAt = date("created_at").nullable()
+    val updatedAt = date("updated_at").nullable()
 }
 
 class ClientPersonalDataEntity(id: EntityID<Long>) : LongEntity(id) {
@@ -101,6 +101,8 @@ class ClientEntity(id: EntityID<Long>) : LongEntity(id) {
         id = id.value,
         clientPrivate = personalData?.toClientPersonalData(),
         clientCompany = companyData?.toClientCompanyData(),
-        isActive = isActive
+        isActive = isActive,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
     )
 }

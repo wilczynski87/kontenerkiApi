@@ -1,15 +1,20 @@
 package com.kontenery.model
 
+import com.kontenery.utils.BigDecimalSerializer
+import kotlinx.datetime.LocalDate
+import kotlinx.serialization.Serializable
 import java.math.BigDecimal
-import java.time.LocalDate
 
+@Serializable
 data class Contract(
     val id: Long? = null,
-    val client: Client? = null,
-    val product: Product? = null,
-    val startDate: LocalDate? = null,
-    val endDate: LocalDate? = null,
-    val netPrice: BigDecimal? = null,
+    var client: Client? = null,
+    var product: Product? = null,
+    var startDate: LocalDate? = null,
+    var endDate: LocalDate? = null,
+    @Serializable(with = BigDecimalSerializer::class)
+    var netPrice: BigDecimal? = null,
+    @Serializable(with = BigDecimalSerializer::class)
     val vatRate: BigDecimal = BigDecimal(23),
-    val needInvoice: Boolean? = null,
+    var needInvoice: Boolean? = null,
 )

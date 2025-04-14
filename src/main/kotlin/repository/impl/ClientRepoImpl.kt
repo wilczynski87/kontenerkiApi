@@ -7,15 +7,13 @@ import com.kontenery.repository.AddressRepo
 import com.kontenery.repository.ClientRepo
 import com.kontenery.repository.entity.*
 import com.kontenery.repository.entity.AddressTable.postCode
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.*
 import org.jetbrains.exposed.dao.with
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
 
-    override suspend fun save(client: Client): Client? {
+    override suspend fun save(client: Client): Client {
         val clientPersonalData: ClientPersonalData? = client.clientPrivate
         val clientCompanyData: ClientCompanyData? = client.clientCompany
         val isActive: Boolean? = client.isActive
@@ -66,6 +64,7 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
                 this.personalData = personalDataEntity
                 this.companyData = companyDataEntity
                 this.isActive = isActive
+                this.createdAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
             }.toClient()
         }
     }

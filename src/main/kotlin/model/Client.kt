@@ -1,12 +1,19 @@
 package com.kontenery.model
 
+import kotlinx.datetime.LocalDate
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Client(
     val id: Long? = null,
     val clientPrivate: ClientPersonalData? = null,
     val clientCompany: ClientCompanyData? = null,
     val isActive: Boolean? = null,
+    val createdAt: LocalDate? = null,
+    val updatedAt: LocalDate? = null,
 )
 
+@Serializable
 data class ClientPersonalData(
     val id: Long? = null,
     var firstName: String? = null,
@@ -18,6 +25,7 @@ data class ClientPersonalData(
     var email: String? = null,
 )
 
+@Serializable
 data class ClientCompanyData(
     val id: Long? = null,
     val name: String? = null,
