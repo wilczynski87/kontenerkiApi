@@ -11,6 +11,15 @@ import io.ktor.server.response.*
 fun Route.clientRoute(clientService: ClientService) {
     route("/client") {
 
+        get("/list") {
+            val page: Int = call.request.queryParameters["page"]?.toInt() ?: 0
+            val size: Int = call.request.queryParameters["size"]?.toInt() ?: 100
+
+            val clientList = clientService.getClientList(page, size)
+
+            call.respond(clientList)
+        }
+
         post {
             println("zaczynamy SAVE klienta: ")
 //            println(call.receiveText())
@@ -35,7 +44,7 @@ fun Route.clientRoute(clientService: ClientService) {
             call.respond(clients)
         }
 
-        get("/{id}") {
+        get("/{id}/id") {
             println("get ID ENDPOINT")
             val id:Long? = call.request.pathVariables["id"]?.toLongOrNull()
                 ?: throw BadRequestException("Invalid ID format")

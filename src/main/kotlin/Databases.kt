@@ -33,6 +33,7 @@ fun Application.configureDatabases() {
         log.info("Connecting to postgres database at $url")
         val user = environment.config.property("postgres.user").getString()
         val password = environment.config.property("postgres.password").getString()
+        log.info("user: $user, password: $password")
 
         DriverManager.getConnection(url, user, password)
     }

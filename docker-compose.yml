@@ -2,31 +2,31 @@ version: '3.9'
 
 services:
   db:
-    image: postgres
+    image: postgres:latest
     container_name: db
-    restart: always
-    shm_size: 128mb
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: admin
+      POSTGRES_USER: admin_user
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: kontenery_db
+      POSTGRES_DB: db1
     ports:
       - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: api
     ports:
       - "100:100"
     environment:
-      DB_URL: "jdbc:postgresql://db:5432/kontenery_db"
-      DB_USER: "admin"
-      DB_PASSWORD: "postgres"
+      DB_URL: jdbc:postgresql://db:5432/db1
+      DB_USER: admin_user
+      DB_PASSWORD: postgres
     depends_on:
       - db
-
 
 volumes:
   postgres_data:

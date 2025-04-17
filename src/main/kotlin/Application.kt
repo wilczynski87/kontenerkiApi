@@ -19,7 +19,6 @@ import com.kontenery.service.impl.ContractServiceImpl
 import com.kontenery.service.impl.ProductServiceImp
 import com.kontenery.validator.validator
 import io.ktor.server.application.*
-import kotlinx.serialization.modules.SerializersModule
 
 fun main(args: Array<String>) {
     io.ktor.server.netty.EngineMain.main(args)

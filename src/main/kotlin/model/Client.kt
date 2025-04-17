@@ -1,7 +1,9 @@
 package com.kontenery.model
 
+import com.kontenery.utils.BigDecimalSerializer
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
+import java.math.BigDecimal
 
 @Serializable
 data class Client(
@@ -11,7 +13,16 @@ data class Client(
     val isActive: Boolean? = null,
     val createdAt: LocalDate? = null,
     val updatedAt: LocalDate? = null,
-)
+) {
+    fun getName():String {
+        return clientCompany?.name
+            ?: "${clientPrivate?.firstName} ${clientPrivate?.lastName}".ifBlank { "No Name" }
+    }
+
+    fun needInvoice():Boolean {
+        return clientCompany?.needInvoice == null || clientCompany.needInvoice == false
+    }
+}
 
 @Serializable
 data class ClientPersonalData(
@@ -36,3 +47,16 @@ data class ClientCompanyData(
     val email: String? = null,
     val needInvoice: Boolean? = null,
 )
+
+@Serializable
+data class ClientOnList(
+    val id: Long,
+    val name: String,
+    @Serializable(with = BigDecimalSerializer::class)
+    val paymentsOverdue: BigDecimal? = BigDecimal.ZERO,
+    val contracts: String?,
+    val active: Boolean,
+    val invoice: Boolean,
+    val lastBill: LocalDate?
+) {
+}

@@ -1,9 +1,6 @@
 package com.kontenery.service.impl
 
-import com.kontenery.model.Client
-import com.kontenery.model.Container
-import com.kontenery.model.Contract
-import com.kontenery.model.Yard
+import com.kontenery.model.*
 import com.kontenery.repository.ContractRepo
 import com.kontenery.service.ClientService
 import com.kontenery.service.ContractService
@@ -23,26 +20,39 @@ class ContractServiceImpl(
         return repo.findById(id)
     }
 
-    override suspend fun create(contract: Contract): Contract {
+    override suspend fun getByClientId(clientId: Long): List<Contract> {
+        return repo.findByClientId(clientId)
+    }
+
+
+    override suspend fun create(contractDto: ContractDto): Contract {
+
+        val contract: Contract = Contract(
+            startDate = contractDto.startDate,
+            endDate = contractDto.endDate,
+            netPrice = contractDto.netPrice,
+            vatRate = contractDto.vatRate,
+            needInvoice = contractDto.needInvoice
+        )
 
         run {
             val clientId: Long =
-                contract.client?.id ?: throw NullPointerException("There is no id of a client, for contract")
+                contractDto.client ?: throw NullPointerException("There is no id of a client, for contract")
 
             val client: Client = clientService.findClientById(clientId)
                 ?: throw NullPointerException("There is no client with given ID $clientId")
 
-            contract.apply { this.client = client }
+            contract.client = client
         }
 
         run {
-            val productId: Long = contract.product?.id ?: throw NullPointerException("There is no id of a product, for contract")
+            val productId: Long = contractDto.product ?: throw NullPointerException("There is no id of a product, for contract")
 
             val product = productService.findProductById(productId) ?: throw NullPointerException("There is no product with given ID $productId")
 
             println("product: ${product}")
 
-            contract.product = product
+            contract.product = product as Product
         }
 
         return repo.create(contract)

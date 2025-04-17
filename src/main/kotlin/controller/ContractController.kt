@@ -1,6 +1,7 @@
 package com.kontenery.controller
 
 import com.kontenery.model.Contract
+import com.kontenery.model.ContractDto
 import com.kontenery.service.ContractService
 import io.ktor.http.*
 import io.ktor.server.plugins.*
@@ -24,7 +25,7 @@ fun Route.contractRoutes(service: ContractService) {
         post {
             try{
                 println("POST CONTRACT")
-                val contract = call.receive<Contract>()
+                val contract = call.receive<ContractDto>()
                 println(contract)
                 val created = service.create(contract)
                 call.respond(HttpStatusCode.Created, created)

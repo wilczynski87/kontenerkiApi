@@ -18,3 +18,17 @@ data class Contract(
     val vatRate: BigDecimal = BigDecimal(23),
     var needInvoice: Boolean? = null,
 )
+
+@Serializable
+data class ContractDto(
+    val id: Long? = null,
+    var client: Long? = null,
+    var product: Long? = null,
+    var startDate: LocalDate? = null,
+    var endDate: LocalDate? = null,
+    @Serializable(with = BigDecimalSerializer::class)
+    var netPrice: BigDecimal? = null,
+    @Serializable(with = BigDecimalSerializer::class)
+    val vatRate: BigDecimal = BigDecimal(23),
+    var needInvoice: Boolean? = null,
+)

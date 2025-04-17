@@ -2,10 +2,7 @@ package com.kontenery.repository.impl
 
 import com.kontenery.model.Contract
 import com.kontenery.repository.ContractRepo
-import com.kontenery.repository.entity.ClientEntity
-import com.kontenery.repository.entity.ContractEntity
-import com.kontenery.repository.entity.ProductEntity
-import com.kontenery.repository.entity.suspendTransaction
+import com.kontenery.repository.entity.*
 
 class ContractRepoImpl: ContractRepo {
     override suspend fun findAll(page:Int, size:Int): List<Contract> = suspendTransaction {
@@ -18,6 +15,13 @@ class ContractRepoImpl: ContractRepo {
 
     override suspend fun findById(id: Long): Contract? = suspendTransaction {
         ContractEntity.findById(id)?.toContract()
+    }
+
+    override suspend fun findByClientId(clientId: Long): List<Contract> {
+        return ContractEntity.find {
+                ContractTable.client eq clientId
+            }
+            .map { it.toContract() }
     }
 
     override suspend fun create(contract: Contract): Contract = suspendTransaction {
