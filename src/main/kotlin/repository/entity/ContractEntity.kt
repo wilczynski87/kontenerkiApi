@@ -38,7 +38,11 @@ class ContractEntity(id: EntityID<Long>) : LongEntity(id) {
     fun toContract() = Contract(
         id = id.value,
         client = client?.toClient(),
-        product = product?.toYard(),
+        product = when(product?.type) {
+            ProductType.CONTAINER -> product!!.toContainer()
+            ProductType.YARD -> product!!.toYard()
+            else -> null
+        },
         startDate = startDate,
         endDate = endDate,
         netPrice = netPrice,

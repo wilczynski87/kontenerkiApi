@@ -27,6 +27,36 @@ fun Route.productRouting(productService: ProductService) {
             }
         }
 
+        get("/containers") {
+            val page: Int = call.queryParameters["page"]?.toInt() ?: 0
+            val size: Int = call.queryParameters["size"]?.toInt() ?: 100
+            try {
+
+                val containers: List<Container> = productService.getAllContainers(page, size)
+                println("controller print: $containers")
+
+                call.respond(containers)
+
+            } catch (e: Exception) {
+                println(e)
+            }
+        }
+
+        get("/yards") {
+            val page: Int = call.queryParameters["page"]?.toInt() ?: 0
+            val size: Int = call.queryParameters["size"]?.toInt() ?: 100
+            try {
+
+                val yards: List<Yard> = productService.getAllYards(page, size)
+                println("controller print: $yards")
+
+                call.respond(yards)
+
+            } catch (e: Exception) {
+                println(e)
+            }
+        }
+
         get("/findById/{id}") {
             println("FIND PRODUCT")
             val id:Long = call.pathParameters["id"]?.toLongOrNull() ?: throw BadRequestException("Invalid ID format")
@@ -39,29 +69,69 @@ fun Route.productRouting(productService: ProductService) {
             else call.respond(product)
         }
 
-        post {
+        post("/yard") {
             try {
-                println("POST PRODUCT")
-                val newRawProduct = call.receive<String>()
-                val newProduct = productDeserializer(newRawProduct) ?: throw IllegalArgumentException("Żle wprowadzony produkt")
-                println("newProduct: $newProduct")
-                val savedProduct = productService.save(newProduct)
+                println("POST YARD")
+                val newYard = call.receive<Yard>()
+                println("newYard: $newYard")
+                val savedProduct = productService.save(newYard)
                 println("savedProduct: $savedProduct")
 
-                if (savedProduct == null) call.respond(HttpStatusCode.ExpectationFailed, "Nie mogę zapisać produktu")
+                if (savedProduct == null) call.respond(HttpStatusCode.ExpectationFailed, "Nie mogę zapisać produktu: $newYard")
                 else call.respond(savedProduct)
+
+            } catch (e:Exception) {
+                println(e)
+                call.respond(HttpStatusCode.ExpectationFailed, "Nie mogę zapisać produktu: $e")
+            }
+        }
+        post("/container") {
+            try {
+                println("POST CONTAINER")
+                val newContainer = call.receive<Container>()
+                println("newProduct: $newContainer")
+                val savedProduct = productService.save(newContainer)
+                println("savedProduct: $savedProduct")
+
+                if (savedProduct == null) call.respond(HttpStatusCode.ExpectationFailed, "Nie mogę zapisać produktu: $newContainer")
+                else call.respond(savedProduct)
+
+            } catch (e:Exception) {
+                println(e)
+                call.respond(HttpStatusCode.ExpectationFailed, "Nie mogę zapisać produktu: $e")
+            }
+        }
+
+        put("/yard/{id}") {
+            try {
+                println("PUT YARD")
+                val id:Long = call.pathParameters["id"]?.toLongOrNull() ?: throw BadRequestException("Invalid ID format")
+                val newYard = call.receive<Yard>()
+                println("newProduct: $newYard")
+                val updatedProduct: Yard = productService.updateProduct(newYard) as Yard
+                println("updatedProduct: $updatedProduct")
+
+                call.respond(updatedProduct)
 
             } catch (e:Exception) {
                 println(e)
             }
         }
 
-        put {
-            val newProduct = "ppp"
-            val savedProduct = "ppp"
+        put("/container/{id}") {
+            try {
+                println("PUT CONTAINER")
+                val id:Long = call.pathParameters["id"]?.toLongOrNull() ?: throw BadRequestException("Invalid ID format")
+                val newContainer = call.receive<Container>()
+                println("newProduct: $newContainer")
+                val updatedProduct: Container = productService.updateProduct(newContainer) as Container
+                println("updatedProduct: $updatedProduct")
 
-            if (savedProduct == null) call.respond(HttpStatusCode.ExpectationFailed, "Nie ma takiego produktu")
-            else call.respond(savedProduct)
+                call.respond(updatedProduct)
+
+            } catch (e:Exception) {
+                println(e)
+            }
         }
     }
 }

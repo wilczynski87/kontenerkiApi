@@ -19,6 +19,22 @@ class ProductServiceImp(private val productRepo: ProductRepo): ProductService {
         return productRepo.getAllProduct(page, size)
     }
 
+    override suspend fun getAllContainers(page: Int, size: Int): List<Container> {
+        return productRepo.getAllProduct(page, size)
+            .filterIsInstance<Container>()
+            .map { product: Product ->
+                product as Container
+            }
+    }
+
+    override suspend fun getAllYards(page: Int, size: Int): List<Yard> {
+        return productRepo.getAllProduct(page, size)
+            .filterIsInstance<Yard>()
+            .map { product: Product ->
+                product as Yard
+            }
+    }
+
     override suspend fun findProductById(id: Long): Product? {
         return productRepo.findProductById(id)
     }

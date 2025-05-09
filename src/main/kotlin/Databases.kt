@@ -1,6 +1,9 @@
 package com.kontenery
 
 import com.kontenery.repository.entity.*
+import com.kontenery.repository.entity.invoice.InvoiceTable
+import com.kontenery.repository.entity.invoice.Positions
+import com.kontenery.repository.entity.invoice.Subjects
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -46,6 +49,7 @@ fun Application.configureDatabases() {
             ClientPersonalDataTable, ClientCompanyDataTable, ClientTable,
             ProductTable,
             ContractTable,
+            Subjects, Positions, InvoiceTable,
         )
     }
 }

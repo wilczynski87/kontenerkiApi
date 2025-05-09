@@ -69,7 +69,7 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
         }
     }
 
-    fun updateClient(id: Long, update: Client.() -> Unit): Client? = transaction {
+    suspend fun updateClient(id: Long, update: Client.() -> Unit): Client? = suspendTransaction {
         ClientEntity.findById(id)?.apply {
 
             val client = toClient().apply(update)

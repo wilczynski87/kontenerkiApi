@@ -3,6 +3,9 @@ package com.kontenery.repository.impl
 import com.kontenery.model.Contract
 import com.kontenery.repository.ContractRepo
 import com.kontenery.repository.entity.*
+import kotlinx.datetime.*
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.or
 
 class ContractRepoImpl: ContractRepo {
     override suspend fun findAll(page:Int, size:Int): List<Contract> = suspendTransaction {
@@ -17,11 +20,20 @@ class ContractRepoImpl: ContractRepo {
         ContractEntity.findById(id)?.toContract()
     }
 
-    override suspend fun findByClientId(clientId: Long): List<Contract> {
-        return ContractEntity.find {
+    override suspend fun findByClientId(clientId: Long): List<Contract> = suspendTransaction {
+        ContractEntity.find {
                 ContractTable.client eq clientId
             }
             .map { it.toContract() }
+    }
+
+    override suspend fun findCurrentByProductId(productId: Long): List<Contract> = suspendTransaction {
+        val today: LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        ContractEntity.find {
+            (ContractTable.product eq productId) and ((ContractTable.endDate.isNull()) or (ContractTable.endDate greater today))
+        }
+        .map { it.toContract() }
+
     }
 
     override suspend fun create(contract: Contract): Contract = suspendTransaction {

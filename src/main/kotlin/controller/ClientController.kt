@@ -22,13 +22,12 @@ fun Route.clientRoute(clientService: ClientService) {
 
         post {
             println("zaczynamy SAVE klienta: ")
-//            println(call.receiveText())
             try {
             val client: Client = call.receive<Client>()
 
             println(client)
             val saveClient:Client? = clientService.save(client)
-            println("zapisany")
+            println("zapisany: $saveClient")
             if(saveClient != null) call.respond(saveClient)
             else call.respond(HttpStatusCode.ExpectationFailed)
             } catch (e:Exception) {
@@ -50,15 +49,16 @@ fun Route.clientRoute(clientService: ClientService) {
                 ?: throw BadRequestException("Invalid ID format")
             println("Otrzymałem id: $id\n")
             val client: Client? = clientService.findClientById(id!!)
+            println("Klient: $client\n")
 
             if(client == null) call.respond(HttpStatusCode.ExpectationFailed, "Brak klienta o id: $id")
             else call.respond(client)
         }
 
-        put("/") {
+        put("/{id}") {
             println("zaczynamy PUT client: ")
-//            val id = call.pathParameters["id"]?.toLongOrNull()
-//                ?: throw BadRequestException("Invalid ID format")
+            val id = call.pathParameters["id"]?.toLongOrNull()
+                ?: throw BadRequestException("Invalid ID format")
 
             val clientUpdate = call.receive<Client>()
             println(clientUpdate)

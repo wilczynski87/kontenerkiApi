@@ -3,6 +3,7 @@ package com.kontenery.repository.entity
 import com.kontenery.model.Container
 import com.kontenery.model.Product
 import com.kontenery.model.Yard
+import com.kontenery.repository.entity.ContractTable.nullable
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 import org.jetbrains.exposed.dao.LongEntity
@@ -16,6 +17,7 @@ object ProductTable: LongIdTable(PRODUCT_TABLE_NAME) {
     val name = varchar("name", 255).nullable()
     val location = varchar("location", 255).nullable()
     val type = enumerationByName("type", 25, ProductType::class)
+    val client = reference("client_id", ClientTable).nullable()
 
     // Container
     val length = varchar("length", 50).nullable()
@@ -38,6 +40,7 @@ class ProductEntity(id: EntityID<Long>) : LongEntity(id) {
     var name by ProductTable.name
     var location by ProductTable.location
     var type by ProductTable.type
+    var client by ClientEntity.optionalReferencedOn(ProductTable.client)
 
     var length by ProductTable.length
     var height by ProductTable.height
@@ -49,18 +52,18 @@ class ProductEntity(id: EntityID<Long>) : LongEntity(id) {
 
     var quantity by ProductTable.quantity
 
-    fun toProduct() = Yard()
-//        Product(
-//        id = id.value,
-//        name = name,
-//        location = location,
-//        type = type,
-//    )
+    fun toProduct() = Product(
+        id = id.value,
+        name = name,
+        location = location,
+        type = type,
+    )
 
     fun toContainer() = Container(
         id = id.value,
         name = name,
         location = location,
+        client = client?.toClient(),
         length = length,
         height = height,
         color = color,
@@ -74,6 +77,7 @@ class ProductEntity(id: EntityID<Long>) : LongEntity(id) {
         id = id.value,
         name = name,
         location = location,
+        client = client?.toClient(),
         quantity = quantity
     )
 }

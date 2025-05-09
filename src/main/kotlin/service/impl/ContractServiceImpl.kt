@@ -24,6 +24,15 @@ class ContractServiceImpl(
         return repo.findByClientId(clientId)
     }
 
+    override suspend fun getCurrentByProductId(productId: Long): Contract? {
+        val contracts: List<Contract> = repo.findCurrentByProductId(productId)
+        return when(contracts.size) {
+            0 -> null
+            1 -> contracts.first()
+            else -> throw IllegalArgumentException("Too many Contracts, for given product id: $productId")
+        }
+    }
+
 
     override suspend fun create(contractDto: ContractDto): Contract {
 
@@ -46,20 +55,67 @@ class ContractServiceImpl(
         }
 
         run {
-            val productId: Long = contractDto.product ?: throw NullPointerException("There is no id of a product, for contract")
+            val productId: Long =
+                contractDto.product ?: throw NullPointerException("There is no id of a product, for contract")
 
-            val product = productService.findProductById(productId) ?: throw NullPointerException("There is no product with given ID $productId")
+            var product = productService.findProductById(productId) as Product ?: throw NullPointerException("There is no product with given ID $productId")
 
             println("product: ${product}")
 
-            contract.product = product as Product
+            // updating Client for Product
+            product.client = contract.client
+            product = productService.updateProduct(product) as Product
+
+            println("product2: ${product}")
+
+            contract.product = product
         }
 
         return repo.create(contract)
     }
 
-    override suspend fun update(id: Long, contract: Contract): Contract {
-        return repo.update(id, contract)
+    override suspend fun update(contractId: Long, contractDto: ContractDto): Contract {
+        var contract:Contract?
+
+        run {
+            contract = getById(contractId) ?: throw NullPointerException("There is no Contract with given id $contractId")
+
+            contract?.apply {
+                startDate = contractDto.startDate
+                endDate = contractDto.endDate
+                netPrice = contractDto.netPrice
+                needInvoice = contractDto.needInvoice
+            }
+        }
+
+        run {
+            val clientId: Long =
+                contractDto.client ?: throw NullPointerException("There is no id of a client, for contract")
+
+            val clientFound: Client = clientService.findClientById(clientId)
+                ?: throw NullPointerException("There is no client with given ID $clientId")
+
+            contract?.client = clientFound
+        }
+
+        run {
+            val productId: Long =
+                contractDto.product ?: throw NullPointerException("There is no id of a product, for contract")
+
+            var product = productService.findProductById(productId) as Product ?: throw NullPointerException("There is no product with given ID $productId")
+
+            println("product: ${product}")
+
+            // updating Client for Product
+            product.client = contract?.client
+            product = productService.updateProduct(product) as Product
+
+            println("product2: ${product}")
+
+            contract?.product = product
+        }
+
+        return repo.update(contractId, contract!!)
     }
 
     override suspend fun delete(id: Long): Boolean {

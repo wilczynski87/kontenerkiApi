@@ -13,7 +13,7 @@ object AddressTable: LongIdTable("address") {
     val street = varchar("street", 255).nullable() // Nullable as per the class definition
     val house = varchar("house", 50).nullable() // Nullable
     val city = varchar("city", 255).nullable() // Nullable
-    val postCode = varchar("post_code", 20).nullable() // Nullable
+    var postCode = varchar("post_code", 20).nullable() // Nullable
     val country = varchar("country", 2).default("PL") // Default value for country is "PL"
 }
 

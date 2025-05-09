@@ -1,22 +1,10 @@
 package com.kontenery
 
 import com.kontenery.model.Product
-import com.kontenery.repository.AddressRepo
-import com.kontenery.repository.ClientRepo
-import com.kontenery.repository.ContractRepo
-import com.kontenery.repository.ProductRepo
-import com.kontenery.repository.impl.AddressRepoImpl
-import com.kontenery.repository.impl.ClientRepoImpl
-import com.kontenery.repository.impl.ContractRepoImpl
-import com.kontenery.repository.impl.ProductRepoImpl
-import com.kontenery.service.AddressService
-import com.kontenery.service.ClientService
-import com.kontenery.service.ContractService
-import com.kontenery.service.ProductService
-import com.kontenery.service.impl.AddressServiceImpl
-import com.kontenery.service.impl.ClientServiceImpl
-import com.kontenery.service.impl.ContractServiceImpl
-import com.kontenery.service.impl.ProductServiceImp
+import com.kontenery.repository.*
+import com.kontenery.repository.impl.*
+import com.kontenery.service.*
+import com.kontenery.service.impl.*
 import com.kontenery.validator.validator
 import io.ktor.server.application.*
 
@@ -38,11 +26,14 @@ fun Application.module() {
     val contractRepo: ContractRepo = ContractRepoImpl()
     val contractService: ContractService = ContractServiceImpl(contractRepo, clientService, productService)
 
+    val invoiceRepo: InvoiceRepo = InvoiceRepoImpl()
+    val invoiceService: InvoiceService = InvoiceServiceImpl(invoiceRepo)
+
     configureFrameworks()
     configureSerialization()
     configureDatabases()
-    validator()
+    validator(contractService)
     configureHTTP()
     configureSecurity()
-    configureRouting(addressService, clientService, productService, contractService)
+    configureRouting(addressService, clientService, productService, contractService, invoiceService)
 }
