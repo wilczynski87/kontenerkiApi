@@ -1,15 +1,12 @@
 package com.kontenery.repository.impl
 
-import com.kontenery.model.Client
 import com.kontenery.model.Product
-import com.kontenery.model.Container
-import com.kontenery.model.Yard
 import com.kontenery.repository.ProductRepo
 import com.kontenery.repository.entity.*
 
 class ProductRepoImpl: ProductRepo {
     // Save a new Container
-    override suspend fun save(product: Container): Container = suspendTransaction {
+    override suspend fun save(product: Product.Container): Product.Container = suspendTransaction {
 
         ProductEntity.new {
             name = product.name
@@ -28,7 +25,7 @@ class ProductRepoImpl: ProductRepo {
     }
 
     // Save a new Yard
-    override suspend fun save(product: Yard): Yard = suspendTransaction {
+    override suspend fun save(product: Product.Yard): Product.Yard = suspendTransaction {
         ProductEntity.new {
             name = product.name
             location = product.location
@@ -58,11 +55,11 @@ class ProductRepoImpl: ProductRepo {
         val prod = ProductEntity.findById(id)
 
         if(prod == null) null
-        else mapProductToType(prod)
+        else mapProductByType(prod)
     }
 
     // Update an existing Container
-    override suspend fun updateProduct(product: Container): Container = suspendTransaction {
+    override suspend fun updateProduct(product: Product.Container): Product.Container = suspendTransaction {
         val id:Long = product.id ?: throw NullPointerException("Nowy produkt nie ma ID: $product")
         ProductEntity.findByIdAndUpdate(id) { it ->
             it.apply {
@@ -82,7 +79,7 @@ class ProductRepoImpl: ProductRepo {
     }
 
     // Update an existing Yard
-    override suspend fun updateProduct(product: Yard): Yard = suspendTransaction {
+    override suspend fun updateProduct(product: Product.Yard): Product.Yard = suspendTransaction {
        val id:Long = product.id ?: throw NullPointerException("Nowy produkt nie ma ID: $product")
         ProductEntity.findByIdAndUpdate(id) {
             it.apply {
@@ -100,14 +97,6 @@ private fun mapProductByType(productEntity: ProductEntity): Product {
     return when(productEntity.type) {
         ProductType.CONTAINER -> productEntity.toContainer()
         ProductType.YARD -> productEntity.toYard()
-        else -> productEntity.toProduct()
-    }
-}
-
-private fun mapProductToType(productEntity: ProductEntity): Product {
-    return when(productEntity.type) {
-        ProductType.CONTAINER -> productEntity.toContainer()
-        ProductType.YARD -> productEntity.toYard()
-        else -> productEntity.toProduct()
+        else -> throw TypeCastException("Can not define proper Type in: mapProductByType()")
     }
 }

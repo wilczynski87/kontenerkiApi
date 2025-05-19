@@ -5,6 +5,7 @@ import com.kontenery.repository.ContractRepo
 import com.kontenery.service.ClientService
 import com.kontenery.service.ContractService
 import com.kontenery.service.ProductService
+import kotlinx.datetime.LocalDate
 
 class ContractServiceImpl(
     private val repo: ContractRepo,
@@ -20,8 +21,12 @@ class ContractServiceImpl(
         return repo.findById(id)
     }
 
-    override suspend fun getByClientId(clientId: Long): List<Contract> {
-        return repo.findByClientId(clientId)
+    override suspend fun getByClientId(clientId: Long, onlyActive: Boolean): List<Contract> {
+        return repo.findByClientId(clientId, onlyActive)
+    }
+
+    override suspend fun getByClientId(clientId: Long, fromDate: LocalDate, toDate: LocalDate): List<Contract> {
+        return repo.findByClientId(clientId, fromDate, toDate)
     }
 
     override suspend fun getCurrentByProductId(productId: Long): Contract? {

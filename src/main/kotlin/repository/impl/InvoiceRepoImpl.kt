@@ -5,8 +5,12 @@ import com.kontenery.repository.InvoiceRepo
 import com.kontenery.repository.entity.AddressDAO
 import com.kontenery.repository.entity.invoice.*
 import com.kontenery.repository.entity.suspendTransaction
+import io.ktor.util.*
 import kotlinx.datetime.LocalDate
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
+import kotlin.reflect.jvm.internal.impl.builtins.functions.FunctionTypeKind.SuspendFunction
 
 class InvoiceRepoImpl(): InvoiceRepo {
 
@@ -68,7 +72,7 @@ class InvoiceRepoImpl(): InvoiceRepo {
             nip = invoice.seller.nip
             email = invoice.seller.email
             phone = invoice.seller.phone
-            invoiceId = invoice.seller.invoiceId
+            invoiceNumber = invoice.seller.invoiceNumber
             type = SubjectType.SELLER.name
             account = invoice.seller.account
         }
@@ -80,7 +84,7 @@ class InvoiceRepoImpl(): InvoiceRepo {
             nip = invoice.customer.nip
             email = invoice.customer.email
             phone = invoice.customer.phone
-            invoiceId = invoice.customer.invoiceId
+            invoiceNumber = invoice.customer.invoiceNumber
             type = SubjectType.CUSTOMER.name
             salutation = invoice.customer.salutation
         }
@@ -109,11 +113,29 @@ class InvoiceRepoImpl(): InvoiceRepo {
                 vatRate = product.vatRate
                 vatAmount = product.vatAmount
                 price = product.price
-                vat = product.vat
                 priceWithVat = product.priceWithVat
             }
         }
 
         invoiceEntity.toDomain()
+    }
+
+    override suspend fun getLastInvoiceNumber(): String? = suspendTransaction {
+        InvoiceEntity.all()
+            .orderBy(InvoiceTable.invoiceDate to SortOrder.DESC)
+            .limit(1)
+            .firstOrNull()
+            ?.toDomain()
+            ?.invoiceNumber
+    }
+
+    override suspend fun confirmInvoiceSendDate(invoiceNumber: String, date: LocalDate): Boolean = suspendTransaction {
+        val invoice = InvoiceEntity.find {
+            InvoiceTable.invoiceNumber eq invoiceNumber
+        }.firstOrNull()
+
+        invoice?.invoiceSendToClient = date
+
+        invoice != null
     }
 }

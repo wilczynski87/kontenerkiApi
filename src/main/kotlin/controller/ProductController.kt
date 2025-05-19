@@ -19,7 +19,7 @@ fun Route.productRouting(productService: ProductService) {
                 val products: List<Any> = productService.getAllProduct(page, size)
                 println("controller print: $products")
 
-                val resp = products.map { it as JoiningInterface}.toList()
+                val resp = products.map { it as Product}.toList()
 
                 call.respond(resp)
             } catch (e: Exception) {
@@ -32,7 +32,7 @@ fun Route.productRouting(productService: ProductService) {
             val size: Int = call.queryParameters["size"]?.toInt() ?: 100
             try {
 
-                val containers: List<Container> = productService.getAllContainers(page, size)
+                val containers: List<Product.Container> = productService.getAllContainers(page, size)
                 println("controller print: $containers")
 
                 call.respond(containers)
@@ -47,7 +47,7 @@ fun Route.productRouting(productService: ProductService) {
             val size: Int = call.queryParameters["size"]?.toInt() ?: 100
             try {
 
-                val yards: List<Yard> = productService.getAllYards(page, size)
+                val yards: List<Product.Yard> = productService.getAllYards(page, size)
                 println("controller print: $yards")
 
                 call.respond(yards)
@@ -63,7 +63,7 @@ fun Route.productRouting(productService: ProductService) {
 
             val product = productService.findProductById(id)
             println("controller log: $product")
-            if(product is Yard) println("controller log YARD: $product")
+            if(product is Product.Yard) println("controller log YARD: $product")
 
             if (product == null) call.respond(HttpStatusCode.ExpectationFailed, "Nie ma takiego produktu")
             else call.respond(product)
@@ -72,7 +72,7 @@ fun Route.productRouting(productService: ProductService) {
         post("/yard") {
             try {
                 println("POST YARD")
-                val newYard = call.receive<Yard>()
+                val newYard = call.receive<Product.Yard>()
                 println("newYard: $newYard")
                 val savedProduct = productService.save(newYard)
                 println("savedProduct: $savedProduct")
@@ -88,7 +88,7 @@ fun Route.productRouting(productService: ProductService) {
         post("/container") {
             try {
                 println("POST CONTAINER")
-                val newContainer = call.receive<Container>()
+                val newContainer = call.receive<Product.Container>()
                 println("newProduct: $newContainer")
                 val savedProduct = productService.save(newContainer)
                 println("savedProduct: $savedProduct")
@@ -106,9 +106,9 @@ fun Route.productRouting(productService: ProductService) {
             try {
                 println("PUT YARD")
                 val id:Long = call.pathParameters["id"]?.toLongOrNull() ?: throw BadRequestException("Invalid ID format")
-                val newYard = call.receive<Yard>()
+                val newYard = call.receive<Product.Yard>()
                 println("newProduct: $newYard")
-                val updatedProduct: Yard = productService.updateProduct(newYard) as Yard
+                val updatedProduct: Product.Yard = productService.updateProduct(newYard) as Product.Yard
                 println("updatedProduct: $updatedProduct")
 
                 call.respond(updatedProduct)
@@ -122,9 +122,9 @@ fun Route.productRouting(productService: ProductService) {
             try {
                 println("PUT CONTAINER")
                 val id:Long = call.pathParameters["id"]?.toLongOrNull() ?: throw BadRequestException("Invalid ID format")
-                val newContainer = call.receive<Container>()
+                val newContainer = call.receive<Product.Container>()
                 println("newProduct: $newContainer")
-                val updatedProduct: Container = productService.updateProduct(newContainer) as Container
+                val updatedProduct: Product.Container = productService.updateProduct(newContainer) as Product.Container
                 println("updatedProduct: $updatedProduct")
 
                 call.respond(updatedProduct)

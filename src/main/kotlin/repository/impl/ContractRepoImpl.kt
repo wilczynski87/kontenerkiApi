@@ -20,11 +20,31 @@ class ContractRepoImpl: ContractRepo {
         ContractEntity.findById(id)?.toContract()
     }
 
-    override suspend fun findByClientId(clientId: Long): List<Contract> = suspendTransaction {
-        ContractEntity.find {
+    override suspend fun findByClientId(clientId: Long, onlyActive: Boolean): List<Contract> = suspendTransaction {
+        if(onlyActive) {
+            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            ContractEntity.find {
+                (ContractTable.client eq clientId) and
+                (
+                    ContractTable.endDate.isNull() or
+                    (ContractTable.endDate greater now)
+                )
+            }.map { it.toContract() }
+        } else {
+            ContractEntity.find {
                 ContractTable.client eq clientId
-            }
-            .map { it.toContract() }
+            }.map { it.toContract() }
+        }
+    }
+
+    override suspend fun findByClientId(clientId: Long, fromDate: LocalDate, toDate: LocalDate): List<Contract> = suspendTransaction {
+        ContractEntity.find {
+            (ContractTable.client eq clientId) and
+            (
+                (ContractTable.endDate.isNull() or (ContractTable.endDate greater toDate)) and
+                (ContractTable.startDate lessEq fromDate)
+            )
+        }.map { it.toContract() }
     }
 
     override suspend fun findCurrentByProductId(productId: Long): List<Contract> = suspendTransaction {

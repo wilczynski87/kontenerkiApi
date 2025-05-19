@@ -32,11 +32,11 @@ fun Application.configureDatabases() {
 //    val cityService = CityService(dbConnection)
 
     val connection = {
-        val url = environment.config.property("postgres.url").getString()
-        log.info("Connecting to postgres database at $url")
-        val user = environment.config.property("postgres.user").getString()
-        val password = environment.config.property("postgres.password").getString()
-        log.info("user: $user, password: $password")
+//        val url = environment.config.property("postgres.url").getString()
+//        log.info("Connecting to postgres database at $url")
+//        val user = environment.config.property("postgres.user").getString()
+//        val password = environment.config.property("postgres.password").getString()
+//        log.info("user: $user, password: $password")
 
         DriverManager.getConnection(url, user, password)
     }

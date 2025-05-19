@@ -14,7 +14,6 @@ object Positions : LongIdTable() {
     val vatRate = varchar("vat_rate", 10).nullable() // Vat rate as string, default to 23 if null
     val vatAmount = varchar("vat_amount", 30)
     val price = varchar("price", 30)
-    val vat = varchar("vat", 30)
     val priceWithVat = varchar("price_with_vat", 30)
 }
 
@@ -28,7 +27,6 @@ class PositionEntity(id: EntityID<Long>) : LongEntity(id) {
     var vatRate by Positions.vatRate
     var vatAmount by Positions.vatAmount
     var price by Positions.price
-    var vat by Positions.vat
     var priceWithVat by Positions.priceWithVat
 
     fun toDomain(): Position = Position(
@@ -38,7 +36,6 @@ class PositionEntity(id: EntityID<Long>) : LongEntity(id) {
         vatRate = vatRate ?: "23",  // Default value if null
         vatAmount = vatAmount,
         price = price,
-        vat = vat,
         priceWithVat = priceWithVat
     )
 }

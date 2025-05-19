@@ -13,6 +13,7 @@ data class Client(
     val isActive: Boolean? = null,
     val createdAt: LocalDate? = null,
     val updatedAt: LocalDate? = null,
+    val invoiceTitle: String? = null,
 ) {
     fun getName():String {
         return clientCompany?.name
@@ -34,6 +35,7 @@ data class ClientPersonalData(
     var address: Address? = null,
     var phone: String? = null,
     var email: String? = null,
+    var salutation: String = "Drogi Kliencie"
 )
 
 @Serializable

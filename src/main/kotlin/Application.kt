@@ -13,6 +13,7 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
+    println("App MAIN API started")
 
     val addressRepo: AddressRepo = AddressRepoImpl()
     val addressService: AddressService = AddressServiceImpl(addressRepo)
@@ -27,8 +28,9 @@ fun Application.module() {
     val contractService: ContractService = ContractServiceImpl(contractRepo, clientService, productService)
 
     val invoiceRepo: InvoiceRepo = InvoiceRepoImpl()
-    val invoiceService: InvoiceService = InvoiceServiceImpl(invoiceRepo)
+    val invoiceService: InvoiceService = InvoiceServiceImpl(invoiceRepo, clientService, productService, contractService)
 
+    logger()
     configureFrameworks()
     configureSerialization()
     configureDatabases()

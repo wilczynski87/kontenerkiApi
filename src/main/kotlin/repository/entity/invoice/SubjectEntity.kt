@@ -21,7 +21,7 @@ object Subjects : LongIdTable() {
     val salutation = varchar("salutation", 100).nullable()
     val account = varchar("account", 100).nullable()
 
-    val invoiceId = long("invoice_id")
+    val invoiceNumber = varchar("invoice_number", 12).nullable()
 }
 
 class SubjectEntity(id: EntityID<Long>) : LongEntity(id) {
@@ -36,25 +36,25 @@ class SubjectEntity(id: EntityID<Long>) : LongEntity(id) {
 
     var salutation by Subjects.salutation
     var account by Subjects.account
-    var invoiceId by Subjects.invoiceId
+    var invoiceNumber by Subjects.invoiceNumber
 
     fun toDomain(): Subject = when (type) {
-        "customer" -> Subject.Customer(
+        SubjectType.CUSTOMER.name -> Subject.Customer(
             name = name,
             address = address.toAddress(),
             nip = nip,
             email = email,
             phone = phone,
-            invoiceId = invoiceId,
+            invoiceNumber = invoiceNumber,
             salutation = salutation ?: "Drogi Kliencie"
         )
-        "seller" -> Subject.Seller(
+        SubjectType.SELLER.name -> Subject.Seller(
             name = name,
             address = address.toAddress(),
             nip = nip,
             email = email,
             phone = phone,
-            invoiceId = invoiceId,
+            invoiceNumber = invoiceNumber,
             account = account ?: ""
         )
         else -> error("Unknown Subject type: $type")
@@ -65,7 +65,7 @@ class SubjectEntity(id: EntityID<Long>) : LongEntity(id) {
         nip = subject.nip
         email = subject.email
         phone = subject.phone
-        invoiceId = subject.invoiceId
+        invoiceNumber = subject.invoiceNumber
         when (subject) {
             is Subject.Customer -> {
                 type = "customer"

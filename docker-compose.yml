@@ -28,5 +28,18 @@ services:
     depends_on:
       - db
 
+  email:
+    build:
+      context: ../email
+      dockerfile: Dockerfile
+    container_name: email
+    expose:
+      - 200
+    environment:
+      - EMAIL_PASSWORD = ehpejfervmuwjwrg
+      - EMAIL_USER = parkingostrowskiego@gmail.com
+      - API_NAME = api
+      - API_PORT = 100
+
 volumes:
   postgres_data:

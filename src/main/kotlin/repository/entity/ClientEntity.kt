@@ -1,18 +1,14 @@
 package com.kontenery.repository.entity
 
-import com.kontenery.model.Address
 import com.kontenery.model.Client
 import com.kontenery.model.ClientCompanyData
 import com.kontenery.model.ClientPersonalData
-import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
-import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.kotlin.datetime.*
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 object ClientPersonalDataTable : LongIdTable("client_personal_data") {
     val firstName = text("first_name").nullable()
@@ -40,6 +36,7 @@ object ClientTable : LongIdTable("clients") {
     val isActive = bool("is_active").nullable()
     val createdAt = date("created_at").nullable()
     val updatedAt = date("updated_at").nullable()
+    val invoiceTitle = text("invoice_title").nullable()
 }
 
 class ClientPersonalDataEntity(id: EntityID<Long>) : LongEntity(id) {
@@ -96,6 +93,7 @@ class ClientEntity(id: EntityID<Long>) : LongEntity(id) {
     var isActive by ClientTable.isActive
     var createdAt by ClientTable.createdAt
     var updatedAt by ClientTable.updatedAt
+    var invoiceTitle by ClientTable.invoiceTitle
 
     fun toClient() = Client(
         id = id.value,
@@ -104,5 +102,6 @@ class ClientEntity(id: EntityID<Long>) : LongEntity(id) {
         isActive = isActive,
         createdAt = createdAt,
         updatedAt = updatedAt,
+        invoiceTitle = invoiceTitle,
     )
 }

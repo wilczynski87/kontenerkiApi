@@ -23,13 +23,12 @@ fun Route.clientRoute(clientService: ClientService) {
         post {
             println("zaczynamy SAVE klienta: ")
             try {
-            val client: Client = call.receive<Client>()
-
-            println(client)
-            val saveClient:Client? = clientService.save(client)
-            println("zapisany: $saveClient")
-            if(saveClient != null) call.respond(saveClient)
-            else call.respond(HttpStatusCode.ExpectationFailed)
+                val client: Client = call.receive<Client>()
+                println(client)
+                val saveClient:Client? = clientService.save(client)
+                println("zapisany: $saveClient")
+                if(saveClient != null) call.respond(saveClient)
+                else call.respond(HttpStatusCode.ExpectationFailed)
             } catch (e:Exception) {
                 println(e)
             }

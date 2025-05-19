@@ -22,6 +22,7 @@ object InvoiceTable: LongIdTable() {
 
     val paymentDay = date("payment_day")
     val mainAccount = varchar("main_account", 100)
+    val invoiceSendToClient = date("invoice_send").nullable()
 }
 
 class InvoiceEntity(id: EntityID<Long>) : LongEntity(id) {
@@ -40,6 +41,7 @@ class InvoiceEntity(id: EntityID<Long>) : LongEntity(id) {
 
     var paymentDay by InvoiceTable.paymentDay
     var mainAccount by InvoiceTable.mainAccount
+    var invoiceSendToClient by InvoiceTable.invoiceSendToClient
 
     val positions by PositionEntity referrersOn Positions.invoice
 
@@ -54,6 +56,7 @@ class InvoiceEntity(id: EntityID<Long>) : LongEntity(id) {
         priceSum = priceSum,
         priceWithVatSum = priceWithVatSum,
         paymentDay = paymentDay,
-        mainAccount = mainAccount
+        mainAccount = mainAccount,
+        invoiceSendToClient = invoiceSendToClient,
     )
 }

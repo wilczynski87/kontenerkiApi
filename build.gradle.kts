@@ -41,6 +41,7 @@ dependencies {
     implementation(libs.exposed.dao)
     implementation(libs.ktor.server.request.validation)
     implementation(libs.exposed.kotlin.datetime)
+    implementation(libs.ktor.server.call.logging)
 }
 
 tasks.withType<Jar> {

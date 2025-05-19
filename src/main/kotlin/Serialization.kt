@@ -1,8 +1,7 @@
 package com.kontenery
 
 import com.kontenery.model.Product
-import com.kontenery.model.Yard
-import com.kontenery.model.Container
+import com.kontenery.model.invoice.Subject
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.*
@@ -14,8 +13,12 @@ fun Application.configureSerialization() {
 
     val productModule = SerializersModule {
         polymorphic(Product::class) {
-            subclass(Container::class, Container.serializer())
-            subclass(Yard::class, Yard.serializer())
+            subclass(Product.Container::class, Product.Container.serializer())
+            subclass(Product.Yard::class, Product.Yard.serializer())
+        }
+        polymorphic(Subject::class) {
+            subclass(Subject.Seller::class, Subject.Seller.serializer())
+            subclass(Subject.Customer::class, Subject.Customer.serializer())
         }
     }
 
