@@ -1,6 +1,6 @@
 package com.kontenery.controller
 
-import com.kontenery.model.Client
+import com.kontenery.library.model.Client
 import com.kontenery.service.ClientService
 import io.ktor.http.*
 import io.ktor.server.plugins.*
@@ -16,6 +16,7 @@ fun Route.clientRoute(clientService: ClientService) {
             val size: Int = call.request.queryParameters["size"]?.toInt() ?: 100
 
             val clientList = clientService.getClientList(page, size)
+//            println("clientList $clientList")
 
             call.respond(clientList)
         }
@@ -24,9 +25,9 @@ fun Route.clientRoute(clientService: ClientService) {
             println("zaczynamy SAVE klienta: ")
             try {
                 val client: Client = call.receive<Client>()
-                println(client)
+//                println(client)
                 val saveClient:Client? = clientService.save(client)
-                println("zapisany: $saveClient")
+//                println("zapisany: $saveClient")
                 if(saveClient != null) call.respond(saveClient)
                 else call.respond(HttpStatusCode.ExpectationFailed)
             } catch (e:Exception) {

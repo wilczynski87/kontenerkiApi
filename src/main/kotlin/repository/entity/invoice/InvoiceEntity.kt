@@ -1,7 +1,7 @@
 package com.kontenery.repository.entity.invoice
 
-import com.kontenery.model.invoice.Invoice
-import com.kontenery.model.invoice.Subject
+import com.kontenery.library.model.invoice.Invoice
+import com.kontenery.library.model.invoice.Subject
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -58,5 +58,6 @@ class InvoiceEntity(id: EntityID<Long>) : LongEntity(id) {
         paymentDay = paymentDay,
         mainAccount = mainAccount,
         invoiceSendToClient = invoiceSendToClient,
+        vatApply = true,
     )
 }

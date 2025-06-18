@@ -1,7 +1,7 @@
 package com.kontenery.controller
 
-import com.kontenery.model.Contract
-import com.kontenery.model.ContractDto
+import com.kontenery.library.model.Contract
+import com.kontenery.library.model.ContractDto
 import com.kontenery.service.ContractService
 import io.ktor.http.*
 import io.ktor.server.request.*
@@ -48,12 +48,12 @@ fun Route.contractRoutes(service: ContractService) {
         post {
             try {
                 println("POST CONTRACT")
-                val contract = call.receive<ContractDto>()
+                val contractDto:ContractDto = call.receive<ContractDto>()
                 /*
                 Potrzebny validaotr do sprawdzenia czy dany product nie jest już zakontraktowany
                  */
-                println(contract)
-                val created = service.create(contract)
+                println(contractDto)
+                val created: Contract = service.create(contractDto)
                 println("created Contract: $created")
                 call.respond(HttpStatusCode.Created, created)
             } catch(e:Exception) {

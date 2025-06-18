@@ -1,6 +1,6 @@
 package com.kontenery.repository.entity.invoice
 
-import com.kontenery.model.invoice.Position
+import com.kontenery.library.model.invoice.Position
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -11,7 +11,7 @@ object Positions : LongIdTable() {
     val productName = varchar("product_name", 255)
     val unitPrice = varchar("unit_price", 30)
     val quantity = varchar("quantity", 30)  // Updated to store as a string
-    val vatRate = varchar("vat_rate", 10).nullable() // Vat rate as string, default to 23 if null
+    val vatRate = varchar("vat_rate", 10) // Vat rate as string, default to 23 if null
     val vatAmount = varchar("vat_amount", 30)
     val price = varchar("price", 30)
     val priceWithVat = varchar("price_with_vat", 30)

@@ -1,8 +1,11 @@
-
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktor)
     alias(libs.plugins.kotlin.plugin.serialization)
+}
+
+kotlin {
+    jvmToolchain(21)
 }
 
 group = "com.kontenery"
@@ -17,6 +20,7 @@ application {
 
 repositories {
     mavenCentral()
+        maven { url = uri("https://jitpack.io") }
 }
 
 dependencies {
@@ -42,6 +46,11 @@ dependencies {
     implementation(libs.ktor.server.request.validation)
     implementation(libs.exposed.kotlin.datetime)
     implementation(libs.ktor.server.call.logging)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
+//    implementation(libs.kontenerki.library)
+    implementation(files("libs/library-1.0.0.jar"))
+
 }
 
 tasks.withType<Jar> {

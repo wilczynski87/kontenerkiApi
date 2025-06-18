@@ -1,6 +1,6 @@
 package com.kontenery.repository.entity
 
-import com.kontenery.model.Address
+import com.kontenery.library.model.Address
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.dao.EntityClass
 import org.jetbrains.exposed.dao.LongEntity

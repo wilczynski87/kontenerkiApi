@@ -1,6 +1,6 @@
 package com.kontenery.repository.entity.invoice
 
-import com.kontenery.model.invoice.Subject
+import com.kontenery.library.model.invoice.Subject
 import com.kontenery.repository.entity.AddressDAO
 import com.kontenery.repository.entity.AddressTable
 import com.kontenery.repository.entity.toAddress

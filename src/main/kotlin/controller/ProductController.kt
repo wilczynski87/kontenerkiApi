@@ -1,6 +1,6 @@
 package com.kontenery.controller
 
-import com.kontenery.model.*
+import com.kontenery.library.model.Product
 import com.kontenery.service.ProductService
 import io.ktor.http.*
 import io.ktor.server.plugins.*
@@ -17,9 +17,11 @@ fun Route.productRouting(productService: ProductService) {
             try {
 
                 val products: List<Any> = productService.getAllProduct(page, size)
-                println("controller print: $products")
+//                println("controller print: $products")
 
-                val resp = products.map { it as Product}.toList()
+                val resp = products.map { it as Product }.toList()
+
+                println("Products response: print: $resp")
 
                 call.respond(resp)
             } catch (e: Exception) {

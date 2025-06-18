@@ -1,7 +1,6 @@
 package com.kontenery.repository.entity
 
-import com.kontenery.model.Product
-import com.kontenery.repository.entity.ContractTable.nullable
+import com.kontenery.library.model.Product
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 import org.jetbrains.exposed.dao.LongEntity
@@ -49,13 +48,6 @@ class ProductEntity(id: EntityID<Long>) : LongEntity(id) {
     var photo by ProductTable.photo
 
     var quantity by ProductTable.quantity
-
-//    fun toProduct() = Product(
-//        id = id.value,
-//        name = name,
-//        location = location,
-//        type = type,
-//    )
 
     fun toContainer() = Product.Container(
         id = id.value,

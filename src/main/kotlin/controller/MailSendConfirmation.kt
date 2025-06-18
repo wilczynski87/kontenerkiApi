@@ -8,8 +8,9 @@ import kotlinx.datetime.LocalDate
 import model.MailSendParam
 
 fun Route.mailSendConfirmation(invoiceService: InvoiceService) {
-    route("mailSend") {
+    route("/mailSend") {
         get("/invoice") {
+            println("mailSend/invoice")
             try {
                 val invoiceNumber: String = call.queryParameters[MailSendParam.INVOICE_NUMBER.param].toString()
                 val invoiceSendDate: LocalDate = LocalDate.parse(call.queryParameters[MailSendParam.SEND_DATE.param].toString())

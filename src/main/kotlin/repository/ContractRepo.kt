@@ -1,6 +1,6 @@
 package com.kontenery.repository
 
-import com.kontenery.model.Contract
+import com.kontenery.library.model.Contract
 import kotlinx.datetime.LocalDate
 
 interface ContractRepo {

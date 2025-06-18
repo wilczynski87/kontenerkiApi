@@ -1,11 +1,9 @@
 package com.kontenery.service.impl
 
-import com.kontenery.model.Client
-import com.kontenery.model.ClientOnList
+import com.kontenery.library.model.Client
+import com.kontenery.library.model.ClientOnList
 import com.kontenery.repository.ClientRepo
 import com.kontenery.service.ClientService
-import com.kontenery.service.ContractService
-import kotlinx.datetime.LocalDate
 import java.math.BigDecimal
 
 class ClientServiceImpl(
@@ -15,6 +13,8 @@ class ClientServiceImpl(
 
     override suspend fun getClientList(page: Int, size: Int): List<ClientOnList> {
         val clients: List<Client> = getAllClients(page, size)
+//        println("clients, to clientOnList: $clients")
+//        clients.forEach{x -> println(x.needInvoice())}
         return clients.map { clientToClientOnList(it) }
     }
 
@@ -31,7 +31,10 @@ class ClientServiceImpl(
     }
 
     override suspend fun save(client: Client): Client? {
-        return clientRepo.save(client)
+        val newClient: Client = if(client.clientCompany != null) {
+                client.copy(clientCompany = client.clientCompany!!.copy(needInvoice = true))
+            } else client
+        return clientRepo.save(newClient)
     }
 
     override suspend fun getAllClients(page: Int, size: Int): List<Client> {

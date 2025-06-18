@@ -1,8 +1,8 @@
 package com.kontenery.repository.entity
 
-import com.kontenery.model.Client
-import com.kontenery.model.ClientCompanyData
-import com.kontenery.model.ClientPersonalData
+import com.kontenery.library.model.Client
+import com.kontenery.library.model.ClientCompanyData
+import com.kontenery.library.model.ClientPersonalData
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID

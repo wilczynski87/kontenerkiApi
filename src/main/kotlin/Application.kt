@@ -1,6 +1,5 @@
 package com.kontenery
 
-import com.kontenery.model.Product
 import com.kontenery.repository.*
 import com.kontenery.repository.impl.*
 import com.kontenery.service.*
@@ -28,7 +27,13 @@ fun Application.module() {
     val contractService: ContractService = ContractServiceImpl(contractRepo, clientService, productService)
 
     val invoiceRepo: InvoiceRepo = InvoiceRepoImpl()
-    val invoiceService: InvoiceService = InvoiceServiceImpl(invoiceRepo, clientService, productService, contractService)
+    val billRepo: BillRepo = BillRepoImpl()
+    val invoiceService: InvoiceService = InvoiceServiceImpl(invoiceRepo, billRepo, clientService, productService, contractService)
+
+    val printService:PrintService = PrintServiceImpl()
+
+    val paymentRepo:PaymentRepo = PaymentRepoImpl()
+    val paymentService:PaymentService = PaymentServiceImpl(paymentRepo)
 
     logger()
     configureFrameworks()
@@ -37,5 +42,5 @@ fun Application.module() {
     validator(contractService)
     configureHTTP()
     configureSecurity()
-    configureRouting(addressService, clientService, productService, contractService, invoiceService)
+    configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService)
 }

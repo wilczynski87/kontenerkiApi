@@ -13,19 +13,22 @@ fun Application.configureRouting(
     productService: ProductService,
     contractService: ContractService,
     invoiceService: InvoiceService,
+    printService: PrintService,
+    paymentService: PaymentService,
 ) {
     routing {
         get("/") {
             call.respondText("Hello World!")
         }
         get("health") {
-            call.respond(HttpStatusCode.OK, "")
+            call.respond(HttpStatusCode.OK, "OK")
         }
         addressRouting(addressService)
         clientRoute(clientService)
         productRouting(productService)
         contractRoutes(contractService)
-        invoiceRoutes(invoiceService)
+        invoiceRoutes(invoiceService, printService)
         mailSendConfirmation(invoiceService)
+        paymentRoute(paymentService)
     }
 }

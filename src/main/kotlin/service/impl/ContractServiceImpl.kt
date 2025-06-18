@@ -1,6 +1,9 @@
 package com.kontenery.service.impl
 
-import com.kontenery.model.*
+import com.kontenery.library.model.Client
+import com.kontenery.library.model.Contract
+import com.kontenery.library.model.ContractDto
+import com.kontenery.library.model.Product
 import com.kontenery.repository.ContractRepo
 import com.kontenery.service.ClientService
 import com.kontenery.service.ContractService

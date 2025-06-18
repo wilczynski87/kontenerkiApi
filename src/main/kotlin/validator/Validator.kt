@@ -1,8 +1,8 @@
 package com.kontenery.validator
 
-import com.kontenery.model.Address
-import com.kontenery.model.Contract
-import com.kontenery.model.ContractDto
+import com.kontenery.library.model.Address
+import com.kontenery.library.model.Contract
+import com.kontenery.library.model.ContractDto
 import com.kontenery.service.ContractService
 import io.ktor.server.application.*
 import io.ktor.server.plugins.requestvalidation.*

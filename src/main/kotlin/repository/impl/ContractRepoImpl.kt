@@ -1,6 +1,6 @@
 package com.kontenery.repository.impl
 
-import com.kontenery.model.Contract
+import com.kontenery.library.model.Contract
 import com.kontenery.repository.ContractRepo
 import com.kontenery.repository.entity.*
 import kotlinx.datetime.*

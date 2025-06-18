@@ -1,6 +1,6 @@
 package com.kontenery.repository.entity
 
-import com.kontenery.model.Contract
+import com.kontenery.library.model.Contract
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID

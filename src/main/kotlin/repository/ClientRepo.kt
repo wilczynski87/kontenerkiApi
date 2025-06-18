@@ -1,6 +1,6 @@
 package com.kontenery.repository
 
-import com.kontenery.model.Client
+import com.kontenery.library.model.Client
 
 interface ClientRepo {
 

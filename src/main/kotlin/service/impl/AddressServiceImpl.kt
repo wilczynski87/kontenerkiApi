@@ -1,6 +1,6 @@
 package com.kontenery.service.impl
 
-import com.kontenery.model.Address
+import com.kontenery.library.model.Address
 import com.kontenery.repository.AddressRepo
 import com.kontenery.service.AddressService
 import org.jetbrains.exposed.sql.SizedIterable

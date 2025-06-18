@@ -1,8 +1,7 @@
 package com.kontenery.repository
 
-import com.kontenery.model.Address
+import com.kontenery.library.model.Address
 import com.kontenery.repository.entity.AddressDAO
-import org.jetbrains.exposed.sql.SizedIterable
 
 interface AddressRepo {
 

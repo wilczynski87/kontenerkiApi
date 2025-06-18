@@ -19,7 +19,8 @@ COPY build/libs/main-all.jar /kontenerki/api.jar
 EXPOSE 100
 
 # Evirnomental variables
-ENV DB_URL=jdbc:postgresql://localhost:5431/db1 DB_USER=postgres POSTGRES_PASSWORD=postgres
+#ENV DB_URL=jdbc:postgresql://localhost:5431/db1 DB_USER=postgres POSTGRES_PASSWORD=postgres
+ENV DB_HOST=localhost; DB_NAME=db1; DB_PORT=5431; DB_USER=postgres; POSTGRES_DB=db1; POSTGRES_PASSWORD=postgres; EMAIL_PORT=200; EMAIL_NAME=email
 
 # Command to run the app
 CMD ["java", "-jar", "api.jar"]

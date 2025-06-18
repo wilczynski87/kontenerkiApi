@@ -1,10 +1,10 @@
 package com.kontenery.service
 
-import com.kontenery.model.invoice.Invoice
-import com.kontenery.repository.endOfCurrentMonth
-import com.kontenery.repository.endOfCurrentYear
-import com.kontenery.repository.startOfCurrentMonth
-import com.kontenery.repository.startOfCurrentYear
+import com.kontenery.library.model.invoice.Invoice
+import com.kontenery.library.utils.endOfCurrentMonth
+import com.kontenery.library.utils.endOfCurrentYear
+import com.kontenery.library.utils.startOfCurrentMonth
+import com.kontenery.library.utils.startOfCurrentYear
 import kotlinx.datetime.LocalDate
 
 interface InvoiceService {

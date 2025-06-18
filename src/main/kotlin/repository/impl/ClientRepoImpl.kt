@@ -1,15 +1,14 @@
 package com.kontenery.repository.impl
-import com.kontenery.model.Address
-import com.kontenery.model.Client
-import com.kontenery.model.ClientCompanyData
-import com.kontenery.model.ClientPersonalData
+import com.kontenery.library.model.Address
+import com.kontenery.library.model.Client
+import com.kontenery.library.model.ClientCompanyData
+import com.kontenery.library.model.ClientPersonalData
 import com.kontenery.repository.AddressRepo
 import com.kontenery.repository.ClientRepo
 import com.kontenery.repository.entity.*
 import com.kontenery.repository.entity.AddressTable.postCode
 import kotlinx.datetime.*
 import org.jetbrains.exposed.dao.with
-import org.jetbrains.exposed.sql.transactions.transaction
 
 class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
 
@@ -206,7 +205,7 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
         requireNotNull(client.id) { "Client ID must not be null for update" }
 
         return suspendTransaction {
-            ClientEntity.findByIdAndUpdate(client.id) { entity ->
+            ClientEntity.findByIdAndUpdate(client.id!!) { entity ->
                 entity.isActive = client.isActive ?: entity.isActive
 
                 client.clientPrivate?.let { personalData ->

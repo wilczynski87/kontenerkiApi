@@ -1,7 +1,8 @@
 package com.kontenery.service
 
-import com.kontenery.model.Client
-import com.kontenery.model.ClientOnList
+import com.kontenery.library.model.Client
+import com.kontenery.library.model.ClientOnList
+
 
 interface ClientService {
 

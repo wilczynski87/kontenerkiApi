@@ -1,6 +1,6 @@
 package com.kontenery.controller
 
-import com.kontenery.model.Address
+import com.kontenery.library.model.Address
 import com.kontenery.service.AddressService
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -12,7 +12,7 @@ fun Route.addressRouting(addressService: AddressService) {
     route("/address") {
         post {
             println("save ENDPOINT")
-            val addressRecived:Address = call.receive<Address>()
+            val addressRecived: Address = call.receive<Address>()
             println("Otrzymałem: $addressRecived")
             val addresssaved: Address? = addressService.save(addressRecived)
             if(addresssaved == null) call.respond(HttpStatusCode.ExpectationFailed, addressRecived)
