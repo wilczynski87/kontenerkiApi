@@ -100,12 +100,11 @@ class InvoiceServiceImpl(
 
         // create list of positions for invoice, from contracts
         val positions:List<Position> = contracts
-            .filter { it.product != null }
             .map { Position.toPosition(it) }
 
         // Create Invoice or Bill
 
-        val savedInvoice: Invoice? = if(addTax) {
+        val savedBill: Invoice? = if(addTax) {
             val currentInvoiceNumber: String = createInvoiceNumber()
             // create invoice
             val inv = Invoice(
@@ -148,7 +147,7 @@ class InvoiceServiceImpl(
             billRepo.saveBill(bill)
         }
 //        println("return invoice/bill: $savedInvoice")
-        return savedInvoice
+        return savedBill
     }
 
     private suspend fun createInvoiceNumber():String {
@@ -210,12 +209,12 @@ class InvoiceServiceImpl(
             .mapNotNull { createPeriodicInvoiceForClient(it, period) }
     }
 
-    override suspend fun createCustomInvoice(invoice: Invoice) {
-        if(invoice.vatApply) {
-            invoiceRepo.saveInvoice(invoice)
-        } else {
-            billRepo.saveBill(invoice)
-        }
+    override suspend fun createCustomInvoice(invoice: Invoice): Invoice? {
+        return if(invoice.vatApply) {
+                invoiceRepo.saveInvoice(invoice)
+            } else {
+                billRepo.saveBill(invoice)
+            }
     }
 
     override suspend fun createUtilitiesInvoice(invoice: Invoice) {

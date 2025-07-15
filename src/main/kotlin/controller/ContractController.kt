@@ -7,6 +7,7 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
+import kotlinx.serialization.json.Json
 
 fun Route.contractRoutes(service: ContractService) {
     route("/contract") {
@@ -49,10 +50,8 @@ fun Route.contractRoutes(service: ContractService) {
             try {
                 println("POST CONTRACT")
                 val contractDto:ContractDto = call.receive<ContractDto>()
-                /*
-                Potrzebny validaotr do sprawdzenia czy dany product nie jest już zakontraktowany
-                 */
-                println(contractDto)
+
+                println("contractDto: $contractDto")
                 val created: Contract = service.create(contractDto)
                 println("created Contract: $created")
                 call.respond(HttpStatusCode.Created, created)

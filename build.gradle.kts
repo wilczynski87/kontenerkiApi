@@ -50,6 +50,9 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
 //    implementation(libs.kontenerki.library)
     implementation(files("libs/library-1.0.0.jar"))
+//    implementation("io.ktor:ktor-server-cors:2.3.5")
+    implementation(libs.ktor.server.cors)
+
 
 }
 

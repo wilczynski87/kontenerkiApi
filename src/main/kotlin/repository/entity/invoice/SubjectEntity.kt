@@ -1,5 +1,6 @@
 package com.kontenery.repository.entity.invoice
 
+import com.kontenery.library.model.Address
 import com.kontenery.library.model.invoice.Subject
 import com.kontenery.repository.entity.AddressDAO
 import com.kontenery.repository.entity.AddressTable
@@ -11,8 +12,9 @@ import org.jetbrains.exposed.dao.id.LongIdTable
 
 object Subjects : LongIdTable() {
     val name = varchar("name", 255)
-    val address = reference("address_id", AddressTable)
-    val nip = varchar("nip", 20)
+    val address = optReference("address_id", AddressTable)
+//    reference("address_id", AddressTable)
+    val nip = varchar("nip", 20).nullable()
     val email = varchar("email", 255)
     val phone = varchar("phone", 30).nullable()
 
@@ -28,7 +30,7 @@ class SubjectEntity(id: EntityID<Long>) : LongEntity(id) {
     companion object : LongEntityClass<SubjectEntity>(Subjects)
 
     var name by Subjects.name
-    var address by AddressDAO referencedOn Subjects.address
+    var address by AddressDAO optionalReferencedOn Subjects.address
     var nip by Subjects.nip
     var email by Subjects.email
     var phone by Subjects.phone
@@ -41,7 +43,7 @@ class SubjectEntity(id: EntityID<Long>) : LongEntity(id) {
     fun toDomain(): Subject = when (type) {
         SubjectType.CUSTOMER.name -> Subject.Customer(
             name = name,
-            address = address.toAddress(),
+            address = address?.toAddress(),
             nip = nip,
             email = email,
             phone = phone,
@@ -50,8 +52,8 @@ class SubjectEntity(id: EntityID<Long>) : LongEntity(id) {
         )
         SubjectType.SELLER.name -> Subject.Seller(
             name = name,
-            address = address.toAddress(),
-            nip = nip,
+            address = address?.toAddress() ?: Address(),
+            nip = nip ?: "",
             email = email,
             phone = phone,
             invoiceNumber = invoiceNumber,

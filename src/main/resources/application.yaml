@@ -6,6 +6,7 @@ ktor:
     port: 100
 
 postgres:
+#  url: "$DB_URL:jdbc:postgresql://localhost:5431/db1"
   url: "$DB_URL:jdbc:postgresql://localhost:5431/db1"
   user: "$DB_USER:postgres"
   password: "$DB_PASSWORD:postgres"

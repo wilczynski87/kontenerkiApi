@@ -40,10 +40,10 @@ services:
     ports:
       - "200:200"
     environment:
-      - EMAIL_PASSWORD = ehpejfervmuwjwrg
-      - EMAIL_USER = parkingostrowskiego@gmail.com
-      - API_NAME = api
-      - API_PORT = 100
+      EMAIL_PASSWORD: ehpejfervmuwjwrg
+      EMAIL_USER: parkingostrowskiego@gmail.com
+      API_NAME: api
+      API_PORT: 100
 
 volumes:
   postgres_data:

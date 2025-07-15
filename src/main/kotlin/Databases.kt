@@ -18,6 +18,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.sql.Connection
 
 fun Application.configureDatabases() {
+    "docker run --name dbtest1 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=dbtest1 -p 5430:5432 -d postgres:latest"
 
     val url = environment.config.property("postgres.url").getString()
     val user = environment.config.property("postgres.user").getString()

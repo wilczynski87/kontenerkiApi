@@ -26,7 +26,7 @@ interface InvoiceService {
     suspend fun createPeriodicInvoiceForAllClients(period:LocalDate? = null): List<Invoice>
 
     // przerobić save Invoice
-    suspend fun createCustomInvoice(invoice: Invoice)
+    suspend fun createCustomInvoice(invoice: Invoice): Invoice?
 
     suspend fun createUtilitiesInvoice(invoice: Invoice)
 

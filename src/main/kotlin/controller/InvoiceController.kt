@@ -4,9 +4,11 @@ import com.kontenery.library.model.invoice.Invoice
 import com.kontenery.library.utils.now
 import com.kontenery.service.InvoiceService
 import com.kontenery.service.PrintService
-import io.ktor.server.application.*
+import io.ktor.http.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.util.*
 import kotlinx.datetime.LocalDate
 
 fun Route.invoiceRoutes(invoiceService: InvoiceService, printService: PrintService) {
@@ -53,9 +55,9 @@ fun Route.invoiceRoutes(invoiceService: InvoiceService, printService: PrintServi
                     }
                 } else period = LocalDate.now()
 
-                println("about to save invoice: ")
+//                println("about to save invoice: ")
                 val savedInvoice: Invoice? = invoiceService.createPeriodicInvoiceForClient(clientId, period, invoiceTitle)
-                println("savedInvoice: $savedInvoice")
+//                println("savedInvoice: $savedInvoice")
 
                 // TODO: Send Invoice to Client
                 if (savedInvoice != null) {
@@ -73,29 +75,56 @@ fun Route.invoiceRoutes(invoiceService: InvoiceService, printService: PrintServi
 
         }
         post("/sendInvoices/forAll") {
+            println("/sendInvoices/forAll recived")
             try {
                 println("clientId: /sendInvoices/forAll")
                 val periodRaw:String = call.queryParameters["period"].toString()
 
-                var period: LocalDate? = null
-                if(periodRaw.isNotBlank()) {
+//                var period: LocalDate? = null
+                val period: LocalDate = if(periodRaw.isNotBlank() || periodRaw.toLowerCasePreservingASCIIRules().trim() != "null") {
                     try {
-                        period = LocalDate.parse(periodRaw)
+                        LocalDate.parse(periodRaw)
                     } catch (e:Exception) {
                         println("period: $e")
+                        throw NullPointerException("/sendInvoices/forAll can not parse date: $periodRaw")
                     }
-                }
+                } else LocalDate.now()
 
                 val savedInvoices:List<Invoice> = invoiceService.createPeriodicInvoiceForAllClients(period)
 
                 // TODO: Send Invoice to Clients
+                savedInvoices.forEach { savedInvoice ->
+                    printService.sendPeriodicInvoice(savedInvoice)
+                }
 
                 call.respondNullable(savedInvoices)
             } catch (e:Exception) {
                 println("post invoice: $e")
                 call.respond(e.message.toString())
             }
+        }
+        post("/{customerId}/custom") {
+            println("Custom Invoice create")
+            try {
+                val customerId: Long = call.pathParameters["customerId"]?.toLong() ?: throw TypeCastException("customer Id is wrong /{customerId}/custom")
+                val invoice: Invoice = call.receive<Invoice>()
 
+                println("invoice String: $invoice")
+
+                val savedInvoice:Invoice? = invoiceService.createCustomInvoice(invoice)
+
+                if(savedInvoice == null) {
+                    call.respond(HttpStatusCode.ExpectationFailed, "Could not save invoice")
+                } else {
+                    // Send Invoice to Clients
+                    printService.sendPeriodicInvoice(savedInvoice)
+                    // Respond to front
+                    call.respondNullable(savedInvoice)
+                }
+            } catch (e:Exception) {
+                println("post invoice error: $e")
+                call.respond(e.message.toString())
+            }
         }
     }
 
