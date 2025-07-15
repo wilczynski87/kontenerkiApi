@@ -35,6 +35,8 @@ fun Application.module() {
     val paymentRepo:PaymentRepo = PaymentRepoImpl()
     val paymentService:PaymentService = PaymentServiceImpl(paymentRepo)
 
+    val csvService: CSVService = CSVServiceImpl()
+
     logger()
     configureFrameworks()
     configureSerialization()
@@ -42,5 +44,5 @@ fun Application.module() {
     validator(contractService)
     configureHTTP()
     configureSecurity()
-    configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService)
+    configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService, csvService)
 }
