@@ -2,15 +2,14 @@ package com.kontenery.repository.entity.invoice
 
 import com.kontenery.library.model.Address
 import com.kontenery.library.model.invoice.Subject
-import com.kontenery.repository.entity.AddressDAO
-import com.kontenery.repository.entity.AddressTable
-import com.kontenery.repository.entity.toAddress
+import com.kontenery.repository.entity.*
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
 
 object Subjects : LongIdTable() {
+    val client = optReference("client", ClientTable)
     val name = varchar("name", 255)
     val address = optReference("address_id", AddressTable)
 //    reference("address_id", AddressTable)
@@ -29,6 +28,7 @@ object Subjects : LongIdTable() {
 class SubjectEntity(id: EntityID<Long>) : LongEntity(id) {
     companion object : LongEntityClass<SubjectEntity>(Subjects)
 
+    var client by ClientEntity optionalReferencedOn Subjects.client
     var name by Subjects.name
     var address by AddressDAO optionalReferencedOn Subjects.address
     var nip by Subjects.nip
@@ -48,7 +48,8 @@ class SubjectEntity(id: EntityID<Long>) : LongEntity(id) {
             email = email,
             phone = phone,
             invoiceNumber = invoiceNumber,
-            salutation = salutation ?: "Drogi Kliencie"
+            salutation = salutation ?: "Drogi Kliencie",
+            client = client?.toClient(),
         )
         SubjectType.SELLER.name -> Subject.Seller(
             name = name,

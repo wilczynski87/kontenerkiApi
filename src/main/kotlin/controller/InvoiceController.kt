@@ -2,6 +2,7 @@ package com.kontenery.controller
 
 import com.kontenery.library.model.invoice.Invoice
 import com.kontenery.library.utils.now
+import com.kontenery.library.utils.startOfCurrentYear
 import com.kontenery.service.InvoiceService
 import com.kontenery.service.PrintService
 import io.ktor.http.*
@@ -10,8 +11,12 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.*
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.toLocalDate
 
-fun Route.invoiceRoutes(invoiceService: InvoiceService, printService: PrintService) {
+fun Route.invoiceRoutes(
+    invoiceService: InvoiceService,
+    printService: PrintService
+) {
     route("/invoice") {
 
         get("/{invoiceId}/id") {
@@ -33,7 +38,26 @@ fun Route.invoiceRoutes(invoiceService: InvoiceService, printService: PrintServi
         }
 
         get("/{clientId}/forClient") {
+            try {
+                val clientId: Long = call.pathParameters["clientId"]?.toLongOrNull()
+                    ?: throw NullPointerException("Brak Id klienta")
+                val from: LocalDate = call.queryParameters["from"]?.let { LocalDate.parse(it) } ?: LocalDate.startOfCurrentYear()
+                val to: LocalDate = call.queryParameters["to"]?.let { LocalDate.parse(it) } ?: LocalDate.now()
+                println("/{clientId}/forClient: clientId: $clientId, from: $from, to: $to")
 
+                val invoices: List<Invoice> = invoiceService.getInvoicesForClient(
+                    clientId = clientId,
+                    from = from,
+                    to = to
+                )
+                println("invoices: $invoices")
+
+                call.respond(invoices)
+
+            } catch (e: Exception) {
+                println(e)
+                call.respond(e)
+            }
         }
         // create SINGLE PERIODIC invoice for client
         post("/{clientId}") {
@@ -55,9 +79,10 @@ fun Route.invoiceRoutes(invoiceService: InvoiceService, printService: PrintServi
                     }
                 } else period = LocalDate.now()
 
+//                println("period: $period")
 //                println("about to save invoice: ")
-                val savedInvoice: Invoice? = invoiceService.createPeriodicInvoiceForClient(clientId, period, invoiceTitle)
-//                println("savedInvoice: $savedInvoice")
+                val savedInvoice: Invoice? = invoiceService.createPeriodicInvoiceForClient(clientId, period!!, invoiceTitle)
+                println("savedInvoice: $savedInvoice")
 
                 // TODO: Send Invoice to Client
                 if (savedInvoice != null) {

@@ -60,6 +60,10 @@ class InvoiceServiceImpl(
         return invoiceRepo.getInvoicesForClient(page, size, clientId, from, to)
     }
 
+    override suspend fun getInvoiceByNumber(invoiceNumber: String): Invoice? {
+        return invoiceRepo.getInvoiceByNumber(invoiceNumber)
+    }
+
     override suspend fun getInvoiceById(invoiceId: Long): Invoice? {
         return invoiceRepo.getInvoiceById(invoiceId)
     }
@@ -72,24 +76,25 @@ class InvoiceServiceImpl(
     TO DO:
     - funkcja licząca invoice nie tylko za bierzący okres
      */
-    override suspend fun createPeriodicInvoiceForClient(clientId: Long, period: LocalDate?, invoiceTitle: String?): Invoice? {
-//        println("in createPeriodicInvoiceForClient: clientId: $clientId, period: $period, invoiceTitle: $invoiceTitle")
+    override suspend fun createPeriodicInvoiceForClient(clientId: Long, period: LocalDate, invoiceTitle: String?): Invoice {
+//         println("in createPeriodicInvoiceForClient: clientId: $clientId, period: $period, invoiceTitle: $invoiceTitle")
         // find client
-        val client: Client = clientService.findClientById(clientId) ?: throw NullPointerException("There is no client, with given Id: $clientId")
+        val client: Client = clientService.findClientById(clientId)
+            ?: throw NullPointerException("There is no client, with given Id: $clientId")
         // check if client is active - else throw exception
         if(client.isActive == false) {
             log.error("Client is no longer ACTIVE, id: $clientId")
-            return null
+            throw NullPointerException("Client is no longer ACTIVE, id: $clientId")
         }
 
         // find active contract, for given period
-        val contracts: List<Contract> = if(period == null) contractService.getByClientId(clientId, true)
-            else contractService.getByClientId(clientId, LocalDate.startOfCurrentMonth(period), LocalDate.endOfCurrentMonth(period))
+        val contracts: List<Contract> =
+            contractService.getByClientId(clientId, LocalDate.startOfCurrentMonth(period), LocalDate.endOfCurrentMonth(period))
 
         // Do not create invoice if no Contract
         if(contracts.isEmpty()) {
             log.info("No contracts for given client, id: $clientId")
-            return null
+            throw NullPointerException("No contracts for given client, id: $clientId")
         }
 
         // set Invoice date
@@ -104,7 +109,7 @@ class InvoiceServiceImpl(
 
         // Create Invoice or Bill
 
-        val savedBill: Invoice? = if(addTax) {
+        val savedBill: Invoice = if(addTax) {
             val currentInvoiceNumber: String = createInvoiceNumber()
             // create invoice
             val inv = Invoice(
@@ -123,7 +128,7 @@ class InvoiceServiceImpl(
                 vatApply = true,
             )
 //            println("invoice: $inv")
-            invoiceRepo.saveInvoice(inv)
+            invoiceRepo.saveInvoice(inv) ?: throw NullPointerException("Can not create invoice: $inv")
         } else {
             val currentBillNumber: String = createBillNumber()
             val finalPrice: String = priceSumCalculate(contracts)
@@ -144,7 +149,7 @@ class InvoiceServiceImpl(
                 vatApply = false
             )
 //            println("bill: $bill")
-            billRepo.saveBill(bill)
+            billRepo.saveBill(bill) ?: throw NullPointerException("Can not create bill: $bill")
         }
 //        println("return invoice/bill: $savedInvoice")
         return savedBill
@@ -203,7 +208,7 @@ class InvoiceServiceImpl(
             .toPlainString()
     }
 
-    override suspend fun createPeriodicInvoiceForAllClients(period: LocalDate?): List<Invoice> {
+    override suspend fun createPeriodicInvoiceForAllClients(period: LocalDate): List<Invoice> {
         return clientService.getAllClients(0, 1000)
             .mapNotNull { it.id }
             .mapNotNull { createPeriodicInvoiceForClient(it, period) }

@@ -33,9 +33,14 @@ fun Application.module() {
     val printService:PrintService = PrintServiceImpl()
 
     val paymentRepo:PaymentRepo = PaymentRepoImpl()
-    val paymentService:PaymentService = PaymentServiceImpl(paymentRepo)
+    val paymentService:PaymentService = PaymentServiceImpl(paymentRepo, clientService, invoiceService)
 
-    val csvService: CSVService = CSVServiceImpl()
+    val clientBankAccountRepository: ClientBankAccountRepository = ClientBankAccountRepositoryImpl()
+    val bankAccountService: BankAccountService = BankAccountServiceImpl(clientBankAccountRepository)
+
+    val csvService: CSVService = CSVServiceImpl(bankAccountService)
+
+    val listingService: ListingService = ListingServiceImpl(clientRepo, productRepo, contractRepo, paymentRepo, invoiceRepo)
 
     logger()
     configureFrameworks()
@@ -44,5 +49,5 @@ fun Application.module() {
     validator(contractService)
     configureHTTP()
     configureSecurity()
-    configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService, csvService)
+    configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService, csvService, bankAccountService, listingService)
 }

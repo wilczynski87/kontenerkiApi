@@ -10,24 +10,6 @@ import io.ktor.server.routing.*
 
 fun Route.productRouting(productService: ProductService) {
     route("/products") {
-        get("/allProducts") {
-            println("GET ALL PRODUCT")
-            val page: Int = call.queryParameters["page"]?.toInt() ?: 0
-            val size: Int = call.queryParameters["size"]?.toInt() ?: 100
-            try {
-
-                val products: List<Any> = productService.getAllProduct(page, size)
-//                println("controller print: $products")
-
-                val resp = products.map { it as Product }.toList()
-
-                println("Products response: print: $resp")
-
-                call.respond(resp)
-            } catch (e: Exception) {
-                println(e)
-            }
-        }
 
         get("/containers") {
             val page: Int = call.queryParameters["page"]?.toInt() ?: 0

@@ -1,8 +1,11 @@
 package com.kontenery.repository.entity
 
 import com.kontenery.library.model.Client
+import com.kontenery.library.model.ClientBankAccount
 import com.kontenery.library.model.ClientCompanyData
 import com.kontenery.library.model.ClientPersonalData
+import com.kontenery.repository.entity.ClientTable.nullable
+import kotlinx.datetime.LocalDate
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -37,6 +40,12 @@ object ClientTable : LongIdTable("clients") {
     val createdAt = date("created_at").nullable()
     val updatedAt = date("updated_at").nullable()
     val invoiceTitle = text("invoice_title").nullable()
+}
+
+object ClientBankAccountTable : LongIdTable("client_bank_account") {
+    val client = optReference("client_id", ClientTable)
+    val bankAccount = text("bank_account").nullable()
+    val createdAt = date("created_at").nullable()
 }
 
 class ClientPersonalDataEntity(id: EntityID<Long>) : LongEntity(id) {
@@ -94,14 +103,31 @@ class ClientEntity(id: EntityID<Long>) : LongEntity(id) {
     var createdAt by ClientTable.createdAt
     var updatedAt by ClientTable.updatedAt
     var invoiceTitle by ClientTable.invoiceTitle
+    val bankAccounts by ClientBankAccountEntity optionalReferrersOn ClientBankAccountTable.client
 
     fun toClient() = Client(
+            id = id.value,
+            clientPrivate = personalData?.toClientPersonalData(),
+            clientCompany = companyData?.toClientCompanyData(),
+            isActive = isActive,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            invoiceTitle = invoiceTitle,
+            bankAccounts = bankAccounts.mapNotNull { it.bankAccount }
+        )
+}
+
+class ClientBankAccountEntity(id: EntityID<Long>) : LongEntity(id) {
+    companion object : LongEntityClass<ClientBankAccountEntity>(ClientBankAccountTable)
+
+    var client by ClientEntity optionalReferencedOn ClientBankAccountTable.client
+    var bankAccount by ClientBankAccountTable.bankAccount
+    var createdAt by ClientBankAccountTable.createdAt
+
+    fun toDomain() = ClientBankAccount(
         id = id.value,
-        clientPrivate = personalData?.toClientPersonalData(),
-        clientCompany = companyData?.toClientCompanyData(),
-        isActive = isActive,
+        client = client?.toClient(),
+        bankAccount = bankAccount,
         createdAt = createdAt,
-        updatedAt = updatedAt,
-        invoiceTitle = invoiceTitle,
     )
 }

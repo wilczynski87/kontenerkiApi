@@ -3,10 +3,12 @@ import com.kontenery.library.model.Address
 import com.kontenery.library.model.Client
 import com.kontenery.library.model.ClientCompanyData
 import com.kontenery.library.model.ClientPersonalData
+import com.kontenery.library.utils.now
 import com.kontenery.repository.AddressRepo
 import com.kontenery.repository.ClientRepo
 import com.kontenery.repository.entity.*
 import com.kontenery.repository.entity.AddressTable.postCode
+import com.kontenery.service.BankAccountService
 import kotlinx.datetime.*
 import org.jetbrains.exposed.dao.with
 
@@ -59,12 +61,22 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
                 }
             }
 
-            ClientEntity.new {
+            val clientEntity: ClientEntity = ClientEntity.new {
                 this.personalData = personalDataEntity
                 this.companyData = companyDataEntity
                 this.isActive = isActive
                 this.createdAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-            }.toClient()
+            }
+
+            client.bankAccounts?.forEach {
+                ClientBankAccountEntity.new {
+                    this.client = clientEntity
+                    bankAccount = it
+                    createdAt = LocalDate.now()
+                }
+            }
+
+            clientEntity.toClient()
         }
     }
 
@@ -160,7 +172,7 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
                                 street = address.street ?: ""
                                 city = address.city ?: ""
                                 postcode = address.postCode ?: ""
-                                country = address.country ?: ""
+                                country = address.country
                             }
                         }
                     }
@@ -169,6 +181,7 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
 
             val instant = Clock.System.now()
             updatedAt = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
+//            bankAccounts = ClientBankAccountEntity.
         }?.toClient()
     }
 

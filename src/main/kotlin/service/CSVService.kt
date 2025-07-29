@@ -1,6 +1,8 @@
 package com.kontenery.service
 
+import com.kontenery.library.model.Payment
+
 interface CSVService {
 
-    fun readLinesFromSCV(csv: String)
+    suspend fun readCSV(csv: String): List<Payment>
 }

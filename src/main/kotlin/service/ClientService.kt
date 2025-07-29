@@ -6,8 +6,6 @@ import com.kontenery.library.model.ClientOnList
 
 interface ClientService {
 
-    suspend fun getClientList(page: Int, size: Int): List<ClientOnList>
-
     suspend fun save(client: Client): Client?
 
     suspend fun getAllClients(page:Int, size:Int): List<Client>

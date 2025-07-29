@@ -17,6 +17,8 @@ fun Application.configureRouting(
     printService: PrintService,
     paymentService: PaymentService,
     csvService: CSVService,
+    bankAccountService: BankAccountService,
+    listingService: ListingService,
 ) {
     routing {
 
@@ -33,6 +35,8 @@ fun Application.configureRouting(
         invoiceRoutes(invoiceService, printService)
         mailSendConfirmation(invoiceService)
         paymentRoute(paymentService)
-        CSVController(csvService)
+        CSVController(csvService, paymentService)
+        bankAccountController(bankAccountService)
+        listingRoute(listingService)
     }
 }

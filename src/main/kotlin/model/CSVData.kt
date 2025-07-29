@@ -1,5 +1,6 @@
 package com.kontenery.model
 
+import com.kontenery.library.model.Payment
 import kotlinx.datetime.LocalDate
 import java.math.BigDecimal
 
@@ -15,5 +16,6 @@ data class CSVData(
     val waluta: String,
     val numerReferencyjny: String,
     val typOperacji: String,
-    val kategoria: String?
-)
+    val kategoria: String? = null,
+) {
+}

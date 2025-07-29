@@ -11,16 +11,6 @@ import io.ktor.server.response.*
 fun Route.clientRoute(clientService: ClientService) {
     route("/client") {
 
-        get("/list") {
-            val page: Int = call.request.queryParameters["page"]?.toInt() ?: 0
-            val size: Int = call.request.queryParameters["size"]?.toInt() ?: 100
-
-            val clientList = clientService.getClientList(page, size)
-//            println("clientList $clientList")
-
-            call.respond(clientList)
-        }
-
         post {
             println("zaczynamy SAVE klienta: ")
             try {

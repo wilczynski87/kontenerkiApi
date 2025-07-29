@@ -11,7 +11,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
 
 class BillRepoImpl: BillRepo {
-    override suspend fun saveBill(bill: Invoice): Invoice  = suspendTransaction {
+    override suspend fun saveBill(bill: Invoice): Invoice = suspendTransaction {
         // Create seller address
         val sellerAddress = AddressDAO.new {
             street = bill.seller?.address?.street

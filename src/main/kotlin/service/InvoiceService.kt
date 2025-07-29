@@ -12,18 +12,20 @@ interface InvoiceService {
 
     suspend fun getInvoicesForClient(page:Int = 0, size:Int = 100, clientId:Long, from: LocalDate = LocalDate.startOfCurrentYear(), to: LocalDate = LocalDate.endOfCurrentYear()): List<Invoice>
 
+    suspend fun getInvoiceByNumber(invoiceNumber: String): Invoice?
+
     suspend fun getInvoiceById(invoiceId:Long): Invoice?
 
     suspend fun saveInvoice(invoice: Invoice): Invoice?
 
     suspend fun createPeriodicInvoiceForClient(
         clientId:Long,
-        period: LocalDate? = LocalDate.startOfCurrentMonth(),
+        period: LocalDate,
         invoiceTitle: String? = null
-    ): Invoice?
+    ): Invoice
 
     // TO DO
-    suspend fun createPeriodicInvoiceForAllClients(period:LocalDate? = null): List<Invoice>
+    suspend fun createPeriodicInvoiceForAllClients(period:LocalDate): List<Invoice>
 
     // przerobić save Invoice
     suspend fun createCustomInvoice(invoice: Invoice): Invoice?

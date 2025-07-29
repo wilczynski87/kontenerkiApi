@@ -20,7 +20,7 @@ application {
 
 repositories {
     mavenCentral()
-        maven { url = uri("https://jitpack.io") }
+    maven { url = uri("https://jitpack.io") }
 }
 
 dependencies {
@@ -39,8 +39,12 @@ dependencies {
     implementation(libs.ktor.server.netty)
     implementation(libs.logback.classic)
     implementation(libs.ktor.server.config.yaml)
+    // TESTY:
     testImplementation(libs.ktor.server.test.host)
-    testImplementation(libs.kotlin.test.junit)
+//    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.kotlin.test) // alias na kotlin-test + JUnit support
+    testImplementation(libs.kotlin.test.junit.jupiter)
+
     // https://mvnrepository.com/artifact/org.jetbrains.exposed/exposed-dao
     implementation(libs.exposed.dao)
     implementation(libs.ktor.server.request.validation)
@@ -50,9 +54,7 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
 //    implementation(libs.kontenerki.library)
     implementation(files("libs/library-1.0.0.jar"))
-//    implementation("io.ktor:ktor-server-cors:2.3.5")
     implementation(libs.ktor.server.cors)
-
 
 }
 
@@ -60,4 +62,8 @@ tasks.withType<Jar> {
     manifest {
         attributes["Main-Class"] = "com.kontenery.main.ApplicationKt"
     }
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
