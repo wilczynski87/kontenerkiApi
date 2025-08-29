@@ -13,7 +13,8 @@ class ClientServiceImpl(
 
     override suspend fun save(client: Client): Client? {
         val newClient: Client = if(client.clientCompany != null) {
-                client.copy(clientCompany = client.clientCompany!!.copy(needInvoice = true))
+                val needInvoice: Boolean = client.clientCompany!!.needInvoice ?: true
+                client.copy(clientCompany = client.clientCompany!!.copy(needInvoice = needInvoice))
             } else client
         return clientRepo.save(newClient)
     }
@@ -22,11 +23,19 @@ class ClientServiceImpl(
         return clientRepo.getAllClients(page, size)
     }
 
+    override suspend fun getFilteredClients(active: Boolean, paysVat: Boolean?): List<Client> {
+        return clientRepo.getFilteredClients(active, paysVat)
+    }
+
     override suspend fun findClientById(id: Long): Client? {
         return clientRepo.findClientById(id)
     }
 
     override suspend fun updateClient(client: Client): Client? {
         return clientRepo.updateClient(client)
+    }
+
+    override suspend fun paysVat(clientId: Long): Boolean {
+        return clientRepo.paysVat(clientId)
     }
 }

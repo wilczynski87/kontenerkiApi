@@ -40,7 +40,7 @@ fun Application.module() {
 
     val csvService: CSVService = CSVServiceImpl(bankAccountService)
 
-    val listingService: ListingService = ListingServiceImpl(clientRepo, productRepo, contractRepo, paymentRepo, invoiceRepo)
+    val listingService: ListingService = ListingServiceImpl(clientRepo, productRepo, contractRepo, paymentRepo, invoiceRepo, billRepo)
 
     logger()
     configureFrameworks()

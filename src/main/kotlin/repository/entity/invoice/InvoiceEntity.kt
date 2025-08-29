@@ -6,6 +6,7 @@ import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
+import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 
 object InvoiceTable: LongIdTable() {
@@ -13,8 +14,8 @@ object InvoiceTable: LongIdTable() {
     val invoiceTitle = varchar("invoice_title", 250)
     val invoiceDate = date("invoice_date")
 
-    val seller = reference("seller_id", Subjects)
-    val customer = reference("customer_id", Subjects)
+    val seller = reference("seller_id", Subjects, onDelete = ReferenceOption.CASCADE)
+    val customer = reference("customer_id", Subjects, onDelete = ReferenceOption.CASCADE)
 
     val vatAmountSum = varchar("vat_amount_sum", 30)
     val priceSum = varchar("price_sum", 30)
@@ -23,6 +24,8 @@ object InvoiceTable: LongIdTable() {
     val paymentDay = date("payment_day")
     val mainAccount = varchar("main_account", 100)
     val invoiceSendToClient = date("invoice_send").nullable()
+
+    val invoiceType = varchar("invoice_type", 50).nullable()
 }
 
 class InvoiceEntity(id: EntityID<Long>) : LongEntity(id) {
@@ -43,6 +46,8 @@ class InvoiceEntity(id: EntityID<Long>) : LongEntity(id) {
     var mainAccount by InvoiceTable.mainAccount
     var invoiceSendToClient by InvoiceTable.invoiceSendToClient
 
+    var invoiceType by InvoiceTable.invoiceType
+
     val positions by PositionEntity referrersOn Positions.invoice
 
     fun toDomain(): Invoice = Invoice(
@@ -58,6 +63,7 @@ class InvoiceEntity(id: EntityID<Long>) : LongEntity(id) {
         paymentDay = paymentDay,
         mainAccount = mainAccount,
         invoiceSendToClient = invoiceSendToClient,
+        type = invoiceType,
         vatApply = true,
     )
 }

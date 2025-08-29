@@ -57,5 +57,15 @@ fun Route.clientRoute(clientService: ClientService) {
 
             call.respond(updatedClient)
         }
+
+        post("/fromDb") {
+            val clients: List<Client> = call.receive<List<Client>>()
+            clients.forEach {
+                println(it)
+                clientService.save(it)
+            }
+
+            call.respond("dostałem")
+        }
     }
 }

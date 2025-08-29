@@ -1,8 +1,10 @@
 package com.kontenery.service
 
+import com.kontenery.library.model.Client
 import com.kontenery.library.model.invoice.Invoice
 import com.kontenery.library.utils.endOfCurrentMonth
 import com.kontenery.library.utils.endOfCurrentYear
+import com.kontenery.library.utils.errors.ErrorMessage
 import com.kontenery.library.utils.startOfCurrentMonth
 import com.kontenery.library.utils.startOfCurrentYear
 import kotlinx.datetime.LocalDate
@@ -18,14 +20,17 @@ interface InvoiceService {
 
     suspend fun saveInvoice(invoice: Invoice): Invoice?
 
-    suspend fun createPeriodicInvoiceForClient(
-        clientId:Long,
-        period: LocalDate,
-        invoiceTitle: String? = null
-    ): Invoice
+    suspend fun saveInvoiceWithErrors(
+        isInvoice: Boolean,
+        invoice: Invoice,
+        errors: MutableList<ErrorMessage>
+    ): Invoice?
 
-    // TO DO
-    suspend fun createPeriodicInvoiceForAllClients(period:LocalDate): List<Invoice>
+    suspend fun createPeriodicInvoiceForClient(
+        client: Client,
+        period: LocalDate?,
+        errorList: MutableList<ErrorMessage>
+    ): Invoice?
 
     // przerobić save Invoice
     suspend fun createCustomInvoice(invoice: Invoice): Invoice?

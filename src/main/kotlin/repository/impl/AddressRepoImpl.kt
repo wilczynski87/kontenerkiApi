@@ -1,7 +1,7 @@
 package com.kontenery.repository.impl
 
 import com.kontenery.library.model.Address
-import com.kontenery.repository.entity.AddressDAO
+import com.kontenery.repository.entity.AddressEntity
 import com.kontenery.repository.AddressRepo
 import com.kontenery.repository.entity.suspendTransaction
 import com.kontenery.repository.entity.toAddress
@@ -11,24 +11,24 @@ class AddressRepoImpl: AddressRepo {
     override suspend fun save(address: Address): Address {
 
         return suspendTransaction {
-            AddressDAO.new {
+            AddressEntity.new {
                 street = address.street
                 house = address.house
                 city = address.city
                 country = address.country
-                postcode = address.postCode
+                postCode = address.postCode
             }.toAddress()
         }
     }
 
-    override suspend fun saveToDao(address: Address): AddressDAO {
+    override suspend fun saveToDao(address: Address): AddressEntity {
         return suspendTransaction {
-            AddressDAO.new {
+            AddressEntity.new {
                 street = address.street
                 house = address.house
                 city = address.city
                 country = address.country
-                postcode = address.postCode
+                postCode = address.postCode
             }
         }
     }
@@ -36,7 +36,7 @@ class AddressRepoImpl: AddressRepo {
     override suspend fun findAll(page: Int, size: Int): List<Address> {
         return suspendTransaction {
             val countOffset:Long = (page * size).toLong()
-            AddressDAO.all()
+            AddressEntity.all()
                 .limit(size)
                 .offset(countOffset)
                 .mapLazy { it.toAddress() }
@@ -46,7 +46,7 @@ class AddressRepoImpl: AddressRepo {
 
     override suspend fun findById(id: Long): Address? {
         return suspendTransaction {
-            AddressDAO.findById(id)?.toAddress()
+            AddressEntity.findById(id)?.toAddress()
         }
     }
 }

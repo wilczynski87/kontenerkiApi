@@ -32,7 +32,7 @@ fun Application.configureRouting(
         clientRoute(clientService)
         productRouting(productService)
         contractRoutes(contractService)
-        invoiceRoutes(invoiceService, printService)
+        invoiceRoutes(invoiceService, printService, clientService)
         mailSendConfirmation(invoiceService)
         paymentRoute(paymentService)
         CSVController(csvService, paymentService)

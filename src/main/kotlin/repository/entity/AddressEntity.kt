@@ -14,16 +14,16 @@ object AddressTable: LongIdTable("address") {
     val house = varchar("house", 50).nullable() // Nullable
     val city = varchar("city", 255).nullable() // Nullable
     var postCode = varchar("post_code", 20).nullable() // Nullable
-    val country = varchar("country", 2).default("PL") // Default value for country is "PL"
+    val country = varchar("country", 3).default("PL") // Default value for country is "PL"
 }
 
-class AddressDAO(id: EntityID<Long>): LongEntity(id) {
-    companion object: EntityClass<Long, AddressDAO>(AddressTable)
+class AddressEntity(id: EntityID<Long>): LongEntity(id) {
+    companion object: EntityClass<Long, AddressEntity>(AddressTable)
 
     var street by AddressTable.street
     var house by AddressTable.house
     var city by AddressTable.city
-    var postcode by AddressTable.postCode
+    var postCode by AddressTable.postCode
     var country by AddressTable.country
 
 }
@@ -31,22 +31,22 @@ class AddressDAO(id: EntityID<Long>): LongEntity(id) {
 suspend fun <T> suspendTransaction(block: Transaction.() -> T): T =
     newSuspendedTransaction(Dispatchers.IO, statement = block)
 
-fun addressDAOToAddress(dao: AddressDAO) = Address (
+fun addressDAOToAddress(dao: AddressEntity) = Address (
     id = dao.id.value,
     street = dao.street,
     house = dao.house,
     city = dao.city,
     country = dao.country,
-    postCode = dao.postcode,
+    postCode = dao.postCode,
 )
 
-fun AddressDAO.toAddress(): Address {
+fun AddressEntity.toAddress(): Address {
     return Address (
         id = this.id.value,
         street = this.street,
         house = this.house,
         city = this.city,
         country = this.country,
-        postCode = this.postcode,
+        postCode = this.postCode,
     )
 }

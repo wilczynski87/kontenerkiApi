@@ -60,17 +60,15 @@ class PaymentServiceImpl(
 
     private suspend fun dtoToPayment(dto: PaymentDto): Payment {
         val client: Client? = dto.fromClientId?.let { clientService.findClientById(it) }
-        val toAccount: SellerAccount? = SellerAccount.fromAccountNumber(dto.toAccount!!)
-
 
         assert(
             client != null
-            || toAccount != null
             || dto.amount != null
             || dto.date != null
-            || dto.toAccount != null
-            || dto.forInvoices != null
         )
+
+        val toAccount: SellerAccount? = if(dto.toAccount != null) SellerAccount.fromAccountNumber(dto.toAccount!!)
+            else SellerAccount.PRIVATE
 
         return Payment(
             amount = dto.amount!!,

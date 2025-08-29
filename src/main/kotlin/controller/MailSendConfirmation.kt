@@ -14,6 +14,7 @@ fun Route.mailSendConfirmation(invoiceService: InvoiceService) {
             try {
                 val invoiceNumber: String = call.queryParameters[MailSendParam.INVOICE_NUMBER.param].toString()
                 val invoiceSendDate: LocalDate = LocalDate.parse(call.queryParameters[MailSendParam.SEND_DATE.param].toString())
+//                println("mailSend/invoice: invoice send: $invoiceNumber, on date: $invoiceSendDate")
 
                 invoiceService.confirmInvoiceSendDate(invoiceNumber, invoiceSendDate)
 

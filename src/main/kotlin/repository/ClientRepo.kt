@@ -8,7 +8,11 @@ interface ClientRepo {
 
     suspend fun getAllClients(page:Int, size:Int): List<Client>
 
+    suspend fun getFilteredClients(active: Boolean, paysVat: Boolean?): List<Client>
+
     suspend fun findClientById(id:Long): Client?
 
     suspend fun updateClient(client:Client): Client?
+
+    suspend fun paysVat(clientId: Long): Boolean
 }

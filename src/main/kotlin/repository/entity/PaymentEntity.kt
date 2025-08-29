@@ -36,6 +36,7 @@ class PaymentEntity(id: EntityID<Long>) : LongEntity(id) {
     var forInvoices by InvoiceEntity via PaymentInvoices
 
     fun toDomain() = Payment(
+        id = id.value,
         amount = amount,
         date = date,
         fromClient = fromClient.toClient(),

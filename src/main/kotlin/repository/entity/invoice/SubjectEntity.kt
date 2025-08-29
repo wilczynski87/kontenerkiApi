@@ -30,7 +30,7 @@ class SubjectEntity(id: EntityID<Long>) : LongEntity(id) {
 
     var client by ClientEntity optionalReferencedOn Subjects.client
     var name by Subjects.name
-    var address by AddressDAO optionalReferencedOn Subjects.address
+    var address by AddressEntity optionalReferencedOn Subjects.address
     var nip by Subjects.nip
     var email by Subjects.email
     var phone by Subjects.phone

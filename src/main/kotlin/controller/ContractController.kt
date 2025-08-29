@@ -36,8 +36,9 @@ fun Route.contractRoutes(service: ContractService) {
         get("{productId}/product") {
             println("Get Contract By Product")
             try {
-                val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest, "No product id")
+                val id = call.parameters["productId"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest, "No product id")
                 val contract: Contract? = service.getCurrentByProductId(id)
+                println("Get Contract By Product: $contract")
                 call.respondNullable(contract)
 
             } catch (e: Exception) {

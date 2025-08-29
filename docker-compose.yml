@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   db:
-    image: postgres:latest
+    image: postgres:17.5
     container_name: db
     restart: unless-stopped
     environment:
@@ -19,6 +19,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: api
+    restart: unless-stopped
     ports:
       - "100:100"
     environment:
@@ -35,12 +36,13 @@ services:
       context: ../email
       dockerfile: Dockerfile
     container_name: email
+    restart: unless-stopped
     expose:
       - 200
     ports:
       - "200:200"
     environment:
-      EMAIL_PASSWORD: ehpejfervmuwjwrg
+      EMAIL_PASSWORD: litcviutipqwkxsw
       EMAIL_USER: parkingostrowskiego@gmail.com
       API_NAME: api
       API_PORT: 100

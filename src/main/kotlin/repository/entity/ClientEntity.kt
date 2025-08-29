@@ -4,8 +4,6 @@ import com.kontenery.library.model.Client
 import com.kontenery.library.model.ClientBankAccount
 import com.kontenery.library.model.ClientCompanyData
 import com.kontenery.library.model.ClientPersonalData
-import com.kontenery.repository.entity.ClientTable.nullable
-import kotlinx.datetime.LocalDate
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -21,6 +19,7 @@ object ClientPersonalDataTable : LongIdTable("client_personal_data") {
     val addressId = optReference("address_id", AddressTable, onDelete = ReferenceOption.SET_NULL)
     val phone = text("phone").nullable()
     val email = text("email").nullable()
+    val salutation = text("salutation").nullable()
 }
 
 object ClientCompanyDataTable : LongIdTable("client_company_data") {
@@ -55,9 +54,10 @@ class ClientPersonalDataEntity(id: EntityID<Long>) : LongEntity(id) {
     var lastName by ClientPersonalDataTable.lastName
     var pesel by ClientPersonalDataTable.pesel
     var passport by ClientPersonalDataTable.passport
-    var address by AddressDAO optionalReferencedOn ClientPersonalDataTable.addressId
+    var address by AddressEntity optionalReferencedOn ClientPersonalDataTable.addressId
     var phone by ClientPersonalDataTable.phone
     var email by ClientPersonalDataTable.email
+    var salutation by ClientPersonalDataTable.salutation
 
     fun toClientPersonalData() = ClientPersonalData(
         id = id.value,
@@ -67,7 +67,8 @@ class ClientPersonalDataEntity(id: EntityID<Long>) : LongEntity(id) {
         passport = passport,
         address = address?.toAddress(),
         phone = phone,
-        email = email
+        email = email,
+        salutation = salutation ?: "Drogi Kliencie"
     )
 }
 
@@ -77,7 +78,7 @@ class ClientCompanyDataEntity(id: EntityID<Long>) : LongEntity(id) {
     var name by ClientCompanyDataTable.name
     var nip by ClientCompanyDataTable.nip
     var krs by ClientCompanyDataTable.krs
-    var address by AddressDAO optionalReferencedOn ClientCompanyDataTable.addressId
+    var address by AddressEntity optionalReferencedOn ClientCompanyDataTable.addressId
     var phone by ClientCompanyDataTable.phone
     var email by ClientCompanyDataTable.email
     var needInvoice by ClientCompanyDataTable.needInvoice

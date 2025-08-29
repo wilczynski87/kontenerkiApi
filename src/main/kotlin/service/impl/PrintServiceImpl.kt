@@ -14,16 +14,14 @@ val emailPort:String = System.getenv("EMAIL_PORT") ?: throw NullPointerException
 class PrintServiceImpl: PrintService {
     val client = HttpClient()
     private val emailContainerAddress = "http://$emailName:$emailPort/sendMailWithAttachment/withVat"
+    private val printInvoicesAddress = "http://$emailName:$emailPort/printInvoices"
+    private val sendInvoiceAgain = "http://$emailName:$emailPort/sendInvoiceAgain"
 
     override suspend fun sendPeriodicInvoice(invoice: Invoice) {
         try {
-
-//            println("email container address: ")
-//            println(emailContainerAddress)
-//            println("email container address: ")
-//            println(emailContainerAddress)
-
             val json:String = Json.encodeToString(invoice)
+//            println("invoice: $json")
+
             client.post(emailContainerAddress) {
                 contentType(ContentType.Application.Json)
                 setBody(json)
@@ -34,8 +32,18 @@ class PrintServiceImpl: PrintService {
         }
     }
 
-    override suspend fun printInvoices(from: LocalDate, to: LocalDate) {
-        TODO("Not yet implemented")
+    override suspend fun printInvoices(invoices: List<Invoice>) {
+        try {
+            val jsons: String = Json.encodeToString(invoices)
+
+            client.post(printInvoicesAddress) {
+                contentType(ContentType.Application.Json)
+                setBody(jsons)
+            }
+        } catch (e:Exception) {
+            println("printInvoices EXCEPTION, invoiceNumber: ${invoices.map { it.invoiceNumber }}")
+            println(e)
+        }
     }
 
     override suspend fun sendUtilitiesInvoice(invoice: Invoice) {
@@ -44,6 +52,20 @@ class PrintServiceImpl: PrintService {
 
     override suspend fun sendPeriodicBill(invoice: Invoice) {
         TODO("Not yet implemented")
+    }
+
+    override suspend fun sendInvoiceAgain(invoice: Invoice) {
+        try {
+            val json:String = Json.encodeToString(invoice)
+
+            client.post(emailContainerAddress) {
+                contentType(ContentType.Application.Json)
+                setBody(json)
+            }
+        } catch (e:Exception) {
+            println("sendInvoiceAgain EXCEPTION, invoiceNumber: ${invoice.invoiceNumber}")
+            println(e)
+        }
     }
 
 }

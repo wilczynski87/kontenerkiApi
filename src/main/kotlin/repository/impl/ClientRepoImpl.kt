@@ -7,8 +7,6 @@ import com.kontenery.library.utils.now
 import com.kontenery.repository.AddressRepo
 import com.kontenery.repository.ClientRepo
 import com.kontenery.repository.entity.*
-import com.kontenery.repository.entity.AddressTable.postCode
-import com.kontenery.service.BankAccountService
 import kotlinx.datetime.*
 import org.jetbrains.exposed.dao.with
 
@@ -29,12 +27,14 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
                     passport = personalData.passport
                     phone = personalData.phone
                     email = personalData.email
+                    salutation = personalData.salutation
 
                     personalData.address?.let { address ->
-                        this.address = AddressDAO.new {
+                        this.address = AddressEntity.new {
                             street = address.street
+                            house = address.house
                             city = address.city
-                            postcode = address.postCode
+                            postCode = address.postCode
                             country = address.country
                         }
                     }
@@ -51,10 +51,11 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
                     needInvoice = companyData.needInvoice
 
                     companyData.address?.let { address ->
-                        this.address = AddressDAO.new {
+                        this.address = AddressEntity.new {
                             street = address.street
+                            house = address.house
                             city = address.city
-                            postcode = address.postCode
+                            postCode = address.postCode
                             country = address.country
                         }
                     }
@@ -96,18 +97,19 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
                     passport = personalData.passport ?: passport
                     phone = personalData.phone ?: phone
                     email = personalData.email ?: email
+                    salutation = personalData.salutation ?: salutation
 
                     personalData.address?.let { address ->
                         this.address?.apply {
                             street = address.street ?: street
                             city = address.city ?: city
-                            postcode = (address.postCode ?: postCode).toString()
+                            postCode = (address.postCode ?: postCode).toString()
                             country = address.country ?: country
                         } ?: run {
-                            this.address = AddressDAO.new {
+                            this.address = AddressEntity.new {
                                 street = address.street ?: ""
                                 city = address.city ?: ""
-                                postcode = address.postCode ?: ""
+                                postCode = address.postCode ?: ""
                                 country = address.country ?: ""
                             }
                         }
@@ -120,12 +122,13 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
                         passport = personalData.passport
                         phone = personalData.phone
                         email = personalData.email
+                        salutation = personalData.salutation
 
                         personalData.address?.let { address ->
-                            this.address = AddressDAO.new {
+                            this.address = AddressEntity.new {
                                 street = address.street ?: ""
                                 city = address.city ?: ""
-                                postcode = address.postCode ?: ""
+                                postCode = address.postCode ?: ""
                                 country = address.country ?: ""
                             }
                         }
@@ -147,13 +150,13 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
                         this.address?.apply {
                             street = address.street ?: street
                             city = address.city ?: city
-                            postcode = (address.postCode ?: postCode).toString()
+                            postCode = (address.postCode ?: postCode).toString()
                             country = address.country ?: country
                         } ?: run {
-                            this.address = AddressDAO.new {
+                            this.address = AddressEntity.new {
                                 street = address.street ?: ""
                                 city = address.city ?: ""
-                                postcode = address.postCode ?: ""
+                                postCode = address.postCode ?: ""
                                 country = address.country ?: ""
                             }
                         }
@@ -168,10 +171,10 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
                         needInvoice = companyData.needInvoice
 
                         companyData.address?.let { address ->
-                            this.address = AddressDAO.new {
+                            this.address = AddressEntity.new {
                                 street = address.street ?: ""
                                 city = address.city ?: ""
-                                postcode = address.postCode ?: ""
+                                postCode = address.postCode ?: ""
                                 country = address.country
                             }
                         }
@@ -208,6 +211,17 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
         }
     }
 
+    override suspend fun getFilteredClients(active: Boolean, paysVat: Boolean?): List<Client> = suspendTransaction {
+        ClientEntity.find {
+            ClientTable.isActive eq active
+        }.with(ClientEntity::personalData, ClientEntity::companyData)
+        .filter {
+            if(paysVat != null) it.companyData?.needInvoice == paysVat
+            else true
+        }
+        .map { it.toClient() }
+    }
+
     override suspend fun findClientById(id: Long): Client? {
         return suspendTransaction {
             ClientEntity.findById(id)?.toClient()
@@ -240,6 +254,10 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
         }
     }
 
+    override suspend fun paysVat(clientId: Long): Boolean = suspendTransaction {
+        ClientEntity.findById(clientId)?.toClient()?.needInvoice() ?: throw NullPointerException("paysVat: Could not find client with given Id: $clientId")
+    }
+
     private fun ClientPersonalDataEntity.updatePersonalData(data: ClientPersonalData) {
         firstName = data.firstName ?: firstName
         lastName = data.lastName ?: lastName
@@ -250,11 +268,11 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
 
         data.address?.let { address ->
             this.address?.updateAddress(address) ?: run {
-                this.address = AddressDAO.new {
+                this.address = AddressEntity.new {
                     street = address.street ?: ""
                     house = address.house ?: ""
                     city = address.city ?: ""
-                    postcode = address.postCode ?: ""
+                    postCode = address.postCode ?: ""
                     country = address.country ?: ""
                 }
             }
@@ -271,22 +289,22 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
 
         data.address?.let { address ->
             this.address?.updateAddress(address) ?: run {
-                this.address = AddressDAO.new {
+                this.address = AddressEntity.new {
                     street = address.street ?: ""
                     house = address.house ?: ""
                     city = address.city ?: ""
-                    postcode = address.postCode ?: ""
+                    postCode = address.postCode ?: ""
                     country = address.country ?: ""
                 }
             }
         }
     }
 
-    private fun AddressDAO.updateAddress(address: Address) {
+    private fun AddressEntity.updateAddress(address: Address) {
         street = address.street ?: street
         house = address.house ?: house
         city = address.city ?: city
-        postcode = (address.postCode ?: postCode).toString()
+        postCode = (address.postCode ?: postCode).toString()
         country = address.country ?: country
     }
 }

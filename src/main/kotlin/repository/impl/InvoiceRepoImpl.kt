@@ -1,10 +1,11 @@
 package com.kontenery.repository.impl
 
-import com.kontenery.library.model.Client
 import com.kontenery.library.model.invoice.Invoice
 import com.kontenery.library.utils.now
+import com.kontenery.library.utils.startOfCurrentMonth
+import com.kontenery.model.invoice.InvoiceNumber
 import com.kontenery.repository.InvoiceRepo
-import com.kontenery.repository.entity.AddressDAO
+import com.kontenery.repository.entity.AddressEntity
 import com.kontenery.repository.entity.ClientEntity
 import com.kontenery.repository.entity.invoice.*
 import com.kontenery.repository.entity.suspendTransaction
@@ -61,24 +62,26 @@ class InvoiceRepoImpl(): InvoiceRepo {
     }
 
     override suspend fun saveInvoice(invoice: Invoice): Invoice = suspendTransaction {
-//        val client: Client? =
         // Create seller address
-        val sellerAddress = AddressDAO.new {
+        val sellerAddress = AddressEntity.new {
             street = invoice.seller?.address?.street
             house = invoice.seller?.address?.house
             city = invoice.seller?.address?.city
-            postcode = invoice.seller?.address?.postCode
+            postCode = invoice.seller?.address?.postCode
             country = invoice.seller?.address?.country ?: "PL"
         }
+//        println("sellerAddress: $sellerAddress")
 
         // Create customer address
-        val customerAddress = AddressDAO.new {
+        val customerAddress = AddressEntity.new {
             street = invoice.customer?.address?.street
             house = invoice.customer?.address?.house
             city = invoice.customer?.address?.city
-            postcode = invoice.customer?.address?.postCode
+            postCode = invoice.customer?.address?.postCode
             country = invoice.customer?.address?.country ?: "PL"
         }
+//        println("customerAddress: $customerAddress")
+
         // Create or retrieve Seller
         val sellerEntity = SubjectEntity.new {
             name = invoice.seller?.name ?: ""
@@ -90,6 +93,7 @@ class InvoiceRepoImpl(): InvoiceRepo {
             type = SubjectType.SELLER.name ?: ""
             account = invoice.seller?.account ?: ""
         }
+//        println("sellerEntity: $sellerEntity")
 
         // Create or retrieve Customer
         val customerEntity = SubjectEntity.new {
@@ -98,25 +102,29 @@ class InvoiceRepoImpl(): InvoiceRepo {
             nip = invoice.customer?.nip ?: ""
             email = invoice.customer?.email ?: ""
             phone = invoice.customer?.phone
-            invoiceNumber = invoice.customer?.invoiceNumber
+            invoiceNumber = invoice.invoiceNumber ?: throw IllegalStateException("Can nato save invoice with customer - missing InvoiceNumber")
             type = SubjectType.CUSTOMER.name
             salutation = invoice.customer?.salutation
             client = invoice.customer?.client?.id?.let { ClientEntity.findById(it) }
         }
+//        println("customerEntity: $customerEntity")
 
+        println("invoice: $invoice")
         // Create Invoice
         val invoiceEntity = InvoiceEntity.new {
-            invoiceNumber = invoice.invoiceNumber ?: ""
+            invoiceNumber = invoice.invoiceNumber ?: throw IllegalStateException("Can not save invoice - missing InvoiceNumber")
             invoiceTitle = invoice.invoiceTitle ?: ""
             invoiceDate = invoice.invoiceDate ?: LocalDate.now()
             this.seller = sellerEntity
             this.customer = customerEntity
-            vatAmountSum = invoice.vatAmountSum ?: ""
-            priceSum = invoice.priceSum ?: ""
-            priceWithVatSum = invoice.priceWithVatSum ?: ""
+            vatAmountSum = invoice.vatAmountSum?.roundSum() ?: ""
+            priceSum = invoice.priceSum?.roundSum() ?: ""
+            priceWithVatSum = invoice.priceWithVatSum?.roundSum() ?: ""
             paymentDay = invoice.paymentDay ?: LocalDate.now().plus(14, DateTimeUnit.DAY)
             mainAccount = invoice.mainAccount
+            invoiceType = invoice.type
         }
+        println("invoiceEntity: $invoiceEntity")
 
         // Create Positions
         invoice.products.forEach { product ->
@@ -126,31 +134,33 @@ class InvoiceRepoImpl(): InvoiceRepo {
                 unitPrice = product.unitPrice ?: ""
                 quantity = product.quantity ?: ""
                 vatRate = product.vatRate ?: "23"
-                vatAmount = product.vatAmount ?: ""
-                price = product.price ?: ""
-                priceWithVat = product.priceWithVat ?: ""
+                vatAmount = product.vatAmount?.roundSum() ?: ""
+                price = product.price?.roundSum() ?: ""
+                priceWithVat = product.priceWithVat?.roundSum() ?: ""
             }
         }
+        println("invoice: $invoice")
 
         invoiceEntity.toDomain()
     }
 
     override suspend fun getLastInvoiceNumber(): String? = suspendTransaction {
-        InvoiceEntity.all()
-            .orderBy(InvoiceTable.invoiceDate to SortOrder.DESC)
-            .limit(1)
-            .firstOrNull()
-            ?.toDomain()
-            ?.invoiceNumber
+        val currentMonth: LocalDate = LocalDate.startOfCurrentMonth()
+        InvoiceEntity.find {
+                InvoiceTable.invoiceDate greaterEq currentMonth
+            }
+            .map { InvoiceNumber.toInvoiceNumber(it.invoiceNumber) }
+            .maxByOrNull { it.number }
+            ?.toInvoiceNumberString()
     }
 
     override suspend fun getLastBillNumber(): String? = suspendTransaction {
-        BillEntity.all()
-            .orderBy(BillTable.billDate to SortOrder.DESC)
-            .limit(1)
-            .firstOrNull()
-            ?.toDomain()
-            ?.invoiceNumber
+        BillEntity.find {
+                BillTable.billDate greaterEq LocalDate.startOfCurrentMonth()
+            }
+            .map { InvoiceNumber.toInvoiceNumber(it.billNumber) }
+            .maxByOrNull { it.number }
+            ?.toInvoiceNumberString()
     }
 
     override suspend fun getLastInvoiceForClient(clientId: Long): Invoice? = suspendTransaction {
@@ -167,12 +177,25 @@ class InvoiceRepoImpl(): InvoiceRepo {
     }
 
     override suspend fun confirmInvoiceSendDate(invoiceNumber: String, date: LocalDate): Boolean = suspendTransaction {
-        val invoice = InvoiceEntity.find {
-            InvoiceTable.invoiceNumber eq invoiceNumber
-        }.firstOrNull()
+        val isInvoice = !invoiceNumber.endsWith('r')
+        try {
+            if(isInvoice) {
+                InvoiceEntity.find {
+                    InvoiceTable.invoiceNumber eq invoiceNumber
+                }.firstOrNull()?.invoiceSendToClient = date
+            } else {
+                BillEntity.find { BillTable.billNumber eq invoiceNumber }.firstOrNull()?.billSendToClient = date
+            }
+            true
+        } catch (e: Exception) {
+            throw NullPointerException("confirmInvoiceSendDate: No invoice found for: $invoiceNumber")
+        }
+    }
 
-        invoice?.invoiceSendToClient = date
-
-        invoice != null
+    private fun String.roundSum(decimals: Int = 2): String {
+        return this
+            .toBigDecimal()                  // konwersja String → BigDecimal
+            .setScale(decimals, java.math.RoundingMode.HALF_UP) // zaokrąglenie
+            .toPlainString()                  // z powrotem na String
     }
 }

@@ -64,13 +64,13 @@ fun Route.paymentRoute(paymentService: PaymentService) {
         post() {
             try {
                 val paymentDtoReceived = call.receive<PaymentDto>()
-
+                println("paymentDtoReceived: $paymentDtoReceived")
                 val paymentSaved: Payment = paymentService.createPayment(paymentDtoReceived)
 
                 call.respond(paymentSaved)
 
             } catch (e:Exception) {
-                println("payment/post")
+                println("payment/post EXCEPTION")
                 println(e)
                 call.respond(HttpStatusCode.ExpectationFailed)
             }

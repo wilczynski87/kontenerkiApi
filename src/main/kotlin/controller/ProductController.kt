@@ -117,5 +117,37 @@ fun Route.productRouting(productService: ProductService) {
                 println(e)
             }
         }
+
+        post("/container/all") {
+            try {
+                val containers = call.receive<List<Product.Container>>()
+                containers.forEach {
+                    println(it)
+                }
+                containers.forEach {
+                    productService.save(it)
+                }
+
+                call.respond("ok")
+            } catch (e: Exception) {
+                println(e)
+            }
+        }
+
+        post("/yard/all") {
+            try {
+                val containers = call.receive<List<Product.Yard>>()
+                containers.forEach {
+                    println(it)
+                }
+                containers.forEach {
+                    productService.save(it)
+                }
+
+                call.respond("ok")
+            } catch (e: Exception) {
+                println(e)
+            }
+        }
     }
 }

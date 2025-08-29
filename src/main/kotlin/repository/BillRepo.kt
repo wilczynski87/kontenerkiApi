@@ -28,7 +28,11 @@ interface BillRepo {
 
     suspend fun getBillById(invoiceId:Long): Invoice?
 
+    suspend fun getBillByNumber(billNumber: String): Invoice?
+
     suspend fun getLastBillNumber(): String?
+
+    suspend fun getLastBillForClient(clientId:Long): Invoice?
 
     suspend fun confirmBillSendDate(invoiceNumber:String, date:LocalDate): Boolean
 }
