@@ -5,7 +5,7 @@ import com.kontenery.library.model.Product
 
 interface ProductService {
 
-    suspend fun save(product: Product): Any?
+    suspend fun save(product: Product): Product?
 
     suspend fun getAllProduct(page:Int, size:Int): List<Any>
 

@@ -7,9 +7,14 @@ import com.kontenery.service.ProductService
 class ProductServiceImp(private val productRepo: ProductRepo): ProductService {
     override suspend fun save(product: Product): Product? {
         return when(product) {
-            is Product.Container -> productRepo.save(product)
-            is Product.Yard -> productRepo.save(product)
-            else -> throw IllegalArgumentException("Nie ma takiego rodzaju produktu")
+            is Product.Container -> {
+                val productDigest = product.copy(name = null)
+                productRepo.save(productDigest)
+            }
+            is Product.Yard -> {
+                val productDigest = product.copy(name = null)
+                productRepo.save(productDigest)
+            }
         }
     }
 
@@ -41,7 +46,6 @@ class ProductServiceImp(private val productRepo: ProductRepo): ProductService {
         return when(product) {
             is Product.Container -> productRepo.updateProduct(product)
             is Product.Yard -> productRepo.updateProduct(product)
-            else -> throw IllegalArgumentException("Nie ma takiego rodzaju produktu")
         }
     }
 

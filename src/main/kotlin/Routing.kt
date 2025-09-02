@@ -4,7 +4,6 @@ import com.kontenery.controller.*
 import com.kontenery.service.*
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
@@ -31,7 +30,7 @@ fun Application.configureRouting(
         addressRouting(addressService)
         clientRoute(clientService)
         productRouting(productService)
-        contractRoutes(contractService)
+        contractRoutes(contractService, clientService, productService)
         invoiceRoutes(invoiceService, printService, clientService)
         mailSendConfirmation(invoiceService)
         paymentRoute(paymentService)

@@ -82,6 +82,10 @@ class ContractServiceImpl(
         return repo.create(contract)
     }
 
+    override suspend fun save(contract: Contract): Contract? {
+        return repo.create(contract)
+    }
+
     override suspend fun update(contractId: Long, contractDto: ContractDto): Contract {
         var contract:Contract?
 

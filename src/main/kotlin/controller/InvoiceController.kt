@@ -41,6 +41,22 @@ fun Route.invoiceRoutes(
 
         }
 
+        get("/{invoiceNumber}/number") {
+            try {
+                val invoiceNumber:String = call.pathParameters["invoiceNumber"]
+                    ?: throw NullPointerException("There is no valid invoiceNumber")
+
+                val invoice:Invoice? = invoiceService.getInvoiceByNumber(invoiceNumber)
+                println("invoiceNumber: $invoice")
+
+                call.respond(invoice ?: "brak")
+            } catch (e:Exception) {
+                println("/{invoiceId}/id Error: $e")
+                call.respond(e.message.toString())
+            }
+
+        }
+
         get("/forDate") {
 
         }
@@ -58,7 +74,7 @@ fun Route.invoiceRoutes(
                     from = from,
                     to = to
                 )
-                println("invoices:")
+                println("Numery faktur/rachunków utworzonych:")
                 invoices.forEach { println(it) }
 
                 call.respond(invoices)
@@ -130,7 +146,8 @@ fun Route.invoiceRoutes(
                     allClients.mapNotNull { invoiceService.createPeriodicInvoiceForClient(it, period, errorList) }
                 println("invoices: ${createdInvoice.map{ it.invoiceNumber}}")
 
-                val savedInvoices:List<Invoice> = createdInvoice.mapNotNull { invoiceService.saveInvoice(it) }
+//                val savedInvoices:List<Invoice> = createdInvoice.mapNotNull { invoiceService.saveInvoice(it) }
+                val savedInvoices:List<Invoice> = createdInvoice.mapNotNull { invoiceService.saveInvoiceWithErrors(it.vatApply, it, errorList) }
 
                 savedInvoices.forEach { savedInvoice ->
                     println("document send: vat apply - ${savedInvoice.vatApply}, numer - ${savedInvoice.invoiceNumber}")

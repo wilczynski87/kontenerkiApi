@@ -73,7 +73,7 @@ class InvoiceServiceImpl(
 
     override suspend fun getInvoiceByNumber(invoiceNumber: String): Invoice? {
         return if(invoiceNumber.trim().endsWith("r")) billRepo.getBillByNumber(invoiceNumber)
-        else invoiceRepo.getInvoiceByNumber(invoiceNumber)
+            else invoiceRepo.getInvoiceByNumber(invoiceNumber)
     }
 
     override suspend fun getInvoiceById(invoiceId: Long): Invoice? {
@@ -89,10 +89,15 @@ class InvoiceServiceImpl(
             if(isInvoice) invoiceRepo.saveInvoice(invoice)
             else billRepo.saveBill(invoice)
         } catch (e: Exception) {
-            log.error("Problem z zapisem faktury: $e")
+            log.error("Problem z zapisem faktury: ${invoice.invoiceNumber}," +
+                "dla klienta: ${invoice.customer?.client?.getName()}" +
+                "\n $e" +
+                "\n $invoice"
+            )
             errors.add(
                 InvoiceErrorMessage(
                     title = "błąd zapisu faktury ${invoice.invoiceNumber}",
+                    message = "błąd zapisu faktury, dla klienta: ${invoice.customer?.client?.getName()}",
                     clientId = invoice.customer?.client?.id,
                     period = invoice.invoiceDate
                 )
@@ -230,6 +235,8 @@ class InvoiceServiceImpl(
         val period = period ?: LocalDate.now()
         val validator = ObjectValidators(errorList)
 
+        println("createPeriodicInvoiceForClient: ${client.getName()}")
+
         if(validator.validateClient(client)) return null
         val clientId: Long = client.id!!
 
@@ -266,7 +273,7 @@ class InvoiceServiceImpl(
 
         val document: Invoice = if(addTax) createInvoice(client, period, contracts, positions)
             else createBill(client, period, contracts, positions)
-        println("document: $document")
+//        println("document: $document")
 
         return document
     }

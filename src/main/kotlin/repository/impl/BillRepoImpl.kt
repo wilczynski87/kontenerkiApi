@@ -12,6 +12,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 class BillRepoImpl: BillRepo {
     override suspend fun saveBill(bill: Invoice): Invoice = suspendTransaction {
@@ -122,8 +123,8 @@ class BillRepoImpl: BillRepo {
         TODO("Not yet implemented")
     }
 
-    override suspend fun getBillByNumber(billNumber: String): Invoice? {
-        return BillEntity.find { BillTable.billNumber eq billNumber }
+    override suspend fun getBillByNumber(billNumber: String): Invoice? = newSuspendedTransaction {
+        BillEntity.find { BillTable.billNumber eq billNumber }
             .firstOrNull()
             ?.toDomain()
     }

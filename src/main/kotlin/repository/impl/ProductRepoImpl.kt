@@ -9,7 +9,7 @@ class ProductRepoImpl: ProductRepo {
     override suspend fun save(product: Product.Container): Product.Container = suspendTransaction {
 
         ProductEntity.new {
-            name = product.name
+            name = product.name ?: Product.createProductName(product)
             location = product.location
             type = ProductType.CONTAINER
             client = product.client?.id?.let { ClientEntity.findById(it) }
@@ -27,7 +27,7 @@ class ProductRepoImpl: ProductRepo {
     // Save a new Yard
     override suspend fun save(product: Product.Yard): Product.Yard = suspendTransaction {
         ProductEntity.new {
-            name = product.name
+            name = product.name ?: Product.createProductName(product)
             location = product.location
             type = ProductType.YARD
             client = product.client?.id?.let { ClientEntity.findById(it) }

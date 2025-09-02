@@ -58,7 +58,7 @@ class PrintServiceImpl: PrintService {
         try {
             val json:String = Json.encodeToString(invoice)
 
-            client.post(emailContainerAddress) {
+            client.post(sendInvoiceAgain) {
                 contentType(ContentType.Application.Json)
                 setBody(json)
             }

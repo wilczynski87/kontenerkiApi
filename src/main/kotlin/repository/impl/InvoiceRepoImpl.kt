@@ -14,6 +14,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 class InvoiceRepoImpl(): InvoiceRepo {
 
@@ -55,13 +56,14 @@ class InvoiceRepoImpl(): InvoiceRepo {
         InvoiceEntity.findById(invoiceId)?.toDomain()
     }
 
-    override suspend fun getInvoiceByNumber(invoiceNumber: String): Invoice? = suspendTransaction {
+    override suspend fun getInvoiceByNumber(invoiceNumber: String): Invoice? = newSuspendedTransaction {
         InvoiceEntity.find { InvoiceTable.invoiceNumber eq invoiceNumber }
             .firstOrNull()
             ?.toDomain()
     }
 
     override suspend fun saveInvoice(invoice: Invoice): Invoice = suspendTransaction {
+        println("saveInvoice start, number: ${invoice.invoiceNumber}")
         // Create seller address
         val sellerAddress = AddressEntity.new {
             street = invoice.seller?.address?.street
@@ -109,7 +111,7 @@ class InvoiceRepoImpl(): InvoiceRepo {
         }
 //        println("customerEntity: $customerEntity")
 
-        println("invoice: $invoice")
+        println("invoice, w saveInvoice:\n $invoice")
         // Create Invoice
         val invoiceEntity = InvoiceEntity.new {
             invoiceNumber = invoice.invoiceNumber ?: throw IllegalStateException("Can not save invoice - missing InvoiceNumber")
@@ -124,7 +126,7 @@ class InvoiceRepoImpl(): InvoiceRepo {
             mainAccount = invoice.mainAccount
             invoiceType = invoice.type
         }
-        println("invoiceEntity: $invoiceEntity")
+        println("invoiceEntity: ${invoiceEntity.invoiceNumber}")
 
         // Create Positions
         invoice.products.forEach { product ->

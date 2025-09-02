@@ -1,15 +1,23 @@
 package com.kontenery.controller
 
+import com.kontenery.library.model.Client
 import com.kontenery.library.model.Contract
 import com.kontenery.library.model.ContractDto
+import com.kontenery.library.model.Product
+import com.kontenery.service.ClientService
 import com.kontenery.service.ContractService
+import com.kontenery.service.ProductService
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
 import kotlinx.serialization.json.Json
 
-fun Route.contractRoutes(service: ContractService) {
+fun Route.contractRoutes(
+    service: ContractService,
+    clientService: ClientService,
+    productService: ProductService,
+) {
     route("/contract") {
         get {
             val page: Int = call.request.queryParameters["page"]?.toInt() ?: 0
@@ -80,6 +88,23 @@ fun Route.contractRoutes(service: ContractService) {
             val deleted = service.delete(id)
             if (deleted) call.respond(HttpStatusCode.NoContent)
             else call.respond(HttpStatusCode.NotFound)
+        }
+
+        post("updateDB") {
+            try {
+                val contracts: List<Contract> = call.receive<List<Contract>>()
+                println("contracts")
+                println(contracts)
+
+                val clients: List<Client> = contracts.mapNotNull { it.client }.mapNotNull { clientService.save(client = it) }
+
+                val products: List<Product> = contracts.mapNotNull { it.product }.mapNotNull { productService.save(it) }
+
+                contracts.forEach { service.save(it) }
+                call.respond("OK")
+            } catch (e: Exception) {
+                println(e)
+            }
         }
     }
 }
