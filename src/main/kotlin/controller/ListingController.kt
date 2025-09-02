@@ -1,14 +1,9 @@
 package com.kontenery.controller
 
-import com.kontenery.library.model.Client
-import com.kontenery.library.model.ClientOnList
 import com.kontenery.library.model.Product
-import com.kontenery.repository.ClientRepo
-import com.kontenery.repository.ProductRepo
 import com.kontenery.service.ListingService
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import java.math.BigDecimal
 
 fun Route.listingRoute(
     listingService: ListingService

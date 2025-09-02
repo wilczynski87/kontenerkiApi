@@ -46,6 +46,7 @@ services:
       EMAIL_USER: parkingostrowskiego@gmail.com
       API_NAME: api
       API_PORT: 100
+      ENV: DEV
 
 volumes:
   postgres_data:

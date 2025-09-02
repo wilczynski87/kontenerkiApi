@@ -1,10 +1,8 @@
 package com.kontenery.service.impl
 
 import com.kontenery.library.model.Client
-import com.kontenery.library.model.ClientOnList
 import com.kontenery.repository.ClientRepo
 import com.kontenery.service.ClientService
-import java.math.BigDecimal
 
 class ClientServiceImpl(
     private val clientRepo: ClientRepo,
