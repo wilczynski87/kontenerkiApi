@@ -7,6 +7,7 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
+import java.beans.ExceptionListener
 
 val emailName:String = System.getenv("EMAIL_NAME") ?: throw NullPointerException("There is no email address")
 val emailPort:String = System.getenv("EMAIL_PORT") ?: throw NullPointerException("There is no email port")
@@ -15,7 +16,7 @@ class PrintServiceImpl: PrintService {
     val client = HttpClient()
     private val emailContainerAddress = "http://$emailName:$emailPort/sendMailWithAttachment/withVat"
     private val printInvoicesAddress = "http://$emailName:$emailPort/printInvoices"
-    private val sendInvoiceAgain = "http://$emailName:$emailPort/sendInvoiceAgain"
+    private val sendInvoiceAgain = "http://$emailName:$emailPort/sendMailWithAttachment/sendInvoiceAgain"
 
     override suspend fun sendPeriodicInvoice(invoice: Invoice) {
         try {
@@ -58,10 +59,13 @@ class PrintServiceImpl: PrintService {
         try {
             val json:String = Json.encodeToString(invoice)
 
-            client.post(sendInvoiceAgain) {
+            val statusSend = client.post(sendInvoiceAgain) {
                 contentType(ContentType.Application.Json)
                 setBody(json)
-            }
+            }.status
+
+            if(statusSend.isSuccess().not()) throw IllegalArgumentException(statusSend.description)
+
         } catch (e:Exception) {
             println("sendInvoiceAgain EXCEPTION, invoiceNumber: ${invoice.invoiceNumber}")
             println(e)
