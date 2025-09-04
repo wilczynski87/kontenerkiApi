@@ -60,10 +60,13 @@ class PrintServiceImpl: PrintService {
         try {
             val json:String = Json.encodeToString(invoice)
 
-            client.post(sendInvoiceAgain) {
+            val statusSend = client.post(sendInvoiceAgain) {
                 contentType(ContentType.Application.Json)
                 setBody(json)
-            }
+            }.status
+
+            if(statusSend.isSuccess().not()) throw IllegalArgumentException(statusSend.description)
+
         } catch (e:Exception) {
             println("sendInvoiceAgain EXCEPTION, invoiceNumber: ${invoice.invoiceNumber}")
             println(e)
