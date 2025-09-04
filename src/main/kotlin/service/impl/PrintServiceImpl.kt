@@ -7,15 +7,18 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
+import org.slf4j.LoggerFactory
 
-val emailName:String = System.getenv("EMAIL_NAME") ?: throw NullPointerException("There is no email address")
+val emailName:String = System.getenv("EMAIL_HOST") ?: throw NullPointerException("There is no email address")
 val emailPort:String = System.getenv("EMAIL_PORT") ?: throw NullPointerException("There is no email port")
+
+private val logger = LoggerFactory.getLogger("PrintServiceImpl")
 
 class PrintServiceImpl: PrintService {
     val client = HttpClient()
     private val emailContainerAddress = "http://$emailName:$emailPort/sendMailWithAttachment/withVat"
     private val printInvoicesAddress = "http://$emailName:$emailPort/printInvoices"
-    private val sendInvoiceAgain = "http://$emailName:$emailPort/sendInvoiceAgain"
+    private val sendInvoiceAgain = "http://$emailName:$emailPort/sendMailWithAttachment/sendInvoiceAgain"
 
     override suspend fun sendPeriodicInvoice(invoice: Invoice) {
         try {
@@ -27,8 +30,7 @@ class PrintServiceImpl: PrintService {
                 setBody(json)
             }
         } catch (e:Exception) {
-            println("sendPeriodicInvoice EXCEPTION, invoiceNumber: ${invoice.invoiceNumber}")
-            println(e)
+            logger.error("sendPeriodicInvoice EXCEPTION, invoiceNumber: ${invoice.invoiceNumber}\n $e")
         }
     }
 

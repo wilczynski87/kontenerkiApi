@@ -63,7 +63,7 @@ class ProductRepoImpl: ProductRepo {
         val id:Long = product.id ?: throw NullPointerException("Nowy produkt nie ma ID: $product")
         ProductEntity.findByIdAndUpdate(id) { it ->
             it.apply {
-                name = product.name ?: this.name
+                name = product.name ?: this.name ?: Product.createProductName(it.toContainer())
                 location = product.location ?: this.location
                 length = product.length ?: this.length
                 client = product.client?.id?.let { ClientEntity.findById(it) } ?: this.client
@@ -83,7 +83,7 @@ class ProductRepoImpl: ProductRepo {
        val id:Long = product.id ?: throw NullPointerException("Nowy produkt nie ma ID: $product")
         ProductEntity.findByIdAndUpdate(id) {
             it.apply {
-                name = product.name ?: this.name
+                name = product.name ?: this.name ?: Product.createProductName(it.toYard())
                 location = product.location ?: this.location
                 quantity = product.quantity ?: this.quantity
                 client = product.client?.id?.let { ClientEntity.findById(it) } ?: this.client

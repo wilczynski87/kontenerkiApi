@@ -11,9 +11,9 @@ interface ContractService {
     suspend fun getByClientId(clientId: Long, onlyActive:Boolean = false): List<Contract>
     suspend fun getByClientId(clientId: Long, fromDate:LocalDate, toDate: LocalDate): List<Contract>
     suspend fun getCurrentByProductId(productId: Long): Contract?
-    suspend fun create(contract: ContractDto): Contract
+    suspend fun create(contractDto: ContractDto): Contract
     suspend fun save(contract: Contract): Contract?
-    suspend fun update(id: Long, contract: ContractDto): Contract
+    suspend fun update(contractId: Long, contractDto: ContractDto): Contract
     suspend fun delete(id: Long): Boolean
 
 }

@@ -51,7 +51,7 @@ class ProductEntity(id: EntityID<Long>) : LongEntity(id) {
 
     fun toContainer() = Product.Container(
         id = id.value,
-        name = name,
+        name = if(name.isNullOrBlank()) "Kontener ${length} - ${location}" else name,
         location = location,
         client = client?.toClient(),
         length = length,
@@ -65,7 +65,7 @@ class ProductEntity(id: EntityID<Long>) : LongEntity(id) {
 
     fun toYard() = Product.Yard(
         id = id.value,
-        name = name,
+        name = if(name.isNullOrBlank()) "Plac ${quantity}m2" else name,
         location = location,
         client = client?.toClient(),
         quantity = quantity

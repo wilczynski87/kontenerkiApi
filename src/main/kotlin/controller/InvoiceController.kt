@@ -207,7 +207,7 @@ fun Route.invoiceRoutes(
 
                 printService.printInvoices(invoices)
 
-                call.respond("Invoices send")
+                call.respond(true)
 
             } catch (e: Exception) {
                 println("/{month}/print: ${e.message}")

@@ -1,4 +1,4 @@
-version: '3.9'
+#version: '3.9'
 
 services:
   db:
@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: db1
     ports:
-      - "5434:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -21,13 +21,13 @@ services:
     container_name: api
     restart: unless-stopped
     ports:
-      - "100:100"
+      - "8100:8100"
     environment:
       DB_URL: jdbc:postgresql://db:5432/db1
       DB_USER: admin_user
       DB_PASSWORD: postgres
-      EMAIL_NAME: email
-      EMAIL_PORT: 200
+      EMAIL_HOST: email
+      EMAIL_PORT: 8200
     depends_on:
       - db
 
@@ -38,14 +38,14 @@ services:
     container_name: email
     restart: unless-stopped
     expose:
-      - 200
+      - 8200
     ports:
-      - "200:200"
+      - "8200:8200"
     environment:
       EMAIL_PASSWORD: litcviutipqwkxsw
       EMAIL_USER: parkingostrowskiego@gmail.com
       API_NAME: api
-      API_PORT: 100
+      API_PORT: 8100
       ENV: DEV
 
 volumes:

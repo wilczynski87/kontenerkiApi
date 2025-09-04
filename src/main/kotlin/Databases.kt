@@ -20,16 +20,18 @@ import java.sql.Connection
 fun Application.configureDatabases() {
     "docker run --name db1 -e POSTGRES_USER=admin_user -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=db1 -p 5434:5432 -d postgres:latest"
 
-    val url = environment.config.property("postgres.url").getString()
-    val user = environment.config.property("postgres.user").getString()
-    val password = environment.config.property("postgres.password").getString()
+    val DB_HOST = System.getenv("DB_HOST")
+    val DB_PORT = System.getenv("DB_PORT")
+    val DB_NAME = System.getenv("DB_NAME")
+    val DB_USER = System.getenv("DB_USER")
+    val DB_PASSWORD = System.getenv("DB_PASSWORD")
+    val url = "jdbc:postgresql://$DB_HOST:$DB_PORT/$DB_NAME"
     println()
-    println("url: $url, user: $user, password: $password")
+    println("url: $url, user: $DB_USER, password: $DB_PASSWORD")
     println()
 
     val connection = {
-
-        DriverManager.getConnection(url, user, password)
+        DriverManager.getConnection(url, DB_USER, DB_PASSWORD)
     }
 
     val database: Database = Database.connect(connection)
