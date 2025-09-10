@@ -13,6 +13,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin_user" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   api:
     build:
@@ -20,20 +25,25 @@ services:
       dockerfile: Dockerfile
     container_name: api
     restart: unless-stopped
+    expose:
+      - 8100
     ports:
       - "8100:8100"
     environment:
-      DB_URL: jdbc:postgresql://db:5432/db1
-      DB_USER: admin_user
+      DB_HOST: db
+      DB_NAME: db1
       DB_PASSWORD: postgres
+      DB_PORT: 5432
+      DB_USER: admin_user
       EMAIL_HOST: email
       EMAIL_PORT: 8200
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   email:
     build:
-      context: ../email
+      context: ../kontenerkiEmail
       dockerfile: Dockerfile
     container_name: email
     restart: unless-stopped

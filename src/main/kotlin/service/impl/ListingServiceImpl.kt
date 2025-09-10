@@ -5,7 +5,6 @@ import com.kontenery.library.model.ClientOnList
 import com.kontenery.library.model.Payment
 import com.kontenery.library.model.Product
 import com.kontenery.library.model.invoice.Invoice
-import com.kontenery.library.utils.endOfCurrentMonth
 import com.kontenery.library.utils.endOfCurrentYear
 import com.kontenery.library.utils.startOfCurrentYear
 import com.kontenery.repository.*
@@ -13,7 +12,6 @@ import com.kontenery.service.ListingService
 import kotlinx.datetime.LocalDate
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.text.DecimalFormat
 
 class ListingServiceImpl(
     private val clientsRepo: ClientRepo,
@@ -40,7 +38,8 @@ class ListingServiceImpl(
                 contracts = getContractsIdForClient(client.id!!, true),
                 active = client.isActive ?: false,
                 invoice = client.needInvoice(),
-                lastBill = clientLastInvoiceSend(client)
+                lastBill = clientLastInvoiceSend(client),
+                clientType = if(client.clientCompany == null) ClientOnList.ClientType.INDIVIDUAL else ClientOnList.ClientType.COMPANY
             )
         } catch (e: Exception) {
             println("clientToClientOnList: $e")
@@ -48,8 +47,8 @@ class ListingServiceImpl(
         }
     }
 
-    private suspend fun getContractsIdForClient(id: Long, onlyActive: Boolean): List<String> {
-        return contractsRepo.findByClientId(id, true).mapNotNull { it.product?.name }
+    private suspend fun getContractsIdForClient(id: Long, onlyActive: Boolean = true): List<String> {
+        return contractsRepo.findByClientId(id, onlyActive).mapNotNull { it.product?.name }
     }
 
     private suspend fun clientOverdue(client: Client, from: LocalDate, to: LocalDate): BigDecimal? {

@@ -44,12 +44,13 @@ class ContractServiceImpl(
 
     override suspend fun create(contractDto: ContractDto): Contract {
 
-        val contract: Contract = Contract(
+        val contract = Contract(
             startDate = contractDto.startDate,
             endDate = contractDto.endDate,
             netPrice = contractDto.netPrice,
             vatRate = contractDto.vatRate,
-            needInvoice = contractDto.needInvoice
+            needInvoice = contractDto.needInvoice,
+            deposit = contractDto.deposit
         )
 
         run {
@@ -66,7 +67,7 @@ class ContractServiceImpl(
             val productId: Long =
                 contractDto.product ?: throw NullPointerException("There is no id of a product, for contract")
 
-            var product = productService.findProductById(productId) as Product ?: throw NullPointerException("There is no product with given ID $productId")
+            var product = productService.findProductById(productId) as Product
 
             println("product: ${product}")
 
@@ -82,7 +83,7 @@ class ContractServiceImpl(
         return repo.create(contract)
     }
 
-    override suspend fun save(contract: Contract): Contract? {
+    override suspend fun save(contract: Contract): Contract {
         return repo.create(contract)
     }
 
@@ -92,7 +93,7 @@ class ContractServiceImpl(
         run {
             contract = getById(contractId) ?: throw NullPointerException("There is no Contract with given id $contractId")
 
-            contract?.apply {
+            contract.apply {
                 startDate = contractDto.startDate
                 endDate = contractDto.endDate
                 netPrice = contractDto.netPrice
@@ -114,7 +115,7 @@ class ContractServiceImpl(
             val productId: Long =
                 contractDto.product ?: throw NullPointerException("There is no id of a product, for contract")
 
-            var product = productService.findProductById(productId) as Product ?: throw NullPointerException("There is no product with given ID $productId")
+            var product = productService.findProductById(productId) as Product
 
             println("product: ${product}")
 

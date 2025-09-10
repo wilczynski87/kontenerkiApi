@@ -19,6 +19,8 @@ object ContractTable : LongIdTable("contracts") {
     val vatRate = decimal("vat_rate", precision = 5, scale = 2).default(BigDecimal(23))
 
     val needInvoice = bool("need_invoice").nullable()
+
+    val deposit = reference("deposit", DepositTable).nullable()
 }
 
 class ContractEntity(id: EntityID<Long>) : LongEntity(id) {
@@ -35,6 +37,8 @@ class ContractEntity(id: EntityID<Long>) : LongEntity(id) {
 
     var needInvoice by ContractTable.needInvoice
 
+    var deposit by DepositEntity.optionalReferencedOn(ContractTable.deposit)
+
     fun toContract() = Contract(
         id = id.value,
         client = client?.toClient(),
@@ -47,6 +51,7 @@ class ContractEntity(id: EntityID<Long>) : LongEntity(id) {
         endDate = endDate,
         netPrice = netPrice,
         vatRate = vatRate,
-        needInvoice = needInvoice
+        needInvoice = needInvoice,
+        deposit = deposit?.toDomain(),
     )
 }

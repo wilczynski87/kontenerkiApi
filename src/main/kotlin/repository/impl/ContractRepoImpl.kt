@@ -6,6 +6,8 @@ import com.kontenery.repository.entity.*
 import kotlinx.datetime.*
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import java.math.BigDecimal
 
 class ContractRepoImpl: ContractRepo {
     override suspend fun findAll(page:Int, size:Int): List<Contract> = suspendTransaction {
@@ -56,7 +58,13 @@ class ContractRepoImpl: ContractRepo {
 
     }
 
-    override suspend fun create(contract: Contract): Contract = suspendTransaction {
+    override suspend fun create(contract: Contract): Contract = newSuspendedTransaction {
+        val savedDeposit = if(contract.deposit?.type == null) null else DepositEntity.new {
+            depositType = contract.deposit!!.type!!.name
+            amount = if(contract.deposit?.amount == null) null else BigDecimal(contract.deposit?.amount)
+            note = contract.deposit?.note
+        }
+
         val entity = ContractEntity.new {
             client = contract.client?.id?.let { ClientEntity.findById(it) }
             product = contract.product?.id?.let { ProductEntity.findById(it) }
@@ -65,6 +73,7 @@ class ContractRepoImpl: ContractRepo {
             netPrice = contract.netPrice
             vatRate = contract.vatRate
             needInvoice = contract.needInvoice
+            deposit = savedDeposit
         }
         entity.toContract()
     }
@@ -72,6 +81,15 @@ class ContractRepoImpl: ContractRepo {
     override suspend fun update(id: Long, contract: Contract): Contract = suspendTransaction {
         val entity = ContractEntity.findById(id)
             ?: throw NoSuchElementException("Contract with id $id not found")
+
+        val newDeposit = contract.deposit
+        val oldDepositEntity = entity.deposit
+        if(oldDepositEntity != null && newDeposit != null)
+        oldDepositEntity.apply {
+            depositType = newDeposit.type!!.name
+            amount = if(newDeposit.amount == null) null else BigDecimal(contract.deposit?.amount)
+            note = newDeposit.note
+        }
 
         entity.apply {
             client = contract.client?.id?.let { ClientEntity.findById(it) }
@@ -81,6 +99,7 @@ class ContractRepoImpl: ContractRepo {
             netPrice = contract.netPrice
             vatRate = contract.vatRate
             needInvoice = contract.needInvoice
+            deposit = oldDepositEntity
         }
 
         entity.toContract()
