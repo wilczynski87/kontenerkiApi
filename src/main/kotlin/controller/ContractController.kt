@@ -11,7 +11,6 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
-import kotlinx.serialization.json.Json
 
 fun Route.contractRoutes(
     service: ContractService,
@@ -36,9 +35,9 @@ fun Route.contractRoutes(
         get("{id}/client") {
             println("GET CONTRACTS BY client Id")
             val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
-            val contract = service.getByClientId(id)
+            val contracts = service.getByClientId(id)
 
-            call.respond(contract)
+            call.respond(contracts)
         }
 
         get("{productId}/product") {

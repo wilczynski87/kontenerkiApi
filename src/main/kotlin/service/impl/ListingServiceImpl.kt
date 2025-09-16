@@ -26,6 +26,10 @@ class ListingServiceImpl(
         return clients.mapNotNull { clientToClientOnList(it) }
     }
 
+    override suspend fun clientsListSize(): Long {
+        return clientsRepo.clientsListSize()
+    }
+
     private suspend fun clientToClientOnList(client: Client): ClientOnList? {
         if(client.id == null) throw NullPointerException("Client dose not have ID: $client")
         val from: LocalDate = LocalDate.startOfCurrentYear()

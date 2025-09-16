@@ -3,7 +3,6 @@ package com.kontenery
 
 import com.kontenery.repository.entity.*
 import com.kontenery.repository.entity.invoice.*
-import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -48,6 +47,7 @@ fun configureDatabases() {
             BillTable, PositionsBill,
             PaymentTable, PaymentInvoices,
             ClientBankAccountTable,
+            SubmeterTable, ReadingTable
         )
     }
 }

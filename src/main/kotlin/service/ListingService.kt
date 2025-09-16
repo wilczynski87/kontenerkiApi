@@ -7,5 +7,7 @@ interface ListingService {
 
     suspend fun clientsList(page: Int, size: Int): List<ClientOnList>
 
+    suspend fun clientsListSize(): Long
+
     suspend fun productList(page: Int, size: Int): List<Product>
 }

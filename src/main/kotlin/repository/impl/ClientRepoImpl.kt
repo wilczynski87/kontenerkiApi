@@ -9,6 +9,7 @@ import com.kontenery.repository.ClientRepo
 import com.kontenery.repository.entity.*
 import kotlinx.datetime.*
 import org.jetbrains.exposed.dao.with
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
 
@@ -209,6 +210,10 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
                 .with(ClientEntity::personalData, ClientEntity::companyData)
                 .map { it.toClient() }
         }
+    }
+
+    override suspend fun clientsListSize(): Long = newSuspendedTransaction {
+        ClientEntity.count()
     }
 
     override suspend fun getFilteredClients(active: Boolean, paysVat: Boolean?): List<Client> = suspendTransaction {
