@@ -42,6 +42,9 @@ fun Application.module() {
 
     val listingService: ListingService = ListingServiceImpl(clientRepo, productRepo, contractRepo, paymentRepo, invoiceRepo, billRepo)
 
+    val utilitiesRepo: UtilitiesRepo = UtilitiesRepoImpl()
+    val utilitiesService: UtilitiesService = UtilitiesServiceImpl(utilitiesRepo)
+
     logger()
     configureFrameworks()
     configureSerialization()
@@ -49,5 +52,5 @@ fun Application.module() {
     validator(contractService)
     configureHTTP()
     configureSecurity()
-    configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService, csvService, bankAccountService, listingService)
+    configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService, csvService, bankAccountService, listingService, utilitiesService)
 }

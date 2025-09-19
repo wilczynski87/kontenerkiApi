@@ -19,6 +19,7 @@ class UtilitiesRepoImpl: UtilitiesRepo {
             SubmeterEntity.new {
                 client = submeter.clientId?.let { ClientEntity.findById(it) }
                 location = submeter.location ?: throw NullPointerException("Nie ma lokalizacji dla podlicznika")
+                number = submeter.number
                 utilityType = submeter.utilityType?.name ?: throw NullPointerException("Nie ma typu dla podlicznika")
             }.toDomain()
         }
@@ -39,15 +40,15 @@ class UtilitiesRepoImpl: UtilitiesRepo {
                 .map { it.toDomain() }
         }
 
-    override suspend fun updateSubmeter(id: Long, submeter: Submeter): Boolean =
+    override suspend fun updateSubmeter(submeterId: Long, submeter: Submeter): Submeter? =
         newSuspendedTransaction {
-            val entity = SubmeterEntity.findById(id) ?: return@newSuspendedTransaction false
+            val entity = SubmeterEntity.findById(submeterId) ?: return@newSuspendedTransaction null
             entity.apply {
                 client = submeter.clientId?.let { ClientEntity.findById(it) }
                 location = submeter.location ?: location
+                number = submeter.number ?: number
                 utilityType = submeter.utilityType?.name ?: utilityType
-            }
-            true
+            }.toDomain()
         }
 
     override suspend fun deleteSubmeter(id: Long): Boolean =
@@ -81,19 +82,17 @@ class UtilitiesRepoImpl: UtilitiesRepo {
                 .map { it.toDomain() }
         }
 
-    override suspend fun updateReading(reading: Reading): Boolean =
+    override suspend fun updateReading(readingId: Long, reading: Reading): Reading? =
         newSuspendedTransaction {
             val submeterId = reading.submeterId ?: throw NullPointerException("Nie ma podlicznika")
-            val readingId = reading.id ?: throw NullPointerException("Nie ma ID odczytu")
-            val entity = ReadingEntity.findById(readingId) ?: return@newSuspendedTransaction false
+            val entity = ReadingEntity.findById(readingId) ?: return@newSuspendedTransaction null
             entity.apply {
                 submeter = SubmeterEntity[submeterId]
                 utilityType = reading.utilityType?.name ?: utilityType
                 this.reading = reading.reading ?: this.reading
                 date = reading.date ?: date
                 currentUnitPriceNet = reading.currentUnitPriceNet?.toDouble() ?: currentUnitPriceNet
-            }
-            true
+            }.toDomain()
         }
 
     override suspend fun deleteReading(id: Long): Boolean =

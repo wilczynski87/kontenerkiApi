@@ -6,7 +6,6 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import com.kontenery.library.utils.MessageRequest
-import com.kontenery.service.BankAccountService
 import com.kontenery.service.CSVService
 import com.kontenery.service.PaymentService
 import kotlinx.coroutines.coroutineScope

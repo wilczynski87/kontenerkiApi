@@ -13,6 +13,7 @@ import java.math.BigDecimal
 object SubmeterTable: LongIdTable("submeter") {
     val client = reference("client", ClientTable).nullable()
     val location = varchar("location", 250)
+    val number = varchar("number", 50).nullable()
     val utilityType = varchar("utility_type", 50)
 }
 
@@ -29,6 +30,7 @@ class SubmeterEntity(id: EntityID<Long>) : LongEntity(id) {
 
     var client by ClientEntity optionalReferencedOn SubmeterTable.client
     var location by SubmeterTable.location
+    var number by SubmeterTable.number
     var utilityType by SubmeterTable.utilityType
 
     // relacja 1-to-many
@@ -38,6 +40,7 @@ class SubmeterEntity(id: EntityID<Long>) : LongEntity(id) {
         id = id.value,
         clientId = client?.id?.value,
         location = location,
+        number = number,
         utilityType = UtilityType.valueOf(utilityType),
         readings = readings.map { it.toDomain() }
     )

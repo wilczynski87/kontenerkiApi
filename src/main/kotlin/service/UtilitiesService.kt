@@ -11,8 +11,8 @@ interface UtilitiesService {
     suspend fun updateSubmeter(id: Long, submeter: Submeter): Submeter?
     suspend fun deleteSubmeter(id: Long): Boolean
 
-    suspend fun getReadings(): List<Reading>
-    suspend fun getReading(id:Long?): Reading?
+    suspend fun getReadings(submeterId: Long): List<Reading>
+    suspend fun getReading(id:Long): Reading?
     suspend fun postReading(reading:Reading): Reading?
     suspend fun updateReading(id: Long, reading: Reading): Reading?
     suspend fun deleteReading(id: Long): Boolean

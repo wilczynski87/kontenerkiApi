@@ -18,6 +18,7 @@ fun Application.configureRouting(
     csvService: CSVService,
     bankAccountService: BankAccountService,
     listingService: ListingService,
+    utilitiesService: UtilitiesService,
 ) {
     routing {
 
@@ -37,5 +38,6 @@ fun Application.configureRouting(
         CSVController(csvService, paymentService)
         bankAccountController(bankAccountService)
         listingRoute(listingService)
+        utilitiesController(utilitiesService)
     }
 }
