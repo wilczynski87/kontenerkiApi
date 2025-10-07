@@ -8,4 +8,5 @@ interface PaymentRepo {
     suspend fun createPayment(payment: Payment): Payment
     suspend fun updatePayment(payment: Payment): Payment
     suspend fun readPaymentsFromStatement(): List<Payment>
+    suspend fun isPaymentWithReferenceNr(referenceNumber: String): Boolean
 }

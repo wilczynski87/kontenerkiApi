@@ -1,6 +1,7 @@
 package com.kontenery
 
 
+import com.kontenery.library.utils.Env
 import com.kontenery.repository.entity.*
 import com.kontenery.repository.entity.invoice.*
 import org.jetbrains.exposed.sql.Database
@@ -16,6 +17,7 @@ fun configureDatabases() {
     val DB_NAME = System.getenv("DB_NAME")
     val DB_USER = System.getenv("DB_USER")
     val DB_PASSWORD = System.getenv("DB_PASSWORD")
+    val env: Env = Env.valueOf(System.getenv("ENV") ?: "DEV")
     val url = "jdbc:postgresql://$DB_HOST:$DB_PORT/$DB_NAME"
     println()
     println("url: $url, user: $DB_USER, password: $DB_PASSWORD")
@@ -27,18 +29,19 @@ fun configureDatabases() {
     val database: Database = Database.connect(connection)
 
     transaction(database) {
-//        arrayOf(
-//            AddressTable,
-//            ClientPersonalDataTable, ClientCompanyDataTable, ClientTable,
-//            ProductTable,
-//            ContractTable, DepositTable,
-//            Subjects, Positions, InvoiceTable,
-//            BillTable, PositionsBill,
-//            PaymentTable, PaymentInvoices,
-//            ClientBankAccountTable,
-//        )
-//        Unit
-        SchemaUtils.createMissingTablesAndColumns(
+        if(env == Env.PROD) {
+            arrayOf(
+                AddressTable,
+                ClientPersonalDataTable, ClientCompanyDataTable, ClientTable,
+                ProductTable,
+                ContractTable, DepositTable,
+                Subjects, Positions, InvoiceTable,
+                BillTable, PositionsBill,
+                PaymentTable, PaymentInvoices,
+                ClientBankAccountTable,
+            )
+            Unit
+        } else SchemaUtils.createMissingTablesAndColumns(
             AddressTable,
             ClientPersonalDataTable, ClientCompanyDataTable, ClientTable,
             ProductTable,

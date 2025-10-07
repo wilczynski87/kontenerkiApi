@@ -5,9 +5,10 @@ import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
+import org.jetbrains.exposed.sql.ReferenceOption
 
 object PositionsBill : LongIdTable() {
-    val bill = reference("bill_id", BillTable)
+    val bill = reference("bill_id", BillTable, onDelete = ReferenceOption.CASCADE)
     val productName = varchar("product_name", 255)
     val unitPrice = varchar("unit_price", 30)
     val quantity = varchar("quantity", 30)  // Updated to store as a string

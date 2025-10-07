@@ -37,6 +37,7 @@ services:
       DB_USER: admin_user
       EMAIL_HOST: email
       EMAIL_PORT: 8200
+#      ENV: PROD
     depends_on:
       db:
         condition: service_healthy
@@ -50,13 +51,13 @@ services:
     expose:
       - 8200
     ports:
-      - "8200:8200"`
+      - "8200:8200"
     environment:
       EMAIL_PASSWORD: litcviutipqwkxsw
       EMAIL_USER: parkingostrowskiego@gmail.com
       API_NAME: api
       API_PORT: 8100
-#      ENV: PROD
+      ENV: PROD
 
 volumes:
   postgres_data:

@@ -19,6 +19,7 @@ object PaymentTable: LongIdTable("payments") {
     val toAccount = enumerationByName("to_account", 50, SellerAccount::class).nullable()
     val fromAccount = varchar("from_account", 100).nullable()
     val title = varchar("title", 255).nullable()
+    val referenceNumber = varchar("reference_number", 100).nullable()
 }
 
 class PaymentEntity(id: EntityID<Long>) : LongEntity(id) {
@@ -31,6 +32,7 @@ class PaymentEntity(id: EntityID<Long>) : LongEntity(id) {
     var toAccount by PaymentTable.toAccount
     var fromAccount by PaymentTable.fromAccount
     var title by PaymentTable.title
+    var referenceNumber by PaymentTable.referenceNumber
 
     // Assuming many-to-many relationship with Invoice
     var forInvoices by InvoiceEntity via PaymentInvoices
@@ -44,7 +46,8 @@ class PaymentEntity(id: EntityID<Long>) : LongEntity(id) {
         toAccount = toAccount,
         fromAccount = fromAccount,
         title = title,
-        forInvoices = forInvoices.map { it.toDomain() }
+        forInvoices = forInvoices.map { it.toDomain() },
+        referenceNumber = referenceNumber,
     )
 
 }

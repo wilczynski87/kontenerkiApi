@@ -5,7 +5,7 @@ import com.kontenery.library.model.Payment
 import com.kontenery.library.model.PaymentDto
 import com.kontenery.library.model.invoice.Invoice
 import com.kontenery.library.utils.SellerAccount
-import com.kontenery.library.utils.startOfCurrentYear
+import com.kontenery.library.utils.errors.PaymentError
 import com.kontenery.repository.PaymentRepo
 import com.kontenery.service.ClientService
 import com.kontenery.service.InvoiceService
@@ -14,10 +14,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.datetime.LocalDate
-import java.math.RoundingMode
-import java.text.DecimalFormat
-import java.util.*
-import kotlin.math.roundToInt
 
 class PaymentServiceImpl(
     private val paymentRepo: PaymentRepo,
@@ -57,10 +53,24 @@ class PaymentServiceImpl(
         TODO("Not yet implemented")
     }
 
+    override suspend fun validatePayment(
+        newPayment: Payment,
+        errors: MutableList<PaymentError>?
+    ): Boolean {
+        if(newPayment.referenceNumber.isNullOrBlank()) return true
+
+        // if payment in db with given db -> return null because we do not want duplicates
+        if(paymentRepo.isPaymentWithReferenceNr(newPayment.referenceNumber!!)) {
+            println("payment already in DB: ${newPayment.referenceNumber}")
+            return false
+        }
+        return true
+    }
+
 
     private suspend fun dtoToPayment(dto: PaymentDto): Payment {
         val client: Client? = dto.fromClientId?.let { clientService.findClientById(it) }
-
+        println("client for payment: $client")
         assert(
             client != null
             || dto.amount != null
@@ -78,7 +88,8 @@ class PaymentServiceImpl(
             toAccount = toAccount,
             fromAccount = dto.fromAccount,
             title = dto.title,
-            forInvoices = forInvoicesMapper(dto.forInvoices!!)
+            forInvoices = forInvoicesMapper(dto.forInvoices!!),
+            referenceNumber = dto.referenceNumber
         )
     }
 

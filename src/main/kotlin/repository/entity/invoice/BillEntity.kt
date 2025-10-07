@@ -8,6 +8,7 @@ import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.LongIdTable
+import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 
 object BillTable: LongIdTable() {
@@ -15,8 +16,8 @@ object BillTable: LongIdTable() {
     val billTitle = varchar("bill_title", 250)
     val billDate = date("bill_date")
 
-    val seller = reference("seller_id", Subjects)
-    val customer = reference("customer_id", Subjects)
+    val seller = reference("seller_id", Subjects, onDelete = ReferenceOption.CASCADE)
+    val customer = reference("customer_id", Subjects, onDelete = ReferenceOption.CASCADE)
 
     val priceSum = varchar("price_sum", 30)
 

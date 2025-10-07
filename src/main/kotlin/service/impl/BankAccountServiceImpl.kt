@@ -22,6 +22,7 @@ class BankAccountServiceImpl(private val repo: ClientBankAccountRepository): Ban
 
     override suspend fun findClientByAccountNumber(accountNumber: String): Client? {
         val updatedBankAccount: String = accountNumber.filterNot { it.isWhitespace() }
+            .ensurePrefix()
         return repo.findClientByAccountNumber(updatedBankAccount)
     }
 
@@ -36,5 +37,13 @@ class BankAccountServiceImpl(private val repo: ClientBankAccountRepository): Ban
 
     override suspend fun delete(id: Long): Boolean {
         return repo.delete(id)
+    }
+
+    private fun String.ensurePrefix(prefix: String = "PL"): String {
+        return if (this.matches(Regex("^[A-Z]{2,3}.*"))) {
+            this
+        } else {
+            prefix + this
+        }
     }
 }

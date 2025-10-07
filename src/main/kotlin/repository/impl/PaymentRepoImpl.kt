@@ -9,6 +9,7 @@ import kotlinx.datetime.LocalDate
 import org.jetbrains.exposed.dao.with
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 class PaymentRepoImpl: PaymentRepo {
     override suspend fun getPaymentsByClient(
@@ -19,7 +20,7 @@ class PaymentRepoImpl: PaymentRepo {
         to: LocalDate
     ): List<Payment> {
         val countOffset: Long = (page * size).toLong()
-        return suspendTransaction {
+        return newSuspendedTransaction {
             PaymentEntity
                 .find {
                     (PaymentTable.fromClient eq clientId) and
@@ -40,7 +41,7 @@ class PaymentRepoImpl: PaymentRepo {
         val invoicesNumber: List<String> = payment.forInvoices.map { it.invoiceNumber!! }
         val invoices: SizedIterable<InvoiceEntity> = InvoiceEntity.find { InvoiceTable.invoiceNumber inList invoicesNumber }
 
-        println("payment: $payment")
+//        println("payment in createPayment: $payment")
 
         PaymentEntity.new {
             amount = payment.amount
@@ -51,14 +52,21 @@ class PaymentRepoImpl: PaymentRepo {
             fromAccount = payment.fromAccount
             title = payment.title
             forInvoices = invoices
+            referenceNumber = payment.referenceNumber
         }.toDomain()
     }
 
-    override suspend fun updatePayment(payment: Payment): Payment {
+    override suspend fun updatePayment(payment: Payment): Payment = newSuspendedTransaction {
         TODO("Not yet implemented")
     }
 
-    override suspend fun readPaymentsFromStatement(): List<Payment> {
+    override suspend fun readPaymentsFromStatement(): List<Payment> = newSuspendedTransaction {
         TODO("Not yet implemented")
+    }
+
+    override suspend fun isPaymentWithReferenceNr(referenceNumber: String): Boolean = newSuspendedTransaction {
+        PaymentEntity.find {
+            PaymentTable.referenceNumber eq referenceNumber
+        }.any()
     }
 }
