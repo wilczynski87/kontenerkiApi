@@ -69,4 +69,13 @@ class PaymentRepoImpl: PaymentRepo {
             PaymentTable.referenceNumber eq referenceNumber
         }.any()
     }
+
+    override suspend fun isDuplicate(newPayment: Payment): Boolean = newSuspendedTransaction {
+        PaymentEntity.find {
+            (PaymentTable.amount eq newPayment.amount) and
+            (PaymentTable.date eq newPayment.date) and
+            (PaymentTable.title eq newPayment.title) and
+            (PaymentTable.fromClient eq newPayment.fromClient?.id)
+        }.any()
+    }
 }

@@ -25,7 +25,7 @@ class CSVServiceImpl(
                 .drop(1)
                 .dropLast(1)
                 .map { it.split(";") }
-                .map { list ->
+                .mapNotNull { list ->
                     async {
                         try {
                             fromCsvLine(list)
@@ -43,53 +43,24 @@ class CSVServiceImpl(
     }
 
     override suspend fun readCSVAlior(csv: String): List<Payment> {
-        val lines = csv
-            .lineSequence()
-            .dropWhile { !it.startsWith("Data transakcji") } // pomiń wiersze nagłówka banku
-            .filter { it.isNotBlank() }
-            .toList()
-
-        if (lines.size < 2) return emptyList() // brak danych
-
-        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
-
-        return lines
-            .drop(1) // pomiń nagłówek CSV
-            .mapNotNull { line ->
-                val parts = line.split(";")
-
-                if (parts.size < 11) return@mapNotNull null // niekompletna linia
-
-                try {
-////                    val transactionDate = LocalDate.parse(parts[0])
-//                    val bookingDate = java.time.LocalDate.parse(parts[1], formatter).toKotlinLocalDate()
-//                    val senderName = parts[2].trim()
-//                    val recipientName = parts[3].trim()
-//                    val details = parts[4].trim()
-//                    val amount = BigDecimal(parts[5].replace(",", "."))
-//                    val operationCurrency = parts[6].trim()
-//                    val accountAmount = BigDecimal(parts[7].replace(",", "."))
-//                    val accountCurrency = parts[8].trim()
-//                    val senderAccount = parts[9].trim()
-//                    val recipientAccount = parts[10].trim()
-//
-//                    Payment(
-//                        amount = amount,
-//                        date = bookingDate,
-//                        fromClient = null,
-//                        method = null,
-//                        toAccount = SellerAccount.PRIVATE,
-//                        fromAccount = senderAccount,
-//                        title = details,
-//                        forInvoices = listOf(),
-//                        referenceNumber = null,
-//                    )
-                    fromCsvLineAlior(parts).CSVtoPaymentMapper()
-                } catch (e: Exception) {
-                    println("Błąd parsowania wiersza: $line → ${e.message}")
-                    null
-                }
-            }
+        return coroutineScope {
+            async {
+                csv.lineSequence()
+                    .dropWhile { !it.startsWith("Data transakcji") } // pomiń wiersze nagłówka banku
+                    .filter { it.isNotBlank() }
+                    .drop(1)// pomiń nagłówek CSV
+                    .toList()
+                    .mapNotNull { line ->
+                            val parts = line.split(";")
+                            try {
+                                fromCsvLineAlior(parts).CSVtoPaymentMapper()
+                            } catch (e: Exception) {
+                                println("Błąd parsowania wiersza: $line → ${e.message}")
+                                null
+                            }
+                    }
+            }.await()
+        }
     }
     private fun fromCsvLineAlior(list: List<String>): CSVData {
         val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
@@ -129,7 +100,6 @@ class CSVServiceImpl(
     }
 
     private suspend fun CSVData.CSVtoPaymentMapper(): Payment {
-
         val client: Client? = bankAccountService.findClientByAccountNumber(this.rachunekZrodlowy)
 //        println("this.rachunekZrodlowy: ${this.rachunekZrodlowy} -> ${client?.getName()}")
 

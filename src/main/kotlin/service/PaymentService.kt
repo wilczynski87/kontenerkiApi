@@ -14,4 +14,5 @@ interface PaymentService {
     suspend fun clientOverdue(clientId: Long, from: LocalDate, to: LocalDate): Double
     // If validatePayment is TRUE -> there is no payment in db, we can proceed further
     suspend fun validatePayment(newPayment: Payment, errors: MutableList<PaymentError>? = null): Boolean
+    suspend fun validatePaymentByParams(newPayment: Payment, errors: MutableList<PaymentError>? = null): Boolean
 }

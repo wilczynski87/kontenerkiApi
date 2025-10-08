@@ -57,13 +57,26 @@ class PaymentServiceImpl(
         newPayment: Payment,
         errors: MutableList<PaymentError>?
     ): Boolean {
-        if(newPayment.referenceNumber.isNullOrBlank()) return true
+        if(newPayment.referenceNumber.isNullOrBlank()) return paymentRepo.isDuplicate(newPayment)
 
         // if payment in db with given db -> return null because we do not want duplicates
         if(paymentRepo.isPaymentWithReferenceNr(newPayment.referenceNumber!!)) {
             println("payment already in DB: ${newPayment.referenceNumber}")
             return false
         }
+        return true
+    }
+
+    override suspend fun validatePaymentByParams(
+        newPayment: Payment,
+        errors: MutableList<PaymentError>?
+    ): Boolean {
+        // give false when find similar in DB
+        if(paymentRepo.isDuplicate(newPayment)) {
+            println("payment error: $newPayment")
+            return false
+        }
+        println("Z płatnością ok od: ${newPayment.fromClient?.getName()}")
         return true
     }
 

@@ -51,8 +51,10 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService) 
             try {
                 val rawCSV: MessageRequest = call.receive<MessageRequest>()
 //                println("rawCSV: $rawCSV")
+                val errors: MutableList<PaymentError> = mutableListOf()
                 coroutineScope {
                     val newPayments: List<Payment> = csvService.readCSVAlior(rawCSV.message)
+                        .filter { paymentService.validatePaymentByParams(it, errors) }
                     newPayments.forEach { println("payment: $it") }
                 }
                 call.respond(MessageRequest("OK"))

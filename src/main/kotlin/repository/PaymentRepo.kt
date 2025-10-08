@@ -9,4 +9,5 @@ interface PaymentRepo {
     suspend fun updatePayment(payment: Payment): Payment
     suspend fun readPaymentsFromStatement(): List<Payment>
     suspend fun isPaymentWithReferenceNr(referenceNumber: String): Boolean
+    suspend fun isDuplicate(newPayment: Payment): Boolean
 }
