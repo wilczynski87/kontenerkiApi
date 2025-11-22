@@ -42,13 +42,14 @@ jobs:
         run: |
           rsync -az --delete --exclude '.git' --exclude '.github' ./ vps:/opt/app/
           rsync -az --delete ./kontenerkiEmail/ vps:/opt/kontenerkiEmail/
-
+          
       - name: Build and deploy (zero downtime)
         run: |
           ssh vps "
-            cd /opt/app && \
-            docker compose pull && \
-            docker compose build && \
-            docker compose up -d --no-deps --build --force-recreate api && \
-            docker compose up -d --no-deps --build --force-recreate email
+            docker rm -f api email || true
+            cd /opt/app
+            docker compose pull
+            docker compose build
+            docker compose up -d --no-deps --build api
+            docker compose up -d --no-deps --build email
           "
