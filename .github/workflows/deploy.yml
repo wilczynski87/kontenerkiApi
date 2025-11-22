@@ -2,16 +2,16 @@ name: Deploy to VPS
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout main repo
         uses: actions/checkout@v4
-        
+
       - name: Configure SSH
         env:
           HOST: ${{ secrets.VPS_HOST }}
@@ -21,7 +21,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-      
+
           cat <<EOF > ~/.ssh/config
           Host vps
             HostName $HOST
@@ -31,16 +31,27 @@ jobs:
             StrictHostKeyChecking no
           EOF
 
-      - name: Sync project to VPS
+      - name: Upload main repo to VPS
         run: |
-          rsync -az \
-            --delete \
+          rsync -az --delete \
             --exclude '.git' \
             --exclude '.github' \
-            --exclude 'README.md' \
             ./ vps:/opt/app/
 
-      - name: Build images + zero-downtime deploy
+      - name: Ensure email repo exists on VPS
+        env:
+          EMAIL_REPO_URL: ${{ secrets.EMAIL_REPO_URL }}
+          EMAIL_REPO_BRANCH: ${{ secrets.EMAIL_REPO_BRANCH }}
+        run: |
+          ssh vps "
+            if [ ! -d /opt/kontenerkiEmail ]; then
+              git clone -b $EMAIL_REPO_BRANCH $EMAIL_REPO_URL /opt/kontenerkiEmail
+            else
+              cd /opt/kontenerkiEmail && git fetch && git reset --hard origin/$EMAIL_REPO_BRANCH
+            fi
+          "
+
+      - name: Build and deploy (zero downtime)
         run: |
           ssh vps "
             cd /opt/app && \
