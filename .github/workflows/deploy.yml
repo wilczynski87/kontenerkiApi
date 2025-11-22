@@ -12,6 +12,13 @@ jobs:
       - name: Checkout main repo
         uses: actions/checkout@v4
 
+      - name: Checkout email repo
+        uses: actions/checkout@v4
+        with:
+          repository: wilczynski87/kontenerkiEmail
+          token: ${{ secrets.GH_PAT }}
+          path: kontenerkiEmail
+      
       - name: Configure SSH
         env:
           HOST: ${{ secrets.VPS_HOST }}
@@ -31,25 +38,13 @@ jobs:
             StrictHostKeyChecking no
           EOF
 
-      - name: Upload main repo to VPS
+      - name: Upload both repos to VPS
         run: |
           rsync -az --delete \
             --exclude '.git' \
             --exclude '.github' \
             ./ vps:/opt/app/
-
-      - name: Ensure email repo exists on VPS
-        env:
-          EMAIL_REPO_URL: ${{ secrets.EMAIL_REPO_URL }}
-          EMAIL_REPO_BRANCH: ${{ secrets.EMAIL_REPO_BRANCH }}
-        run: |
-          ssh vps "
-            if [ ! -d /opt/kontenerkiEmail ]; then
-              git clone -b $EMAIL_REPO_BRANCH $EMAIL_REPO_URL /opt/kontenerkiEmail
-            else
-              cd /opt/kontenerkiEmail && git fetch && git reset --hard origin/$EMAIL_REPO_BRANCH
-            fi
-          "
+          rsync -az --delete ./kontenerkiEmail/ vps:/opt/kontenerkiEmail/
 
       - name: Build and deploy (zero downtime)
         run: |
