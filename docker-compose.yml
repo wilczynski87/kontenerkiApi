@@ -12,7 +12,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ~/backups/postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U admin_user" ]
       interval: 10s
@@ -58,6 +58,3 @@ services:
       API_NAME: api
       API_PORT: 8100
       ENV: PROD
-
-volumes:
-  postgres_data:
