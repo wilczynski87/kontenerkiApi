@@ -18,7 +18,7 @@ jobs:
           repository: wilczynski87/kontenerkiEmail
           token: ${{ secrets.GH_PAT }}
           path: kontenerkiEmail
-      
+
       - name: Configure SSH
         env:
           HOST: ${{ secrets.VPS_HOST }}
@@ -40,10 +40,7 @@ jobs:
 
       - name: Upload both repos to VPS
         run: |
-          rsync -az --delete \
-            --exclude '.git' \
-            --exclude '.github' \
-            ./ vps:/opt/app/
+          rsync -az --delete --exclude '.git' --exclude '.github' ./ vps:/opt/app/
           rsync -az --delete ./kontenerkiEmail/ vps:/opt/kontenerkiEmail/
 
       - name: Build and deploy (zero downtime)
