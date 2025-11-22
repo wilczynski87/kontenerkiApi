@@ -11,18 +11,22 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
+        
       - name: Configure SSH
+        env:
+          HOST: ${{ secrets.VPS_HOST }}
+          USER: ${{ secrets.VPS_USER }}
+          PORT: ${{ secrets.VPS_PORT }}
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-
+      
           cat <<EOF > ~/.ssh/config
           Host vps
-            HostName ${ secrets.VPS_HOST }
-            User ${ secrets.VPS_USER }
-            Port ${ secrets.VPS_PORT }
+            HostName $HOST
+            User $USER
+            Port $PORT
             IdentityFile ~/.ssh/id_rsa
             StrictHostKeyChecking no
           EOF
