@@ -9,20 +9,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set up SSH
+      - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          printf "Host vps\n  HostName %s\n  User %s\n  Port %s\n  IdentityFile ~/.ssh/id_rsa\n" \
-            "${{ secrets.VPS_HOST }}" \
-            "${{ secrets.VPS_USER }}" \
-            "${{ secrets.VPS_PORT || '22' }}" \
-            >> ~/.ssh/config
 
-      - name: Deploy via rsync
+          cat <<EOF > ~/.ssh/config
+          Host vps
+            HostName ${ secrets.VPS_HOST }
+            User ${ secrets.VPS_USER }
+            Port ${ secrets.VPS_PORT }
+            IdentityFile ~/.ssh/id_rsa
+            StrictHostKeyChecking no
+          EOF
+
+      - name: Sync project to VPS
         run: |
-          ls
+          rsync -az \
+            --delete \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'README.md' \
+            ./ vps:/opt/app/
+
+      - name: Build images + zero-downtime deploy
+        run: |
+          ssh vps "
+            cd /opt/app && \
+            docker compose pull && \
+            docker compose build && \
+            docker compose up -d --no-deps --build api && \
+            docker compose up -d --no-deps --build email
+          "
