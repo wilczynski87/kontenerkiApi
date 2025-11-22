@@ -1,0 +1,28 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          printf "Host vps\n  HostName %s\n  User %s\n  Port %s\n  IdentityFile ~/.ssh/id_rsa\n" \
+            "${{ secrets.VPS_HOST }}" \
+            "${{ secrets.VPS_USER }}" \
+            "${{ secrets.VPS_PORT || '22' }}" \
+            >> ~/.ssh/config
+
+      - name: Deploy via rsync
+        run: |
+          ls
