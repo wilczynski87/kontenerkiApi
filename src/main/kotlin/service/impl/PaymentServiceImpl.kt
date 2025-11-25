@@ -42,7 +42,7 @@ class PaymentServiceImpl(
     }
 
     override suspend fun deletePayment(paymentId: Long): Boolean {
-        TODO("Not yet implemented")
+        return paymentRepo.deletePayment(paymentId)
     }
 
     override suspend fun readPaymentsFromStatement(): List<Payment> {
@@ -57,7 +57,7 @@ class PaymentServiceImpl(
         newPayment: Payment,
         errors: MutableList<PaymentError>?
     ): Boolean {
-        if(newPayment.referenceNumber.isNullOrBlank()) return paymentRepo.isDuplicate(newPayment)
+        if(newPayment.referenceNumber.isNullOrBlank()) return paymentRepo.isDuplicate(newPayment).not()
 
         // if payment in db with given db -> return null because we do not want duplicates
         if(paymentRepo.isPaymentWithReferenceNr(newPayment.referenceNumber!!)) {

@@ -78,4 +78,10 @@ class PaymentRepoImpl: PaymentRepo {
             (PaymentTable.fromClient eq newPayment.fromClient?.id)
         }.any()
     }
+
+    override suspend fun deletePayment(paymentId: Long): Boolean {
+        return newSuspendedTransaction {
+            PaymentEntity.findById(paymentId)?.delete() != null
+        }
+    }
 }
