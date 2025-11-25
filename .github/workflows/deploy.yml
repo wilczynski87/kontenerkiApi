@@ -46,7 +46,7 @@ jobs:
       - name: Build and deploy (zero downtime)
         run: |
           ssh vps "
-            docker rm -f api email db || true
+            docker rm -f api email || true
             cd /opt/app
             docker compose pull
             docker compose build
