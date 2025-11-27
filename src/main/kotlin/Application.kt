@@ -12,6 +12,7 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
+
     println("App MAIN API started")
 
     val addressRepo: AddressRepo = AddressRepoImpl()
