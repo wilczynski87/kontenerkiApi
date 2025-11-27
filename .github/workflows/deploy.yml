@@ -1,3 +1,58 @@
+#name: Deploy to VPS
+#
+#on:
+#  push:
+#    branches: [ "master" ]
+#
+#jobs:
+#  deploy:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout main repo
+#        uses: actions/checkout@v4
+#
+#      - name: Checkout email repo
+#        uses: actions/checkout@v4
+#        with:
+#          repository: wilczynski87/kontenerkiEmail
+#          token: ${{ secrets.GH_PAT }}
+#          path: kontenerkiEmail
+#
+#      - name: Configure SSH
+#        env:
+#          HOST: ${{ secrets.VPS_HOST }}
+#          USER: ${{ secrets.VPS_USER }}
+#          PORT: ${{ secrets.VPS_PORT }}
+#        run: |
+#          mkdir -p ~/.ssh
+#          echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
+#          chmod 600 ~/.ssh/id_rsa
+#
+#          cat <<EOF > ~/.ssh/config
+#          Host vps
+#            HostName $HOST
+#            User $USER
+#            Port $PORT
+#            IdentityFile ~/.ssh/id_rsa
+#            StrictHostKeyChecking no
+#          EOF
+#
+#      - name: Upload both repos to VPS
+#        run: |
+#          rsync -az --delete --exclude '.git' --exclude '.github' ./ vps:/opt/app/
+#          rsync -az --delete ./kontenerkiEmail/ vps:/opt/kontenerkiEmail/
+#
+#      - name: Build and deploy (zero downtime)
+#        run: |
+#          ssh vps "
+#            docker rm -f api email || true
+#            cd /opt/app
+#            docker compose pull
+#            docker compose build
+#            docker compose up -d --build
+#          "
+
 name: Deploy to VPS
 
 on:
@@ -12,43 +67,32 @@ jobs:
       - name: Checkout main repo
         uses: actions/checkout@v4
 
-      - name: Checkout email repo
-        uses: actions/checkout@v4
-        with:
-          repository: wilczynski87/kontenerkiEmail
-          token: ${{ secrets.GH_PAT }}
-          path: kontenerkiEmail
-
       - name: Configure SSH
-        env:
-          HOST: ${{ secrets.VPS_HOST }}
-          USER: ${{ secrets.VPS_USER }}
-          PORT: ${{ secrets.VPS_PORT }}
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
-          cat <<EOF > ~/.ssh/config
-          Host vps
-            HostName $HOST
-            User $USER
-            Port $PORT
-            IdentityFile ~/.ssh/id_rsa
-            StrictHostKeyChecking no
-          EOF
-
-      - name: Upload both repos to VPS
+      - name: Upload repo to VPS
         run: |
-          rsync -az --delete --exclude '.git' --exclude '.github' ./ vps:/opt/app/
-          rsync -az --delete ./kontenerkiEmail/ vps:/opt/kontenerkiEmail/
-          
-      - name: Build and deploy (zero downtime)
+          rsync -avz --delete \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'node_modules' \
+            ./ vps:/opt/app/
+
+      - name: Build and deploy
         run: |
           ssh vps "
-            docker rm -f api email || true
             cd /opt/app
+            docker compose down
             docker compose pull
-            docker compose build
-            docker compose up -d --build
+            docker compose build --no-cache
+            docker compose up -d
           "
+
+      - name: Health check
+        run: |
+          ssh vps "docker ps && docker logs app-api-1"
+          

@@ -6,6 +6,7 @@ import com.kontenery.library.model.PaymentDto
 import com.kontenery.library.model.invoice.Invoice
 import com.kontenery.library.utils.SellerAccount
 import com.kontenery.library.utils.errors.PaymentError
+import com.kontenery.library.utils.errors.ValidationErrorType
 import com.kontenery.repository.PaymentRepo
 import com.kontenery.service.ClientService
 import com.kontenery.service.InvoiceService
@@ -20,7 +21,6 @@ class PaymentServiceImpl(
     private val clientService: ClientService,
     private val invoiceService: InvoiceService,
 ): PaymentService {
-
     override suspend fun getPaymentsByClient(
         page: Int,
         size: Int,
@@ -30,34 +30,40 @@ class PaymentServiceImpl(
     ): List<Payment> {
         return paymentRepo.getPaymentsByClient(page, size, clientId, from, to)
     }
-
     override suspend fun createPayment(paymentDto: PaymentDto): Payment {
         val payment: Payment = dtoToPayment(paymentDto)
         return paymentRepo.createPayment(payment)
     }
-
     override suspend fun updatePayment(paymentDto: PaymentDto): Payment {
         val payment: Payment = dtoToPayment(paymentDto)
         return paymentRepo.updatePayment(payment)
     }
-
     override suspend fun deletePayment(paymentId: Long): Boolean {
         return paymentRepo.deletePayment(paymentId)
     }
-
     override suspend fun readPaymentsFromStatement(): List<Payment> {
         TODO("Not yet implemented")
     }
-
     override suspend fun clientOverdue(clientId: Long, from: LocalDate, to: LocalDate): Double {
         TODO("Not yet implemented")
     }
-
     override suspend fun validatePayment(
         newPayment: Payment,
         errors: MutableList<PaymentError>?
     ): Boolean {
-        if(newPayment.referenceNumber.isNullOrBlank()) return paymentRepo.isDuplicate(newPayment).not()
+        // it have to return TRUE if there is no error
+        if(newPayment.referenceNumber.isNullOrBlank()) {
+            val isDuplicated: Boolean = paymentRepo.isDuplicate(newPayment)
+            if(isDuplicated) {
+                errors?.add(
+                    PaymentError(
+                        ValidationErrorType.DUPLICATED.name,
+                        "Payment with same parameters already exists",
+                        newPayment
+                    )
+                )
+            }
+        }
 
         // if payment in db with given db -> return null because we do not want duplicates
         if(paymentRepo.isPaymentWithReferenceNr(newPayment.referenceNumber!!)) {

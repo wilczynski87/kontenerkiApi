@@ -41,7 +41,6 @@ class ContractServiceImpl(
         }
     }
 
-
     override suspend fun create(contractDto: ContractDto): Contract {
 
         val contract = Contract(

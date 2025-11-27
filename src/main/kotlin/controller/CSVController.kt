@@ -38,6 +38,7 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService) 
                                 logger.error("createPayment error")
                             }
                         }
+                    logger.info(errors.toString())
                 }
 
                 call.respond(MessageRequest("OK"))
