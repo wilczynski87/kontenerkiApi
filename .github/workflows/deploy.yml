@@ -67,39 +67,35 @@ jobs:
       - name: Checkout main repo
         uses: actions/checkout@v4
 
-      - name: Setup SSH
+      - name: Configure SSH
+        env:
+          HOST: ${{ secrets.VPS_HOST }}
+          USER: ${{ secrets.VPS_USER }}
+          PORT: ${{ secrets.VPS_PORT }}
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -p 8100 217.154.148.172 >> ~/.ssh/known_hosts
 
-      - name: Test SSH connection
-        run: |
-          ssh -p 8100 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            root@217.154.148.172 "echo 'SSH connection successful'"
+          cat <<EOF > ~/.ssh/config
+          Host vps
+            HostName $HOST
+            User $USER
+            Port $PORT
+            IdentityFile ~/.ssh/id_rsa
+            StrictHostKeyChecking no
+          EOF
 
       - name: Upload repo to VPS
         run: |
-          rsync -avz --delete \
-            --exclude '.git' \
-            --exclude '.github' \
-            --exclude 'node_modules' \
-            -e "ssh -p 8100 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
-            ./ root@217.154.148.172:/opt/app/
+          rsync -az --delete --exclude '.git' --exclude '.github' ./ vps:/opt/app/
 
-      - name: Build and deploy
+      - name: Build and deploy (zero downtime)
         run: |
-          ssh -p 8100 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            root@217.154.148.172 "
+          ssh vps "
+            docker rm -f api || true
             cd /opt/app
-            docker compose down
             docker compose pull
-            docker compose build --no-cache
-            docker compose up -d
+            docker compose build
+            docker compose up -d --build
           "
-
-      - name: Health check
-        run: |
-          ssh -p 8100 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            root@217.154.148.172 "docker ps"
