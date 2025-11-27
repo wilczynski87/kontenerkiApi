@@ -53,6 +53,7 @@
 #            docker compose up -d --build
 #          "
 
+
 name: Deploy to VPS
 
 on:
@@ -80,11 +81,13 @@ jobs:
             --exclude '.git' \
             --exclude '.github' \
             --exclude 'node_modules' \
-            ./ vps:/opt/app/
+            -e "ssh -p ${{ secrets.VPS_PORT }} -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+            ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/app/
 
       - name: Build and deploy
         run: |
-          ssh vps "
+          ssh -p ${{ secrets.VPS_PORT }} -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
             cd /opt/app
             docker compose down
             docker compose pull
@@ -94,5 +97,5 @@ jobs:
 
       - name: Health check
         run: |
-          ssh vps "docker ps && docker logs app-api-1"
-          
+          ssh -p ${{ secrets.VPS_PORT }} -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "docker ps"
