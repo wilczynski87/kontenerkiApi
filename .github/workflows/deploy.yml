@@ -72,12 +72,12 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -p 8100 217.154.148.172 >> ~/.ssh/known_hosts
 
       - name: Test SSH connection
         run: |
-          ssh -p ${{ secrets.VPS_PORT }} -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "echo 'SSH connection successful'"
+          ssh -p 8100 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            root@217.154.148.172 "echo 'SSH connection successful'"
 
       - name: Upload repo to VPS
         run: |
@@ -85,13 +85,13 @@ jobs:
             --exclude '.git' \
             --exclude '.github' \
             --exclude 'node_modules' \
-            -e "ssh -p ${{ secrets.VPS_PORT }} -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
-            ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/app/
+            -e "ssh -p 8100 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+            ./ root@217.154.148.172:/opt/app/
 
       - name: Build and deploy
         run: |
-          ssh -p ${{ secrets.VPS_PORT }} -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
+          ssh -p 8100 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            root@217.154.148.172 "
             cd /opt/app
             docker compose down
             docker compose pull
@@ -101,5 +101,5 @@ jobs:
 
       - name: Health check
         run: |
-          ssh -p ${{ secrets.VPS_PORT }} -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "docker ps"
+          ssh -p 8100 -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            root@217.154.148.172 "docker ps"
