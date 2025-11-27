@@ -53,7 +53,6 @@
 #            docker compose up -d --build
 #          "
 
-
 name: Deploy to VPS
 
 on:
@@ -68,12 +67,17 @@ jobs:
       - name: Checkout main repo
         uses: actions/checkout@v4
 
-      - name: Configure SSH
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Test SSH connection
+        run: |
+          ssh -p ${{ secrets.VPS_PORT }} -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "echo 'SSH connection successful'"
 
       - name: Upload repo to VPS
         run: |
