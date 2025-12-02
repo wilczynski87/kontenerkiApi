@@ -15,9 +15,7 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.util.*
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.toLocalDate
 import kotlinx.serialization.json.Json
 
 fun Route.invoiceRoutes(
@@ -69,7 +67,7 @@ fun Route.invoiceRoutes(
                 val to: LocalDate = call.queryParameters["to"]?.let { LocalDate.parse(it) } ?: LocalDate.now()
                 println("/{clientId}/forClient: clientId: $clientId, from: $from, to: $to")
 
-                val invoices: List<Invoice> = invoiceService.getInvoicesForClient(
+                val invoices: List<Invoice> = invoiceService.getInvoicesAndBillsForClient(
                     clientId = clientId,
                     from = from,
                     to = to

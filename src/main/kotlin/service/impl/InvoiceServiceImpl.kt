@@ -58,17 +58,18 @@ class InvoiceServiceImpl(
         return invoiceRepo.getInvoicesForDate(page, size, from, to)
     }
 
-    override suspend fun getInvoicesForClient(
+    override suspend fun getInvoicesAndBillsForClient(
         page: Int,
         size: Int,
         clientId: Long,
         from: LocalDate,
         to: LocalDate
     ): List<Invoice> {
-        val paysVat: Boolean = clientService.paysVat(clientId)
+//        val paysVat: Boolean = clientService.paysVat(clientId)
 
-        return if(paysVat) invoiceRepo.getInvoicesForClient(page, size, clientId, from, to)
-            else billRepo.getBillsForClient(page, size, clientId, from, to)
+//        return if(paysVat) invoiceRepo.getInvoicesForClient(page, size, clientId, from, to)
+//            else billRepo.getBillsForClient(page, size, clientId, from, to)
+        return invoiceRepo.getInvoicesForClient(page, size, clientId, from, to) + billRepo.getBillsForClient(page, size, clientId, from, to)
     }
 
     override suspend fun getInvoiceByNumber(invoiceNumber: String): Invoice? {

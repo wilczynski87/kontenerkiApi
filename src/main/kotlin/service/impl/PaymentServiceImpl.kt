@@ -62,12 +62,19 @@ class PaymentServiceImpl(
                         newPayment
                     )
                 )
+                return false
             }
         }
 
         // if payment in db with given db -> return null because we do not want duplicates
         if(paymentRepo.isPaymentWithReferenceNr(newPayment.referenceNumber!!)) {
-            println("payment already in DB: ${newPayment.referenceNumber}")
+            errors?.add(
+                PaymentError(
+                    ValidationErrorType.DUPLICATED.name,
+                    "Payment with REFERENCE nr already exists",
+                    newPayment
+                )
+            )
             return false
         }
         return true

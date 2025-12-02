@@ -39,7 +39,7 @@ services:
       EMAIL_HOST: email
       EMAIL_PORT: 8200
       API_PORT: 8100
-#      ENV: PROD
+      ENV: PROD
     depends_on:
       db:
         condition: service_healthy
@@ -60,7 +60,7 @@ services:
       API_NAME: api
       API_PORT: 8100
       EMAIL_PORT: 8200
-#      ENV: PROD
+      ENV: PROD
 
 volumes:
   postgres_data:

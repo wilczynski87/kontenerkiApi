@@ -24,7 +24,7 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService) 
 
                 coroutineScope {
                     val newPayments: List<Payment> = csvService.readCSV(rawCSV.message)
-//                payments.forEach { println("payment: $it") }
+                    newPayments.forEach { println("payment: $it") }
 
                     val errors: MutableList<PaymentError> = mutableListOf()
                     newPayments.filterNot { it.fromClient == null }
@@ -34,11 +34,14 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService) 
                             try {
 //                                println("it: ${it.referenceNumber}")
                                 paymentService.createPayment(it)
+                                logger.info("payment created: ${it.paymentId}")
                             } catch (e: Exception) {
-                                logger.error("createPayment error")
+                                logger.error("createPayment error: id:${it.paymentId} \n ${e.message}")
                             }
                         }
-                    logger.info(errors.toString())
+                    errors.forEach { error ->
+                        logger.info("payment error: ${error.title} - ${error.payment}")
+                    }
                 }
 
                 call.respond(MessageRequest("OK"))

@@ -60,8 +60,9 @@ class ListingServiceImpl(
 
             val payments: List<Payment> = paymentsRepo.getPaymentsByClient(0, 1000, client.id!!, from, to)
             val invoices: List<Invoice> =
-                if(client.needInvoice()) invoicesRepo.getInvoicesForClient(0, 1000, client.id!!, from, to)
-                else billRepo.getBillsForClient(0, 1000, client.id!!, from, to)
+                invoicesRepo.getInvoicesForClient(0, 1000, client.id!!, from, to) + billRepo.getBillsForClient(0, 1000, client.id!!, from, to)
+//                if(client.needInvoice()) invoicesRepo.getInvoicesForClient(0, 1000, client.id!!, from, to)
+//                else billRepo.getBillsForClient(0, 1000, client.id!!, from, to)
 
             val paymentSum = payments.sumOf { it.amount }
             val invoiceSum = invoices.sumOf { it.priceWithVatSum?.toBigDecimal() ?: it.priceSum?.toBigDecimal() ?: BigDecimal.ZERO }
