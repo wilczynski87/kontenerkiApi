@@ -52,6 +52,7 @@ class PaymentServiceImpl(
         errors: MutableList<PaymentError>?
     ): Boolean {
         // it have to return TRUE if there is no error
+//        println("newPayment.referenceNumber: ${newPayment.referenceNumber}, ${newPayment.fromClient?.getName()} ${newPayment.date} ${newPayment.amount}")
         if(newPayment.referenceNumber.isNullOrBlank()) {
             val isDuplicated: Boolean = paymentRepo.isDuplicate(newPayment)
             if(isDuplicated) {
@@ -64,10 +65,8 @@ class PaymentServiceImpl(
                 )
                 return false
             }
-        }
-
-        // if payment in db with given db -> return null because we do not want duplicates
-        if(paymentRepo.isPaymentWithReferenceNr(newPayment.referenceNumber!!)) {
+            // if payment in db with given db -> return null because we do not want duplicates
+        } else if(paymentRepo.isPaymentWithReferenceNr(newPayment.referenceNumber!!)) {
             errors?.add(
                 PaymentError(
                     ValidationErrorType.DUPLICATED.name,

@@ -15,7 +15,7 @@ COPY . .
 RUN gradle clean shadowJar --no-daemon
 
 # === Runtime stage ===
-FROM openjdk:25-ea-25-jdk-slim
+FROM openjdk:25-ea-21-jdk-slim
 WORKDIR /kontenerki
 
 # Copy the built JAR from the build stage
