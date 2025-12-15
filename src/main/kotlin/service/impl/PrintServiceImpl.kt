@@ -2,6 +2,8 @@ package com.kontenery.service.impl
 
 import com.kontenery.library.model.invoice.Invoice
 import com.kontenery.service.PrintService
+import io.github.cdimascio.dotenv.Dotenv
+import io.github.cdimascio.dotenv.dotenv
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.http.*
@@ -9,12 +11,12 @@ import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 
-val emailName:String = System.getenv("EMAIL_HOST") ?: throw NullPointerException("There is no email address")
-val emailPort:String = System.getenv("EMAIL_PORT") ?: throw NullPointerException("There is no email port")
-
 private val logger = LoggerFactory.getLogger("PrintServiceImpl")
 
-class PrintServiceImpl: PrintService {
+class PrintServiceImpl(emailName: String, emailPort: String): PrintService {
+//    val emailName:String = env["EMAIL_HOST"] ?: throw NullPointerException("There is no email address")
+//    val emailPort:String = env["EMAIL_PORT"] ?: throw NullPointerException("There is no email port")
+
     val client = HttpClient()
     private val emailContainerAddress = "http://$emailName:$emailPort/sendMailWithAttachment/withVat"
     private val printInvoicesAddress = "http://$emailName:$emailPort/printInvoices"

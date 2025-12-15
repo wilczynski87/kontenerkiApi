@@ -24,6 +24,7 @@ repositories {
 }
 
 dependencies {
+    implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
     implementation(libs.koin.ktor)
     implementation(libs.koin.logger.slf4j)
     implementation(libs.ktor.server.core)

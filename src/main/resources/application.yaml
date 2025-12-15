@@ -5,6 +5,37 @@ ktor:
   deployment:
     port: "$API_PORT:8100"
 
+api:
+  env: "$API_ENV:DEV"
+
+  email:
+    host: "$EMAIL_HOST:localhost"
+    port: "${EMAIL_PORT:8200"
+
+  db:
+    host: "$DB_HOST:db"
+    port: "$DB_PORT:5432"
+    name: "$DB_NAME:db1"
+    user: "$DB_USER:admin_user"
+    password: "$DB_PASSWORD:postgres"
+
+#ktor:
+#  application:
+#    modules:
+#      - com.kontenery.ApplicationKt.module
+#  deployment:
+#    port: ${API_PORT:8100}
+#
+#api:
+#  ENV: ${ENV:DEV}
+#  EMAIL_HOST: ${EMAIL_HOST:localhost}
+#  EMAIL_PORT: ${EMAIL_PORT:8200}
+#  DB_HOST: ${DB_HOST:db}
+#  DB_PORT: ${DB_PORT:5432}
+#  DB_NAME: ${DB_NAME:db1}
+#  DB_USER: ${DB_USER:admin_user}
+#  DB_PASSWORD: ${DB_PASSWORD:postgres}
+
 #postgres:
 #  url: "$DB_URL:jdbc:postgresql://localhost:5431/db1"
 #  url: "$DB_URL:jdbc:postgresql://localhost:5430/db1"
