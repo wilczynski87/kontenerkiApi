@@ -39,7 +39,7 @@ services:
       EMAIL_HOST: email
       EMAIL_PORT: 8200
       API_PORT: 8100
-      ENV: PROD
+      API_ENV: PROD
     depends_on:
       db:
         condition: service_healthy

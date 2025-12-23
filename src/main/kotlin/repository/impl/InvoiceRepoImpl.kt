@@ -15,6 +15,8 @@ import kotlinx.datetime.plus
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import java.text.NumberFormat
+import java.util.Locale
 
 class InvoiceRepoImpl(): InvoiceRepo {
 
@@ -196,8 +198,14 @@ class InvoiceRepoImpl(): InvoiceRepo {
 
     private fun String.roundSum(decimals: Int = 2): String {
         return this
+            .replace(',', '.')
             .toBigDecimal()                  // konwersja String → BigDecimal
             .setScale(decimals, java.math.RoundingMode.HALF_UP) // zaokrąglenie
             .toPlainString()                  // z powrotem na String
     }
+
+    private fun String.toDoublePl(): Double =
+        NumberFormat.getInstance(Locale("pl", "PL"))
+            .parse(this)?.toDouble()
+            ?: error("Nieprawidłowa liczba: $this")
 }
