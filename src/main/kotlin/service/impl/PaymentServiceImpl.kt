@@ -15,6 +15,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.datetime.LocalDate
+import java.math.BigDecimal
 
 class PaymentServiceImpl(
     private val paymentRepo: PaymentRepo,
@@ -106,7 +107,7 @@ class PaymentServiceImpl(
             else SellerAccount.PRIVATE
 
         return Payment(
-            amount = dto.amount!!,
+            amount = runCatching { dto.amount?.toBigDecimal() }.getOrNull() ?: BigDecimal.ZERO,
             date = dto.date!!,
             fromClient = client,
             method = dto.method,
