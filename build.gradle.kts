@@ -61,10 +61,16 @@ dependencies {
 
 tasks.withType<Jar> {
     manifest {
-        attributes["Main-Class"] = "com.kontenery.main.ApplicationKt"
+        attributes["Main-Class"] = "io.ktor.server.netty.EngineMain"
     }
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.shadowJar {
+    manifest {
+        attributes["Main-Class"] = "io.ktor.server.netty.EngineMain"
+    }
 }

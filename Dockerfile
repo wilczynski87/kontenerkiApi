@@ -6,7 +6,7 @@ COPY build.gradle.kts settings.gradle.kts gradle.properties ./
 COPY gradle ./gradle
 
 # Download dependencies
-RUN gradle build --no-daemon --stacktrace || true
+#RUN gradle build --no-daemon --stacktrace
 
 # Copy rest of the project and build it
 COPY . .
@@ -15,7 +15,7 @@ COPY . .
 RUN gradle clean shadowJar --no-daemon
 
 # === Runtime stage ===
-FROM openjdk:25-ea-21-jdk-slim
+FROM eclipse-temurin:21-jre
 WORKDIR /kontenerki
 
 # Copy the built JAR from the build stage
@@ -27,14 +27,14 @@ EXPOSE 8100
 # Evirnomental variables
 ENV DB_HOST=localhost
 ENV DB_NAME=db1
+ENV DB_PASSWORD=postgres
 ENV DB_PORT=5432
 ENV DB_USER=admin_user
-ENV DB_PASSWORD=postgres
-ENV POSTGRES_DB=db1
-ENV POSTGRES_PASSWORD=postgres
 ENV EMAIL_HOST=email
 ENV EMAIL_PORT=8200
-ENV EMAIL_NAME=email
+ENV API_PORT=8100
+ENV API_ENV=PROD
 
 # Run the app
 CMD ["java", "-jar", "api.jar"]
+
