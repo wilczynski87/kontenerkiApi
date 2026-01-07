@@ -160,12 +160,25 @@ fun Route.invoiceRoutes(
         }
 
         post("/{customerId}/custom") {
-            println("Custom Invoice create")
+            println("Custom Invoice creation:")
             try {
-                val customerId: Long = call.pathParameters["customerId"]?.toLong() ?: throw TypeCastException("customer Id is wrong /{customerId}/custom")
-                val client = clientService.findClientById(customerId) ?: throw NullPointerException("There is no such Client, with given Id: $customerId")
-                val invoice: Invoice = call.receive<Invoice>()
-                println("invoice String: $invoice")
+                val customerId: Long = call.pathParameters["customerId"]?.toLongOrNull() ?: return@post call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("error" to "Invalid customerId")
+                )
+                val client = clientService.findClientById(customerId) ?: return@post call.respond(
+                    HttpStatusCode.NotFound,
+                    mapOf("error" to "Client not found with id $customerId")
+                )
+
+                val invoice: Invoice = try {
+                    call.receive()
+                } catch (e: Exception) {
+                    return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Invalid invoice body: ${e.message}")
+                    )
+                }
 
                 val updatedInvoice: Invoice = invoice.copy(
                     customer = invoice.customer?.copy(
@@ -177,7 +190,10 @@ fun Route.invoiceRoutes(
                 println("invoice saved: $savedInvoice")
 
                 if(savedInvoice == null) {
-                    call.respond(HttpStatusCode.ExpectationFailed, "Could not save invoice")
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        mapOf("error" to "Could not save invoice")
+                    )
                 } else {
 //                    println("invoice is not null: $savedInvoice")
                     // Send Invoice to Clients
@@ -187,7 +203,10 @@ fun Route.invoiceRoutes(
                 }
             } catch (e:Exception) {
                 println("post invoice error: $e")
-                call.respond(e.message.toString())
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to e.message)
+                )
             }
         }
 

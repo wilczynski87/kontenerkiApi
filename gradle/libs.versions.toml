@@ -10,6 +10,7 @@ kontenerki-library-version = "master-SNAPSHOT"
 #kontenerki-library-version = "1.0.4"
 #ktor-cors-version = "2.3.5"
 junit-jupiter-version = "5.10.1"
+dotenv-ver = "6.5.1"
 
 [libraries]
 koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin-version" }
@@ -40,6 +41,7 @@ ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor-ve
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor-version" }
 #private-library = {module = "", version.ref = "ktor-version" }
 ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor-version" }
+dotenv = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "dotenv-ver"}
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-version" }
