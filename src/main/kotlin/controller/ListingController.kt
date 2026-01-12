@@ -1,7 +1,12 @@
 package com.kontenery.controller
 
+import com.kontenery.library.model.PaymentForFinanceTable
+import com.kontenery.library.model.PaymentsListForFinanceTable
 import com.kontenery.library.model.Product
 import com.kontenery.service.ListingService
+import io.ktor.client.call.body
+import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
@@ -27,6 +32,17 @@ fun Route.listingRoute(
             call.respond(clientListSize)
         }
 
+        get("/clientsPayments") {
+            val page: Int = call.request.queryParameters["page"]?.toInt() ?: 0
+            val size: Int = call.request.queryParameters["size"]?.toInt() ?: 100
+
+            val clientListPayments: List<PaymentsListForFinanceTable> = listingService.clientsFinancesList(page, size)
+            println("clientListPayments: $clientListPayments")
+
+
+            call.respond(clientListPayments)
+        }
+
 
 
 //        get("/allProducts") {
@@ -48,6 +64,8 @@ fun Route.listingRoute(
                 println(e)
             }
         }
+
+
 
 
     }

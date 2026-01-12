@@ -2,13 +2,21 @@ package com.kontenery.service.impl
 
 import com.kontenery.library.model.Client
 import com.kontenery.library.model.ClientOnList
+import com.kontenery.library.model.ClientOnListForFinance
 import com.kontenery.library.model.Payment
+import com.kontenery.library.model.PaymentForFinanceTable
+import com.kontenery.library.model.PaymentsListForFinanceTable
 import com.kontenery.library.model.Product
 import com.kontenery.library.model.invoice.Invoice
 import com.kontenery.library.utils.endOfCurrentYear
 import com.kontenery.library.utils.startOfCurrentYear
 import com.kontenery.repository.*
 import com.kontenery.service.ListingService
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -88,6 +96,38 @@ class ListingServiceImpl(
 
     override suspend fun productList(page: Int, size: Int): List<Product> {
         return productsRepo.getAllProduct(page, size)
+    }
+
+    override suspend fun clientsFinancesList(
+        page: Int,
+        size: Int,
+        from: LocalDate,
+        to: LocalDate,
+    ): List<PaymentsListForFinanceTable> = coroutineScope {
+
+        val clients = withContext(Dispatchers.IO) {
+            clientsRepo.getAllClients(page, size)
+        }
+
+        clients.map {
+            async {
+                val paymentsList: List<Payment> = paymentsRepo.getPaymentsByClient(0, 1000, it.id!!, from, to)
+
+                PaymentsListForFinanceTable(
+                    client = ClientOnListForFinance(
+                        it.id,
+                        it.getName()
+                    ),
+                    payments = paymentsList.map { payment ->
+                        PaymentForFinanceTable(
+                            payment.id,
+                            payment.date.toString(),
+                            payment.amount.toDouble(),
+                        )
+                    }
+                )
+            }
+        }.awaitAll()
     }
 
 }

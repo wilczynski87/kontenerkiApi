@@ -41,73 +41,22 @@ import com.kontenery.service.impl.PrintServiceImpl
 import com.kontenery.service.impl.ProductServiceImp
 import com.kontenery.service.impl.UtilitiesServiceImpl
 import com.kontenery.validator.validator
-import io.github.cdimascio.dotenv.dotenv
 import io.ktor.server.application.Application
 import io.ktor.server.application.log
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
 
 fun main(args: Array<String>) {
-    if (System.getenv("API_ENV") == null) {
-        dotenv {
-            directory = "."
-            filename = "api.env"
-            ignoreIfMissing = true
-            systemProperties = true
-        }
-    }
-    io.ktor.server.netty.EngineMain.main(args)
+//    io.ktor.server.netty.EngineMain.main(args)
+    embeddedServer(Netty, port = System.getenv("API_PORT")?.toInt() ?: 8100) {
+        module()
+    }.start(wait = true)
 }
 
 fun Application.module() {
     println("App MAIN API started")
     val apiConfig: ApiConfig = loadApiConfig()
     log.info("Environment: ${apiConfig.env}")
-
-
-//    val config = environment.config
-//    val production = config.propertyOrNull("api.ENV")?.getString() ?: "DEV"
-//    println("production is: $production")
-//    // PROD vs DEV
-//    var emailHost: String
-//    var emailPort: String
-//    var dbHost: String
-//    var dbPort: String
-//    var dbPassword: String
-//
-//    if(production.equals(Env.PROD.name, ignoreCase = true)) {
-//        println("PRODUCTION")
-//
-//        emailHost = config.propertyOrNull("api.EMAIL_HOST")?.getString()
-//            ?: throw NullPointerException("There is no email address")
-//        emailPort = config.propertyOrNull("api.EMAIL_PORT")?.getString()
-//            ?: throw NullPointerException("There is no email port")
-//        dbHost = config.propertyOrNull("api.DB_HOST")?.getString()
-//            ?: throw NullPointerException("There is no DB_HOST")
-//        dbPort = config.propertyOrNull("api.DB_PORT")?.getString()
-//            ?: throw NullPointerException("There is no DB_PORT")
-//        dbPassword = config.propertyOrNull("api.DB_PASSWORD")?.getString()
-//            ?: throw NullPointerException("There is no DB_PASSWORD")
-//
-//    } else {
-//        println("DEVELOPEMENT")
-//
-//        val env = dotenv {
-//            directory = "."
-//            filename = "api.env"
-//            ignoreIfMissing = false
-//            systemProperties = true
-//        }
-//
-//        emailHost = env["EMAIL_HOST"]
-//            ?: throw NullPointerException("There is no email address")
-//        emailPort = env["EMAIL_PORT"]
-//            ?: throw NullPointerException("There is no email port")
-//        dbHost = env["DB_HOST"]
-//            ?: throw NullPointerException("There is no DB_HOST")
-//        dbPort = env["DB_PORT"]
-//            ?: throw NullPointerException("There is no DB_PORT")
-//        dbPassword = env["DB_PASSWORD"]
-//            ?: throw NullPointerException("There is no DB_PASSWORD")
-//    }
 
     val addressRepo: AddressRepo = AddressRepoImpl()
     val addressService: AddressService = AddressServiceImpl(addressRepo)

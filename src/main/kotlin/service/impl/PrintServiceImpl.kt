@@ -2,8 +2,6 @@ package com.kontenery.service.impl
 
 import com.kontenery.library.model.invoice.Invoice
 import com.kontenery.service.PrintService
-import io.github.cdimascio.dotenv.Dotenv
-import io.github.cdimascio.dotenv.dotenv
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.http.*
