@@ -91,6 +91,14 @@ class ProductRepoImpl: ProductRepo {
             }
         }?.toYard() ?: throw NullPointerException("Nie udało się uaktualnic: $product")
     }
+
+    override suspend fun releaseProduct(id: Long): Boolean = suspendTransaction {
+        ProductEntity.findByIdAndUpdate(id) {
+            it.apply {
+                client = null
+            }
+        } != null
+    }
 }
 
 private fun mapProductByType(productEntity: ProductEntity): Product {

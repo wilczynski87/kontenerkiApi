@@ -49,4 +49,9 @@ class ProductServiceImp(private val productRepo: ProductRepo): ProductService {
         }
     }
 
+    override suspend fun releaseProduct(id: Long): Boolean {
+        return productRepo.releaseProduct(id)
+
+    }
+
 }

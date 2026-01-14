@@ -19,6 +19,8 @@ class PrintServiceImpl(emailName: String, emailPort: String): PrintService {
     private val emailContainerAddress = "http://$emailName:$emailPort/sendMailWithAttachment/withVat"
     private val printInvoicesAddress = "http://$emailName:$emailPort/printInvoices"
     private val sendInvoiceAgain = "http://$emailName:$emailPort/sendMailWithAttachment/sendInvoiceAgain"
+    private val rentIncrease = "http://$emailName:$emailPort/sendMailWithAttachment/rentIncrease"
+
 
     override suspend fun sendPeriodicInvoice(invoice: Invoice) {
         try {

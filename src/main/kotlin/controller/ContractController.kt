@@ -11,6 +11,7 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
+import java.lang.NullPointerException
 
 fun Route.contractRoutes(
     service: ContractService,
@@ -84,7 +85,12 @@ fun Route.contractRoutes(
 
         delete("{id}") {
             val id = call.parameters["id"]?.toLongOrNull() ?: return@delete call.respond(HttpStatusCode.BadRequest)
+            val productId: Long = service.getProductByContractId(id)?.id ?: return@delete call.respond(HttpStatusCode.BadRequest)
+
+            val productReleased: Boolean = productService.releaseProduct(productId)
+
             val deleted = service.delete(id)
+            
             if (deleted) call.respond(HttpStatusCode.NoContent)
             else call.respond(HttpStatusCode.NotFound)
         }

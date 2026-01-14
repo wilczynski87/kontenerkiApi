@@ -2,6 +2,7 @@ package com.kontenery.service
 
 import com.kontenery.library.model.Contract
 import com.kontenery.library.model.ContractDto
+import com.kontenery.library.model.Product
 import kotlinx.datetime.LocalDate
 
 interface ContractService {
@@ -11,6 +12,7 @@ interface ContractService {
     suspend fun getByClientId(clientId: Long, onlyActive:Boolean = false): List<Contract>
     suspend fun getByClientId(clientId: Long, fromDate:LocalDate, toDate: LocalDate): List<Contract>
     suspend fun getCurrentByProductId(productId: Long): Contract?
+    suspend fun getProductByContractId(contractId: Long): Product?
     suspend fun create(contractDto: ContractDto): Contract
     suspend fun save(contract: Contract): Contract?
     suspend fun update(contractId: Long, contractDto: ContractDto): Contract

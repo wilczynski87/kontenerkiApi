@@ -41,6 +41,10 @@ class ContractServiceImpl(
         }
     }
 
+    override suspend fun getProductByContractId(contractId: Long): Product? {
+        return repo.findById(contractId)?.product
+    }
+
     override suspend fun create(contractDto: ContractDto): Contract {
 
         val contract = Contract(
