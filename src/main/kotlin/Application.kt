@@ -19,6 +19,7 @@ import com.kontenery.repository.impl.PaymentRepoImpl
 import com.kontenery.repository.impl.ProductRepoImpl
 import com.kontenery.repository.impl.UtilitiesRepoImpl
 import com.kontenery.service.AddressService
+import com.kontenery.service.AuthService
 import com.kontenery.service.BankAccountService
 import com.kontenery.service.CSVService
 import com.kontenery.service.ClientService
@@ -30,6 +31,7 @@ import com.kontenery.service.PrintService
 import com.kontenery.service.ProductService
 import com.kontenery.service.UtilitiesService
 import com.kontenery.service.impl.AddressServiceImpl
+import com.kontenery.service.impl.AuthServiceImpl
 import com.kontenery.service.impl.BankAccountServiceImpl
 import com.kontenery.service.impl.CSVServiceImpl
 import com.kontenery.service.impl.ClientServiceImpl
@@ -89,12 +91,15 @@ fun Application.module() {
     val utilitiesRepo: UtilitiesRepo = UtilitiesRepoImpl()
     val utilitiesService: UtilitiesService = UtilitiesServiceImpl(utilitiesRepo)
 
+    val authService: AuthService = AuthServiceImpl(apiConfig)
+
+
     logger()
     configureFrameworks()
     configureSerialization()
     configureDatabases(apiConfig)
     validator(contractService)
+    configureSecurity(apiConfig)
     configureHTTP()
-    configureSecurity()
-    configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService, csvService, bankAccountService, listingService, utilitiesService)
+    configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService, csvService, bankAccountService, listingService, utilitiesService, authService)
 }

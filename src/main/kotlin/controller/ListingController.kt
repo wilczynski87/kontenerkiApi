@@ -5,8 +5,11 @@ import com.kontenery.library.model.Product
 import com.kontenery.library.utils.endOfCurrentYear
 import com.kontenery.library.utils.startOfCurrentYear
 import com.kontenery.service.ListingService
+import io.ktor.http.headers
+import io.ktor.server.auth.authenticate
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import jdk.internal.net.http.common.Log.headers
 import kotlinx.datetime.LocalDate
 
 fun Route.listingRoute(
@@ -23,12 +26,16 @@ fun Route.listingRoute(
 
             call.respond(clientList)
         }
+        authenticate("auth-jwt") {
+            get("/clients/count") {
+                val clientListSize: Long = listingService.clientsListSize()
+                println("clientListCount: $clientListSize")
+                headers {
+                    append("Accept", "application/json")
+                }
 
-        get("/clients/count") {
-            val clientListSize: Long = listingService.clientsListSize()
-            println("clientListCount: $clientListSize")
-
-            call.respond(clientListSize)
+                call.respond(clientListSize)
+            }
         }
 
         get("/clientsPayments") {

@@ -19,3 +19,12 @@ api:
     user: ${DB_USER:admin_user}
     password: ${DB_PASSWORD:postgres}
 
+    auth:
+      secret: ${JWT_SECRET:secret}
+      issuer: ${JWT_ISSUER:ktor sample app}
+      audience: ${JWT_AUDIENCE:jwt-audience}
+      realm: ${JWT_REALM:ktor sample app}
+      validityMs: ${VALIDITY_MS:60000}
+      googleClientId: ${GOOGLE_CLIENT_ID:1234567890}
+    
+

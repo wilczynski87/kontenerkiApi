@@ -1,8 +1,8 @@
 [versions]
-exposed-version = "0.60.0"
+exposed-version = "0.61.0"
 h2-version = "2.3.232"
 koin-version = "3.5.6"
-kotlin-version = "2.1.20"
+kotlin-version = "2.3.0"
 ktor-version = "3.3.3"
 logback-version = "1.5.18"
 postgres-version = "42.7.7"

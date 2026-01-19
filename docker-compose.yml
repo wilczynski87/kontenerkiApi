@@ -40,6 +40,11 @@ services:
       EMAIL_PORT: 8200
       API_PORT: 8100
       API_ENV: PROD
+      JWT_SECRET: secret
+      JWT_AUDIENCE: jwt-audience
+      JWT_REALM: ktor sample app
+      VALIDITY_MS: 60000
+      GOOGLE_CLIENT_ID: 1234567890
     depends_on:
       db:
         condition: service_healthy

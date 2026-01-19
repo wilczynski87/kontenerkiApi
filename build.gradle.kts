@@ -33,7 +33,7 @@ dependencies {
     implementation(libs.h2)
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)
-    implementation(libs.ktor.server.swagger)
+//    implementation(libs.ktor.server.swagger)
     implementation(libs.ktor.server.auth)
     implementation(libs.ktor.server.auth.jwt)
     implementation(libs.ktor.server.netty)
@@ -53,7 +53,7 @@ dependencies {
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
 //    implementation(libs.kontenerki.library)
-    implementation(files("libs/library-1.0.0.jar"))
+    implementation(files("libs/library-1.0.1.jar"))
     implementation(libs.ktor.server.cors)
 //    implementation(libs.dotenv)
 
