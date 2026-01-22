@@ -33,6 +33,8 @@ fun Route.listingRoute(
                 headers {
                     append("Accept", "application/json")
                 }
+                val cookie = call.request.cookies.rawCookies
+                println("RAW COOKIE!: $cookie")
 
                 call.respond(clientListSize)
             }

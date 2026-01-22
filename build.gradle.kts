@@ -55,7 +55,10 @@ dependencies {
 //    implementation(libs.kontenerki.library)
     implementation(files("libs/library-1.0.1.jar"))
     implementation(libs.ktor.server.cors)
-//    implementation(libs.dotenv)
+
+    //Test
+    implementation(libs.io.mockk)
+    testImplementation(libs.junit.jupiter)
 
 }
 

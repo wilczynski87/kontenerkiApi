@@ -2,6 +2,10 @@ package com.kontenery
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.auth0.jwt.exceptions.JWTVerificationException
+import com.auth0.jwt.interfaces.DecodedJWT
+import com.auth0.jwt.interfaces.JWTVerifier
+import com.kontenery.service.JwtConfig
 import io.ktor.http.*
 import io.ktor.http.auth.AuthScheme
 import io.ktor.http.auth.HttpAuthHeader
@@ -11,10 +15,10 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.CORS
-import io.ktor.server.plugins.swagger.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
 import java.sql.Connection
 import java.sql.DriverManager
 import org.jetbrains.exposed.sql.*
@@ -22,21 +26,15 @@ import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
 import org.koin.logger.slf4jLogger
 import java.security.MessageDigest
+import java.util.Date
 import kotlin.text.Charsets.UTF_8
 
-fun Application.configureSecurity(apiConfig: ApiConfig) {
-    // Please read the jwt property from the config file if you are using EngineMain
-    val jwtAudience = apiConfig.auth.audience
-//    val jwtDomain = apiConfig.auth.
-    val jwtIssuer = apiConfig.auth.issuer
-    val jwtRealm = apiConfig.auth.realm
-    val jwtSecret = apiConfig.auth.secret
-    val validityMs = 36_000_00 * 24 // 24h
-
+fun Application.configureSecurity(jwtConfig: JwtConfig) {
 
     install(CORS) {
         allowCredentials = true                         // <- bardzo ważne
         allowHost("localhost:8080", schemes = listOf("http")) // frontend
+//        allowHost("localhost:3000", schemes = listOf("http"))
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
         allowMethod(HttpMethod.Put)
@@ -49,14 +47,7 @@ fun Application.configureSecurity(apiConfig: ApiConfig) {
 
     install(Authentication) {
         jwt("auth-jwt") {
-            realm = apiConfig.auth.realm
-            verifier(
-                JWT
-                    .require(Algorithm.HMAC256(apiConfig.auth.secret))
-                    .withAudience(apiConfig.auth.audience)
-                    .withIssuer(apiConfig.auth.issuer)
-                    .build()
-            )
+            verifier(jwtConfig.accessTokenVerifier)
 
             authHeader { call ->
                 // czyta token z headera Authorization: Bearer
@@ -67,7 +58,18 @@ fun Application.configureSecurity(apiConfig: ApiConfig) {
             }
 
             validate { credential ->
-                val username = credential.payload.getClaim("role").asString()
+                val username = credential.payload.getClaim("userId").asString()
+                if (!username.isNullOrBlank()) {
+                    JWTPrincipal(credential.payload)
+                } else null
+            }
+        }
+        jwt("refresh-jwt") {
+            verifier(jwtConfig.refreshTokenVerifier)
+
+            validate { credential ->
+                println("refresh-jwt - Validator")
+                val username = credential.payload.getClaim("userId").asString()
                 if (!username.isNullOrBlank()) {
                     JWTPrincipal(credential.payload)
                 } else null

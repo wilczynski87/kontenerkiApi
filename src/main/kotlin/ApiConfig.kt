@@ -18,11 +18,13 @@ data class DbConfig(
 )
 @Serializable
 data class AuthConfig(
-    val secret: String,
+    val secretAuth: String?,
+    val secretRefresh: String?,
     val issuer: String,
     val audience: String,
     val realm: String,
-    val validityMs: Long,
+    val accessTokenExpiry: Long = 3600000,
+    val refreshTokenExpiry: Long = 2592000000,
     val googleClientId: String,
 )
 @Serializable
@@ -52,11 +54,13 @@ fun Application.loadApiConfig(): ApiConfig {
             password = cfg.propertyOrNull("api.db.password")?.getString() ?: "postgres"
         ),
         auth = AuthConfig(
-            secret = cfg.propertyOrNull("api.auth.secret")?.getString() ?: "secret",
+            secretAuth = cfg.propertyOrNull("api.auth.secretAuth")?.getString() ?: "secretAuth",
+            secretRefresh = cfg.propertyOrNull("api.auth.secretRefresh")?.getString() ?: "secretRefresh",
             issuer = cfg.propertyOrNull("api.auth.issuer")?.getString() ?: "ktor sample app",
             audience = cfg.propertyOrNull("api.auth.audience")?.getString() ?: "jwt-audience",
             realm = cfg.propertyOrNull("api.auth.realm")?.getString() ?: "ktor sample app",
-            validityMs = cfg.propertyOrNull("api.auth.validity")?.getString()?.toLong() ?: 60000,
+            accessTokenExpiry = cfg.propertyOrNull("api.auth.validity")?.getString()?.toLong() ?: 3600000,
+            refreshTokenExpiry = cfg.propertyOrNull("api.auth.validity")?.getString()?.toLong() ?: 2592000000,
             googleClientId = cfg.propertyOrNull("api.auth.googleClientId")?.getString() ?: "1234567890"
         )
     )

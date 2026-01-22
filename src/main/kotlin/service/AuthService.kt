@@ -9,4 +9,5 @@ interface AuthService {
     fun generateTokenResponse(loginResponse: LoginResponse): TokenResponse
     fun refresh(refreshToken: String): Boolean
     fun logout(refreshToken: String): Boolean
+    fun validateRefreshToken(token: String): TokenValidationResult?
 }

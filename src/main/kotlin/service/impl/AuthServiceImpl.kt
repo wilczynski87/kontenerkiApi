@@ -7,9 +7,11 @@ import com.kontenery.library.model.auth.LoginRequest
 import com.kontenery.library.model.auth.LoginResponse
 import com.kontenery.library.model.auth.TokenResponse
 import com.kontenery.service.AuthService
+import com.kontenery.service.JwtConfig
+import com.kontenery.service.TokenValidationResult
 import java.util.Date
 
-class AuthServiceImpl(private val apiConfig: ApiConfig): AuthService {
+class AuthServiceImpl(private val jwtConfig: JwtConfig): AuthService {
     override fun login(loginRequest: LoginRequest): LoginResponse? {
 //        TODO("Not yet implemented")
         return if(loginRequest.email == "ppp" && loginRequest.password == "ppp")
@@ -19,8 +21,8 @@ class AuthServiceImpl(private val apiConfig: ApiConfig): AuthService {
 
     override fun generateTokenResponse(loginResponse: LoginResponse): TokenResponse {
         return TokenResponse(
-            accessToken = generateJWT(loginResponse),
-            refreshToken = null,
+            accessToken = jwtConfig.generateAccessToken(loginResponse.userId, loginResponse.role),
+            refreshToken = jwtConfig.generateRefreshToken(loginResponse.userId),
             expiresIn = obtainExpirationDate().toInstant().nano,
             tokenType = "Bearer"
         )
@@ -36,12 +38,17 @@ class AuthServiceImpl(private val apiConfig: ApiConfig): AuthService {
         return true
     }
 
-    private fun generateJWT(loginResponse: LoginResponse): String = JWT.create()
-        .withAudience(apiConfig.auth.audience)
-        .withIssuer(apiConfig.auth.issuer)
-        .withClaim("role", loginResponse.role)
-        .withExpiresAt(obtainExpirationDate())
-        .sign(Algorithm.HMAC256(apiConfig.auth.secret))
-
     private fun obtainExpirationDate() = Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000L)
+
+    override fun validateRefreshToken(token: String): TokenValidationResult? {
+        return try {
+            jwtConfig.verifyRefreshToken(token)
+        } catch (e: Exception) {
+            null
+        }
+    }
+//
+//    private val refreshTokenVerifier = JWT.require(REFRESH_ALGORITHM)
+//        .withIssuer("auth-server")
+//        .build()
 }

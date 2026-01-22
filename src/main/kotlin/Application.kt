@@ -25,6 +25,7 @@ import com.kontenery.service.CSVService
 import com.kontenery.service.ClientService
 import com.kontenery.service.ContractService
 import com.kontenery.service.InvoiceService
+import com.kontenery.service.JwtConfig
 import com.kontenery.service.ListingService
 import com.kontenery.service.PaymentService
 import com.kontenery.service.PrintService
@@ -91,7 +92,8 @@ fun Application.module() {
     val utilitiesRepo: UtilitiesRepo = UtilitiesRepoImpl()
     val utilitiesService: UtilitiesService = UtilitiesServiceImpl(utilitiesRepo)
 
-    val authService: AuthService = AuthServiceImpl(apiConfig)
+    val jwtConfig = JwtConfig(apiConfig)
+    val authService: AuthService = AuthServiceImpl(jwtConfig)
 
 
     logger()
@@ -99,7 +101,7 @@ fun Application.module() {
     configureSerialization()
     configureDatabases(apiConfig)
     validator(contractService)
-    configureSecurity(apiConfig)
+    configureSecurity(jwtConfig)
     configureHTTP()
     configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService, csvService, bankAccountService, listingService, utilitiesService, authService)
 }

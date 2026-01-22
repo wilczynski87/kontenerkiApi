@@ -20,7 +20,8 @@ api:
     password: ${DB_PASSWORD:postgres}
 
     auth:
-      secret: ${JWT_SECRET:secret}
+      secretAuth: ${JWT_SECRET:secretAuth}
+      secretRefresh: ${JWT_SECRET:secretRefresh}
       issuer: ${JWT_ISSUER:ktor sample app}
       audience: ${JWT_AUDIENCE:jwt-audience}
       realm: ${JWT_REALM:ktor sample app}
