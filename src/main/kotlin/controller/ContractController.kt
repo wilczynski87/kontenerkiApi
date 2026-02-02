@@ -11,6 +11,7 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
+import kotlinx.serialization.json.Json
 import java.lang.NullPointerException
 
 fun Route.contractRoutes(
@@ -73,7 +74,7 @@ fun Route.contractRoutes(
         put("{id}") {
             println("PUT Contract")
             try {
-                val id = call.parameters["id"]?.toLongOrNull() ?: return@put call.respond(HttpStatusCode.BadRequest)
+                val id = call.parameters["id"]?.toLongOrNull() ?: return@put call.respond(HttpStatusCode.BadRequest, "Invalid ID")
                 val contract = call.receive<ContractDto>()
                 val updated = service.update(id, contract)
                 call.respond(updated)
@@ -82,6 +83,56 @@ fun Route.contractRoutes(
                 call.respond(HttpStatusCode.BadRequest, "Invalid request: ${e.message}")
             }
         }
+//        put("{id}") {
+//            println("=== PUT Contract Called ===")
+//            try {
+//                val id = call.parameters["id"]?.toLongOrNull() ?: return@put call.respond(HttpStatusCode.BadRequest, "Invalid ID")
+//                println("Path ID: $id")
+//
+//                // First, get raw request
+//                val rawBody = call.receiveText()
+//                println("Raw request body: $rawBody")
+//
+//                // Try to parse manually
+//                val json = Json {
+//                    ignoreUnknownKeys = true
+//                    isLenient = true
+//                    coerceInputValues = true
+//                }
+//
+//                val contract = try {
+//                    json.decodeFromString<ContractDto>(rawBody)
+//                } catch (e: Exception) {
+//                    println("JSON parsing failed: ${e.message}")
+//                    println("JSON parsing error type: ${e.javaClass.simpleName}")
+//                    e.printStackTrace()
+//                    return@put call.respond(HttpStatusCode.BadRequest, "JSON parsing error: ${e.message}")
+//                }
+//
+//                println("Successfully parsed contract: $contract")
+//
+//                // Try the update
+//                val updated = try {
+//                    service.update(id, contract)
+//                } catch (e: Exception) {
+//                    println("Service update failed: ${e.message}")
+//                    e.printStackTrace()
+//                    return@put call.respond(HttpStatusCode.BadRequest, "Service error: ${e.message}")
+//                }
+//
+//                println("Update successful: $updated")
+//                call.respond(updated)
+//
+//            } catch(e: Exception) {
+//                println("=== Unhandled Exception ===")
+//                println("Type: ${e.javaClass.simpleName}")
+//                println("Message: ${e.message}")
+//                e.printStackTrace()
+//                println("==========================")
+//                call.respond(HttpStatusCode.InternalServerError, "Server error: ${e.message}")
+//            }
+//            println("=== PUT Contract Finished ===")
+//        }
 
         delete("{id}") {
             val id = call.parameters["id"]?.toLongOrNull() ?: return@delete call.respond(HttpStatusCode.BadRequest)

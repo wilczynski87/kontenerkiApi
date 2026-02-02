@@ -9,6 +9,7 @@ import com.kontenery.service.ClientService
 import com.kontenery.service.ContractService
 import com.kontenery.service.ProductService
 import kotlinx.datetime.LocalDate
+import java.math.BigDecimal
 
 class ContractServiceImpl(
     private val repo: ContractRepo,
@@ -51,7 +52,7 @@ class ContractServiceImpl(
             startDate = contractDto.startDate,
             endDate = contractDto.endDate,
             netPrice = contractDto.netPrice,
-            vatRate = contractDto.vatRate,
+            vatRate = contractDto.vatRate ?: BigDecimal.valueOf(0.23),
             needInvoice = contractDto.needInvoice,
             deposit = contractDto.deposit
         )
