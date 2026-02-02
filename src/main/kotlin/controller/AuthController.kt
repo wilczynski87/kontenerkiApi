@@ -13,10 +13,6 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.sessions.SameSite
 import io.ktor.http.Cookie
-import io.ktor.server.auth.authentication
-import io.ktor.server.auth.jwt.JWTPrincipal
-import io.ktor.server.auth.principal
-import io.ktor.server.routing.get
 
 fun Route.authController(
     authService: AuthService
