@@ -38,9 +38,11 @@ jobs:
       - name: Build and deploy (zero downtime)
         run: |
           ssh vps "
-            docker rm -f api || true
+            docker stop api || true
+            docker rm api || true
+            docker rmi my-api:latest || true
             cd /opt/app
-#            docker compose pull
+            docker compose pull
             docker compose build --no-cache
             docker compose up -d --build
           "
