@@ -16,9 +16,12 @@ fun configureDatabases(apiConfig: ApiConfig) {
     val dbPort = apiConfig.db.port
     val dbName = apiConfig.db.name
     val dbUser = apiConfig.db.user
+//    val dbUser = "admin_user"
     val dbPassword = apiConfig.db.password
+//    val dbPassword = "postgres"
     val env: Env = Env.valueOf(System.getenv("ENV") ?: "DEV")
     val url = "jdbc:postgresql://$dbHost:$dbPort/$dbName"
+//    val url = "jdbc:postgresql://217.154.148.172:5431/db1"
     println()
     println("url: $url, user: $dbUser, password: $dbPassword")
     println()
