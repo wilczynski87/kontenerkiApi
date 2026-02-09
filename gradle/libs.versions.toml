@@ -6,11 +6,7 @@ kotlin-version = "2.3.0"
 ktor-version = "3.3.3"
 logback-version = "1.5.18"
 postgres-version = "42.7.7"
-kontenerki-library-version = "master-SNAPSHOT"
-#kontenerki-library-version = "1.0.4"
-#ktor-cors-version = "2.3.5"
 junit-jupiter-version = "5.10.1"
-dotenv-ver = "6.5.1"
 junit-jupiter = "5.14.0"
 mockk = "1.14.7"
 
@@ -33,18 +29,14 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "lo
 ktor-server-config-yaml = { module = "io.ktor:ktor-server-config-yaml", version.ref = "ktor-version" }
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor-version" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test" }
-#kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin-version" }
 kotlin-test-junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter-version"}
 exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed-version" }
 ktor-server-request-validation = { module = "io.ktor:ktor-server-request-validation", version.ref = "ktor-version" }
 exposed-kotlin-datetime = { module = "org.jetbrains.exposed:exposed-kotlin-datetime", version.ref = "exposed-version" }
 ktor-server-call-logging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor-version" }
-kontenerki-library = { module = "com.github.wilczynski87:konteneryLibrary", version.ref = "kontenerki-library-version" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor-version" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor-version" }
-#private-library = {module = "", version.ref = "ktor-version" }
 ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor-version" }
-dotenv = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "dotenv-ver"}
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit-jupiter" }
 io-mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 

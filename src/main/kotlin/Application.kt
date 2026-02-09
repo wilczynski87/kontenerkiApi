@@ -57,7 +57,7 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    println("App MAIN API started")
+    println("\nMAIN API started\n")
     val apiConfig: ApiConfig = loadApiConfig()
     log.info("Environment: ${apiConfig.env}")
 

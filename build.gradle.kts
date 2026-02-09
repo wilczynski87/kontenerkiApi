@@ -19,8 +19,8 @@ application {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
-    maven { url = uri("https://jitpack.io") }
 }
 
 dependencies {
@@ -73,6 +73,7 @@ tasks.test {
 }
 
 tasks.shadowJar {
+    archiveFileName.set("api.jar")
     manifest {
         attributes["Main-Class"] = "io.ktor.server.netty.EngineMain"
     }
