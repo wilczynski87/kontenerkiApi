@@ -27,17 +27,26 @@ import kotlin.text.Charsets.UTF_8
 fun Application.configureSecurity(jwtConfig: JwtConfig) {
 
     install(CORS) {
-        allowCredentials = true                         // <- bardzo ważne
-        allowHost("localhost:8080", schemes = listOf("http")) // frontend
-//        allowHost("localhost:3000", schemes = listOf("http"))
+        allowCredentials = true
+        allowNonSimpleContentTypes = true
+        allowSameOrigin = true
+
+        anyHost()
+
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
         allowMethod(HttpMethod.Put)
         allowMethod(HttpMethod.Delete)
         allowMethod(HttpMethod.Options)
+        allowMethod(HttpMethod.Patch)
+
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.Authorization)
+        allowHeader("X-No-Auth")
+
         allowNonSimpleContentTypes = true
+
+        exposeHeader(HttpHeaders.Authorization)
     }
 
     install(Authentication) {
