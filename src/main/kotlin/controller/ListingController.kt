@@ -22,7 +22,7 @@ fun Route.listingRoute(
             val size: Int = call.request.queryParameters["size"]?.toInt() ?: 100
 
             val clientList = listingService.clientsList(page, size)
-            println("clientList: $clientList")
+//            println("clientList: $clientList")
 
             call.respond(clientList)
         }

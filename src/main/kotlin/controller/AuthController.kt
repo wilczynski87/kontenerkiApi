@@ -13,6 +13,9 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.sessions.SameSite
 import io.ktor.http.Cookie
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.principal
+import io.ktor.server.routing.get
 
 fun Route.authController(
     authService: AuthService
@@ -113,6 +116,24 @@ fun Route.authController(
 //        }
 
         authenticate("auth-jwt") {
+
+            get("/verify") {
+                try {
+                    val principal = call.principal<JWTPrincipal>()
+                    val tokenResponse = authService.generateTokenResponse(LoginResponse(principal?.payload?.id.toString(), "admin"))
+
+                    val authResponse = AuthResponse(
+                        loginResponse = LoginResponse(principal?.payload?.id.toString(), "admin"),
+                        tokenResponse = tokenResponse
+                    )
+                    call.respond(HttpStatusCode.OK, authResponse)
+
+                } catch (e: Exception) {
+                    println("Exception in /auth/verify \n$e")
+                    call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                }
+            }
+
             post("/logout") {
                 try {
 //                    val refreshToken = call.request.cookies["auth_token"]

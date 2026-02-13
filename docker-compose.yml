@@ -24,6 +24,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: wilczynski87/konteneryapi
     container_name: api
     restart: unless-stopped
     expose:
@@ -53,6 +54,7 @@ services:
     build:
       context: ../kontenerkiEmail
       dockerfile: Dockerfile
+    image: wilczynski87/konteneryemail
     container_name: email
     restart: unless-stopped
     expose:
