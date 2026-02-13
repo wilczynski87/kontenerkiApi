@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import java.math.BigDecimal
@@ -115,8 +116,9 @@ class ListingServiceImpl(
 
                 PaymentsListForFinanceTable(
                     client = ClientOnListForFinance(
-                        it.id,
-                        it.getName()
+                        clientId = it.id,
+                        name = it.getName(),
+                        isActive = it.isActive
                     ),
                     payments = paymentsList.map { payment ->
                         PaymentForFinanceTable(
@@ -128,6 +130,7 @@ class ListingServiceImpl(
                 )
             }
         }.awaitAll()
+
     }
 
 }
