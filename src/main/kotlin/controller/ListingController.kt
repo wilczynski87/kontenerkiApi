@@ -17,16 +17,18 @@ fun Route.listingRoute(
 ) {
     route("/list") {
 
-        get("/clients") {
-            val page: Int = call.request.queryParameters["page"]?.toInt() ?: 0
-            val size: Int = call.request.queryParameters["size"]?.toInt() ?: 100
-
-            val clientList = listingService.clientsList(page, size)
-//            println("clientList: $clientList")
-
-            call.respond(clientList)
-        }
         authenticate("auth-jwt") {
+            
+            get("/clients") {
+                val page: Int = call.request.queryParameters["page"]?.toInt() ?: 0
+                val size: Int = call.request.queryParameters["size"]?.toInt() ?: 100
+
+                val clientList = listingService.clientsList(page, size)
+    //            println("clientList: $clientList")
+
+                call.respond(clientList)
+            }
+
             get("/clients/count") {
                 val clientListSize: Long = listingService.clientsListSize()
                 println("clientListCount: $clientListSize")

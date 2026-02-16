@@ -126,6 +126,19 @@ fun Route.authController(
                         loginResponse = LoginResponse(principal?.payload?.id.toString(), "admin"),
                         tokenResponse = tokenResponse
                     )
+
+                    call.response.cookies.append(
+                        Cookie(
+                            name = "auth_token",
+                            value = tokenResponse.accessToken,
+                            secure = false, // false dla localhost, true dla HTTPS
+                            httpOnly = true,
+                            path = "/",
+                            maxAge = 3600,
+                            extensions = mapOf("SameSite" to SameSite.None)
+                        )
+                    )
+
                     call.respond(HttpStatusCode.OK, authResponse)
 
                 } catch (e: Exception) {
