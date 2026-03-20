@@ -116,14 +116,15 @@ fun Route.invoiceRoutes(
                 printService.sendPeriodicInvoice(savedInvoice)
                 println("Mail wysłany, od clientId: $clientId")
 
-                call.respond(errorList)
+                if(errorList.isEmpty()) call.respond(savedInvoice.invoiceNumber as Any)
+                else call.respond(HttpStatusCode.ExpectationFailed, errorList)
 //                call.respond(savedInvoice?.invoiceNumber ?: throw NullPointerException("No invoice number for savedInvoice"))
             } catch (e: IllegalStateException) {
                 println("$e, errorList: $errorList")
-                call.respond(errorList)
+                call.respond(HttpStatusCode.ExpectationFailed, errorList)
             } catch (e:Exception) {
                 println("post invoice: $e")
-                call.respond(e)
+                call.respond(HttpStatusCode.ExpectationFailed, e)
             }
         }
         post("/sendInvoices/forAll") {

@@ -16,3 +16,6 @@ fun cookRawPeriod(periodRaw: String?, placeName: String): LocalDate {
         }
     }
 }
+
+fun LocalDate.startOfYear(): LocalDate =
+    LocalDate(this.year, 1, 1)

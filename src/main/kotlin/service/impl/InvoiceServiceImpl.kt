@@ -65,10 +65,6 @@ class InvoiceServiceImpl(
         from: LocalDate,
         to: LocalDate
     ): List<Invoice> {
-//        val paysVat: Boolean = clientService.paysVat(clientId)
-
-//        return if(paysVat) invoiceRepo.getInvoicesForClient(page, size, clientId, from, to)
-//            else billRepo.getBillsForClient(page, size, clientId, from, to)
         return invoiceRepo.getInvoicesForClient(page, size, clientId, from, to) + billRepo.getBillsForClient(page, size, clientId, from, to)
     }
 

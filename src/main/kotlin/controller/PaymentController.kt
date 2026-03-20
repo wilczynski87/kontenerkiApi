@@ -29,7 +29,7 @@ fun Route.paymentRoute(paymentService: PaymentService) {
                     from = from,
                     to = to
                 )
-                println("payments: $payments")
+                payments.forEach { println(it) }
 
                 call.respond(payments)
 

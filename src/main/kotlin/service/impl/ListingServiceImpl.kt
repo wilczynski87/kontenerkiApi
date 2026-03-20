@@ -9,6 +9,7 @@ import com.kontenery.library.model.PaymentsListForFinanceTable
 import com.kontenery.library.model.Product
 import com.kontenery.library.model.invoice.Invoice
 import com.kontenery.library.utils.endOfCurrentYear
+import com.kontenery.library.utils.now
 import com.kontenery.library.utils.startOfCurrentYear
 import com.kontenery.repository.*
 import com.kontenery.service.ListingService
@@ -19,6 +20,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.Month
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -47,7 +49,7 @@ class ListingServiceImpl(
             ClientOnList(
                 id = client.id!!,
                 name = client.getName(),
-                paymentsOverdue = clientOverdue(client, from, to),
+                paymentsOverdue = clientOverdue(client.id!!, from, to),
                 contracts = getContractsIdForClient(client.id!!, true),
                 active = client.isActive ?: false,
                 invoice = client.needInvoice(),
@@ -64,26 +66,48 @@ class ListingServiceImpl(
         return contractsRepo.findByClientId(id, onlyActive).mapNotNull { it.product?.name }
     }
 
-    private suspend fun clientOverdue(client: Client, from: LocalDate, to: LocalDate): BigDecimal? {
+    override suspend fun clientOverdue(clientId: Long, from: LocalDate, to: LocalDate): BigDecimal? {
         return try {
 
-            val payments: List<Payment> = paymentsRepo.getPaymentsByClient(0, 1000, client.id!!, from, to)
+            val payments: List<Payment> = paymentsRepo.getPaymentsByClient(0, 1000, clientId, from, to)
             val invoices: List<Invoice> =
-                invoicesRepo.getInvoicesForClient(0, 1000, client.id!!, from, to) + billRepo.getBillsForClient(0, 1000, client.id!!, from, to)
-//                if(client.needInvoice()) invoicesRepo.getInvoicesForClient(0, 1000, client.id!!, from, to)
-//                else billRepo.getBillsForClient(0, 1000, client.id!!, from, to)
+                invoicesRepo.getInvoicesForClient(0, 1000, clientId, from, to)
+            val bills: List<Invoice> = billRepo.getBillsForClient(0, 1000, clientId, from, to)
 
             val paymentSum = payments.sumOf { it.amount }
-            val invoiceSum = invoices.sumOf { it.priceWithVatSum?.toBigDecimal() ?: it.priceSum?.toBigDecimal() ?: BigDecimal.ZERO }
+            val billsSum = bills.sumOf { it.priceSum?.toBigDecimal() ?: BigDecimal.ZERO }
+            val invoiceSum = invoices.sumOf { it.priceWithVatSum?.toBigDecimal() ?: BigDecimal.ZERO }
 
-//            println("${client.getName()}, need invoice: ${client.needInvoice()}, paymentSum: $paymentSum, invoiceSum: $invoiceSum")
 
-            paymentSum - invoiceSum.setScale(2, RoundingMode.UP)
+            if(clientId.toInt() == 1) {
+                println("client Id: ${clientId}, from: $from, to: $to , paymentSum: $paymentSum, invoiceSum: $invoiceSum, billsSum: $billsSum")
+                invoices.forEach { println("invoice: $it") }
+            }
+
+
+            paymentSum - invoiceSum.setScale(2, RoundingMode.UP) - billsSum.setScale(2, RoundingMode.UP)
         } catch (e: Exception) {
             println("clientOverdue: $e")
             null
         }
     }
+
+    override suspend fun clientsOverdue(
+        from: LocalDate,
+        to: LocalDate
+    ): Map<Long, Double?> {
+        val clients: List<Long> = clientsRepo.getAllClients(0, 1000).mapNotNull { it.id }
+
+        val clientsBalance: Map<Long, Double?> = coroutineScope {
+            clients.map {
+                async { it to clientOverdue(it, from, to)?.toDouble() }
+            }.awaitAll()
+            .toMap()
+        }
+
+        return clientsBalance
+    }
+
     private suspend fun clientLastInvoiceSend(client: Client): LocalDate? {
         val lastInvoice: Invoice? =
             if(client.needInvoice()) invoicesRepo.getLastInvoiceForClient(client.id!!)
@@ -106,6 +130,8 @@ class ListingServiceImpl(
         to: LocalDate,
     ): List<PaymentsListForFinanceTable> = coroutineScope {
 
+        println("page: $page, size: $size, from: $from, to: $to")
+
         val clients = withContext(Dispatchers.IO) {
             clientsRepo.getAllClients(page, size)
         }
@@ -120,17 +146,43 @@ class ListingServiceImpl(
                         name = it.getName(),
                         isActive = it.isActive
                     ),
-                    payments = paymentsList.map { payment ->
-                        PaymentForFinanceTable(
-                            payment.id,
-                            payment.date.toString(),
-                            payment.amount.toDouble(),
-                        )
-                    }
+                    payments = addEmptyMonths(paymentsList, to)
                 )
             }
         }.awaitAll()
+    }
+}
 
+private fun addEmptyMonths(payments: List<Payment>, to: LocalDate = LocalDate.now()): List<PaymentForFinanceTable> {
+    val paymentForFinanceList: MutableList<PaymentForFinanceTable> = mutableListOf()
+
+    // jeśli zakres nie dotyczy bierzącego roku, to pokaż pełen zakres (za 12 miesięcy)
+    val currentMonth: Int = if(to.year != LocalDate.now().year) 12 else LocalDate.now().monthNumber
+
+//    if(payments.isNotEmpty() && payments[0].fromClient?.id == 1L) payments.forEach { println("payment: $it") }
+
+    for (i in 1.. currentMonth) {
+        val monthPayments = payments.filter { it.date.monthNumber == i }
+        if(monthPayments.isEmpty()) {
+            paymentForFinanceList.add(
+                PaymentForFinanceTable(
+                    null,
+                    LocalDate(to.year, i, 1).toString(),
+                    0.00,
+                )
+            )
+        } else {
+            monthPayments.forEach { monthPayment ->
+                paymentForFinanceList.add(
+                    PaymentForFinanceTable(
+                        monthPayment.id,
+                        monthPayment.date.toString(),
+                        monthPayment.amount.toDouble(),
+                    )
+                )
+            }
+        }
     }
 
+    return paymentForFinanceList
 }

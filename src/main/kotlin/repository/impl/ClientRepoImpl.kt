@@ -203,7 +203,7 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
 
     override suspend fun getAllClients(page: Int, size: Int): List<Client> {
         val countOffset: Long = (page * size).toLong()
-        return suspendTransaction {
+        return newSuspendedTransaction {
             ClientEntity.all()
                 .limit(size)
                 .offset(countOffset)
@@ -216,7 +216,7 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
         ClientEntity.count()
     }
 
-    override suspend fun getFilteredClients(active: Boolean, paysVat: Boolean?): List<Client> = suspendTransaction {
+    override suspend fun getFilteredClients(active: Boolean, paysVat: Boolean?): List<Client> = newSuspendedTransaction {
         ClientEntity.find {
             ClientTable.isActive eq active
         }.with(ClientEntity::personalData, ClientEntity::companyData)

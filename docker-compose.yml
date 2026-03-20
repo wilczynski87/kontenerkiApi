@@ -67,7 +67,7 @@ services:
       API_NAME: api
       API_PORT: 8100
       EMAIL_PORT: 8200
-      ENV: PROD
+      ENV: DEV
 
 volumes:
   postgres_data:
