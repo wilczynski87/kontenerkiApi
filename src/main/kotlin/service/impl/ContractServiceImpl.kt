@@ -51,8 +51,8 @@ class ContractServiceImpl(
         val contract = Contract(
             startDate = contractDto.startDate,
             endDate = contractDto.endDate,
-            netPrice = contractDto.netPrice,
-            vatRate = contractDto.vatRate ?: BigDecimal.valueOf(0.23),
+            netPrice = if(contractDto.netPrice == null) null else BigDecimal.valueOf(contractDto.netPrice!!),
+            vatRate = if(contractDto.vatRate == null) BigDecimal.valueOf(0.23) else BigDecimal.valueOf(contractDto.vatRate!!),
             needInvoice = contractDto.needInvoice,
             deposit = contractDto.deposit
         )
@@ -100,7 +100,7 @@ class ContractServiceImpl(
             contract.apply {
                 startDate = contractDto.startDate
                 endDate = contractDto.endDate
-                netPrice = contractDto.netPrice
+                netPrice = if(contractDto.netPrice == null) null else BigDecimal.valueOf(contractDto.netPrice!!)
                 needInvoice = contractDto.needInvoice
             }
         }

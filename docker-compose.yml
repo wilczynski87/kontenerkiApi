@@ -69,5 +69,21 @@ services:
       EMAIL_PORT: 8200
       ENV: DEV
 
+  web:
+    build:
+      context: ../kontenerkiWeb
+      dockerfile: Dockerfile
+    image: wilczynski87/kontenerkiweb
+    container_name: web
+    restart: unless-stopped
+    expose:
+      - 8200
+    ports:
+      - "80:80"
+    environment:
+      API_NAME: api
+      API_PORT: 8100
+      ENV: DEV
+
 volumes:
   postgres_data:
