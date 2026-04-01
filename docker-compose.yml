@@ -73,11 +73,11 @@ services:
     build:
       context: ../kontenerkiWeb
       dockerfile: Dockerfile
-    image: wilczynski87/kontenerkiweb
+    image: wilczynski87/konteneryweb
     container_name: web
     restart: unless-stopped
     expose:
-      - 8200
+      - 80
     ports:
       - "80:80"
     environment:

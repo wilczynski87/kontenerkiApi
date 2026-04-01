@@ -47,15 +47,20 @@ fun Route.clientRoute(clientService: ClientService) {
 
         put("/{id}") {
             println("zaczynamy PUT client: ")
-            val id = call.pathParameters["id"]?.toLongOrNull()
-                ?: throw BadRequestException("Invalid ID format")
+            try {
+                val id = call.pathParameters["id"]?.toLongOrNull()
+                    ?: throw BadRequestException("Invalid ID format")
 
-            val clientUpdate = call.receive<Client>()
-            println(clientUpdate)
-            val updatedClient = clientService.updateClient(clientUpdate)
-                ?: throw NotFoundException("Client not found")
+                val clientUpdate = call.receive<Client>()
+                println(clientUpdate)
+                val updatedClient = clientService.updateClient(clientUpdate)
+                    ?: throw NotFoundException("Client not found")
 
-            call.respond(updatedClient)
+                call.respond(updatedClient)
+            } catch (e:Exception) {
+                println(e)
+                call.respond(HttpStatusCode.ExpectationFailed, e.message.toString())
+            }
         }
 
         post("/fromDb") {

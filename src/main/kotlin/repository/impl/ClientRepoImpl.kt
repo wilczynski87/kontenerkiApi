@@ -270,6 +270,7 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
         passport = data.passport ?: passport
         phone = data.phone ?: phone
         email = data.email ?: email
+        salutation = data.salutation
 
         data.address?.let { address ->
             this.address?.updateAddress(address) ?: run {
