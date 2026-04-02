@@ -1,7 +1,7 @@
 package com.kontenery.repository
 
-import com.kontenery.library.model.Client
-import com.kontenery.library.model.ClientBankAccount
+import com.kontenery.data.Client
+import com.kontenery.data.ClientBankAccount
 
 interface ClientBankAccountRepository {
 

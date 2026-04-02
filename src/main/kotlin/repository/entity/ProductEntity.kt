@@ -1,6 +1,6 @@
 package com.kontenery.repository.entity
 
-import com.kontenery.library.model.Product
+import com.kontenery.data.Product
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 import org.jetbrains.exposed.dao.LongEntity

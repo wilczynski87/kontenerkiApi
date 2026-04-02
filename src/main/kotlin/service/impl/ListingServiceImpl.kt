@@ -1,26 +1,24 @@
 package com.kontenery.service.impl
 
-import com.kontenery.library.model.Client
-import com.kontenery.library.model.ClientOnList
-import com.kontenery.library.model.ClientOnListForFinance
-import com.kontenery.library.model.Payment
-import com.kontenery.library.model.PaymentForFinanceTable
-import com.kontenery.library.model.PaymentsListForFinanceTable
-import com.kontenery.library.model.Product
-import com.kontenery.library.model.invoice.Invoice
-import com.kontenery.library.utils.endOfCurrentYear
-import com.kontenery.library.utils.now
-import com.kontenery.library.utils.startOfCurrentYear
+import com.kontenery.data.Client
+import com.kontenery.data.ClientOnList
+import com.kontenery.data.ClientOnListForFinance
+import com.kontenery.data.Payment
+import com.kontenery.data.PaymentForFinanceTable
+import com.kontenery.data.Product
+import com.kontenery.data.invoice.Invoice
+import com.kontenery.data.utils.endOfCurrentYear
+import com.kontenery.data.utils.now
+import com.kontenery.data.utils.startOfCurrentYear
+import com.kontenery.data.PaymentsListForFinanceTable
 import com.kontenery.repository.*
 import com.kontenery.service.ListingService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.Month
 import java.math.BigDecimal
 import java.math.RoundingMode
 

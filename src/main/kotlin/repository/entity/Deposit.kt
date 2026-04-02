@@ -1,7 +1,7 @@
 package com.kontenery.repository.entity
 
-import com.kontenery.library.model.Deposit
-import com.kontenery.library.utils.DepositType
+import com.kontenery.data.Deposit
+import com.kontenery.data.DepositType
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID

@@ -1,12 +1,10 @@
 package com.kontenery.service
 
-import com.kontenery.library.model.ClientOnList
-import com.kontenery.library.model.PaymentsListForFinanceTable
-import com.kontenery.library.model.Product
-import com.kontenery.library.utils.endOfCurrentYear
-import com.kontenery.library.utils.now
-import com.kontenery.library.utils.startOfCurrentYear
-import com.kontenery.model.ClientBalance
+import com.kontenery.data.ClientOnList
+import com.kontenery.data.PaymentsListForFinanceTable
+import com.kontenery.data.Product
+import com.kontenery.data.utils.endOfCurrentYear
+import com.kontenery.data.utils.startOfCurrentYear
 import kotlinx.datetime.LocalDate
 import java.math.BigDecimal
 

@@ -1,7 +1,7 @@
 package com.kontenery.service.impl
 
-import com.kontenery.library.model.Reading
-import com.kontenery.library.model.Submeter
+import com.kontenery.data.Reading
+import com.kontenery.data.Submeter
 import com.kontenery.repository.UtilitiesRepo
 import com.kontenery.service.UtilitiesService
 

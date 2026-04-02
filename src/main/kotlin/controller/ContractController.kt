@@ -1,9 +1,9 @@
 package com.kontenery.controller
 
-import com.kontenery.library.model.Client
-import com.kontenery.library.model.Contract
-import com.kontenery.library.model.ContractDto
-import com.kontenery.library.model.Product
+import com.kontenery.data.Contract
+import com.kontenery.data.ContractDto
+import com.kontenery.data.Client
+import com.kontenery.data.Product
 import com.kontenery.service.ClientService
 import com.kontenery.service.ContractService
 import com.kontenery.service.ProductService
@@ -11,8 +11,6 @@ import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
-import kotlinx.serialization.json.Json
-import java.lang.NullPointerException
 
 fun Route.contractRoutes(
     service: ContractService,
@@ -59,11 +57,12 @@ fun Route.contractRoutes(
         post {
             try {
                 println("POST CONTRACT")
-                val contractDto:ContractDto = call.receive<ContractDto>()
-
+                val contractDto: ContractDto = call.receive<ContractDto>()
                 println("contractDto: $contractDto")
+
                 val created: Contract = service.create(contractDto)
                 println("created Contract: $created")
+
                 call.respond(HttpStatusCode.Created, created)
             } catch(e:Exception) {
                 println(e)

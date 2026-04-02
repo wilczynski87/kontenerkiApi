@@ -1,6 +1,6 @@
 package com.kontenery.service
 
-import com.kontenery.library.model.Payment
+import com.kontenery.data.Payment
 
 interface CSVService {
 

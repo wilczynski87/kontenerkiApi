@@ -11,7 +11,7 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.test.assertEquals
-import com.kontenery.library.utils.startOfCurrentMonth
+import com.kontenery.data.utils.startOfCurrentMonth
 import com.kontenery.repository.entity.invoice.*
 import com.kontenery.repository.impl.InvoiceRepoImpl
 import kotlinx.datetime.minus

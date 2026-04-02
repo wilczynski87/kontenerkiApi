@@ -1,6 +1,6 @@
 package com.kontenery.controller
 
-import com.kontenery.library.model.Client
+import com.kontenery.data.Client
 import com.kontenery.service.ClientService
 import io.ktor.http.*
 import io.ktor.server.plugins.*

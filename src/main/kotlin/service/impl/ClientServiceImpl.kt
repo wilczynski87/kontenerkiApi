@@ -1,6 +1,6 @@
 package com.kontenery.service.impl
 
-import com.kontenery.library.model.Client
+import com.kontenery.data.Client
 import com.kontenery.repository.ClientRepo
 import com.kontenery.service.ClientService
 

@@ -1,9 +1,8 @@
 package com.kontenery.controller
 
-import com.kontenery.library.model.Address
+import com.kontenery.data.Address
 import com.kontenery.service.AddressService
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*

@@ -1,6 +1,6 @@
 package com.kontenery.repository
 
-import com.kontenery.library.model.Payment
+import com.kontenery.data.Payment
 import kotlinx.datetime.LocalDate
 
 interface PaymentRepo {

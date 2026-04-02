@@ -1,9 +1,9 @@
 package com.kontenery.repository.impl
-import com.kontenery.library.model.Address
-import com.kontenery.library.model.Client
-import com.kontenery.library.model.ClientCompanyData
-import com.kontenery.library.model.ClientPersonalData
-import com.kontenery.library.utils.now
+import com.kontenery.data.Address
+import com.kontenery.data.Client
+import com.kontenery.data.ClientCompanyData
+import com.kontenery.data.ClientPersonalData
+import com.kontenery.data.utils.now
 import com.kontenery.repository.AddressRepo
 import com.kontenery.repository.ClientRepo
 import com.kontenery.repository.entity.*

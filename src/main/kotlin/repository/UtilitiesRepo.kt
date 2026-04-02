@@ -1,7 +1,7 @@
 package com.kontenery.repository
 
-import com.kontenery.library.model.Reading
-import com.kontenery.library.model.Submeter
+import com.kontenery.data.Reading
+import com.kontenery.data.Submeter
 
 interface UtilitiesRepo {
     // ---------- SUBMETER ----------

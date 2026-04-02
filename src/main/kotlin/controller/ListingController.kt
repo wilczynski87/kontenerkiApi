@@ -1,21 +1,19 @@
 package com.kontenery.controller
 
-import com.kontenery.library.model.PaymentsListForFinanceTable
-import com.kontenery.library.model.PaymentsListForFinanceTableWithBalance
-import com.kontenery.library.model.Product
-import com.kontenery.library.utils.endOfCurrentYear
-import com.kontenery.library.utils.now
-import com.kontenery.library.utils.startOfCurrentYear
+import com.kontenery.data.PaymentsListForFinanceTable
+import com.kontenery.data.PaymentsListForFinanceTableWithBalance
+import com.kontenery.data.Product
+import com.kontenery.data.utils.endOfCurrentYear
+import com.kontenery.data.utils.now
+import com.kontenery.data.utils.startOfCurrentYear
 import com.kontenery.service.ListingService
 import io.ktor.http.headers
 import io.ktor.server.auth.authenticate
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import jdk.internal.net.http.common.Log.headers
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
-import net.bytebuddy.asm.Advice
 
 fun Route.listingRoute(
     listingService: ListingService

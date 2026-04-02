@@ -1,7 +1,6 @@
 package com.kontenery.controller
 
-import com.kontenery.library.model.ClientBankAccount
-import com.kontenery.library.utils.BankAccount
+import com.kontenery.data.ClientBankAccount
 import com.kontenery.service.BankAccountService
 import io.ktor.http.*
 import io.ktor.server.request.*

@@ -1,13 +1,13 @@
 package com.kontenery.validator
 
-import com.kontenery.library.model.Client
-import com.kontenery.library.model.Contract
-import com.kontenery.library.model.invoice.Invoice
-import com.kontenery.library.utils.InvoiceType
-import com.kontenery.library.utils.endOfCurrentMonth
-import com.kontenery.library.utils.errors.ErrorMessage
-import com.kontenery.library.utils.errors.InvoiceErrorMessage
-import com.kontenery.library.utils.startOfCurrentMonth
+import com.kontenery.data.Client
+import com.kontenery.data.Contract
+import com.kontenery.data.invoice.Invoice
+import com.kontenery.data.utils.InvoiceType
+import com.kontenery.data.utils.endOfCurrentMonth
+import com.kontenery.data.utils.errors.ErrorMessage
+import com.kontenery.data.utils.errors.InvoiceErrorMessage
+import com.kontenery.data.utils.startOfCurrentMonth
 import kotlinx.datetime.LocalDate
 import org.slf4j.LoggerFactory
 

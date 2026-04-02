@@ -1,9 +1,9 @@
 package com.kontenery.service.impl
 
-import com.kontenery.library.model.Client
-import com.kontenery.library.model.Contract
-import com.kontenery.library.model.ContractDto
-import com.kontenery.library.model.Product
+import com.kontenery.data.Client
+import com.kontenery.data.Contract
+import com.kontenery.data.ContractDto
+import com.kontenery.data.Product
 import com.kontenery.repository.ContractRepo
 import com.kontenery.service.ClientService
 import com.kontenery.service.ContractService
@@ -52,7 +52,9 @@ class ContractServiceImpl(
             startDate = contractDto.startDate,
             endDate = contractDto.endDate,
             netPrice = if(contractDto.netPrice == null) null else BigDecimal.valueOf(contractDto.netPrice!!),
-            vatRate = if(contractDto.vatRate == null) BigDecimal.valueOf(0.23) else BigDecimal.valueOf(contractDto.vatRate!!),
+            vatRate = if(contractDto.vatRate == null) BigDecimal.valueOf(0.23) else BigDecimal.valueOf(
+                contractDto.vatRate
+            ),
             needInvoice = contractDto.needInvoice,
             deposit = contractDto.deposit
         )

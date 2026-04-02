@@ -1,8 +1,8 @@
 package com.kontenery.repository.impl
 
-import com.kontenery.library.model.invoice.Invoice
-import com.kontenery.library.utils.now
-import com.kontenery.library.utils.startOfCurrentMonth
+import com.kontenery.data.invoice.Invoice
+import com.kontenery.data.utils.now
+import com.kontenery.data.utils.startOfCurrentMonth
 import com.kontenery.model.invoice.InvoiceNumber
 import com.kontenery.repository.InvoiceRepo
 import com.kontenery.repository.entity.AddressEntity

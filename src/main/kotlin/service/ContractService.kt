@@ -1,8 +1,8 @@
 package com.kontenery.service
 
-import com.kontenery.library.model.Contract
-import com.kontenery.library.model.ContractDto
-import com.kontenery.library.model.Product
+import com.kontenery.data.Contract
+import com.kontenery.data.ContractDto
+import com.kontenery.data.Product
 import kotlinx.datetime.LocalDate
 
 interface ContractService {

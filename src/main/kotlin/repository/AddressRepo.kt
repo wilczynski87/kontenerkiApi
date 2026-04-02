@@ -1,6 +1,6 @@
 package com.kontenery.repository
 
-import com.kontenery.library.model.Address
+import com.kontenery.data.Address
 import com.kontenery.repository.entity.AddressEntity
 
 interface AddressRepo {

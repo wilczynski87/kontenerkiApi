@@ -1,7 +1,6 @@
 package com.kontenery.service
 
-import com.kontenery.library.model.invoice.Invoice
-import kotlinx.datetime.LocalDate
+import com.kontenery.data.invoice.Invoice
 
 interface PrintService {
 

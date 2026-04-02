@@ -1,7 +1,7 @@
 package com.kontenery.controller
 
-import com.kontenery.library.model.Reading
-import com.kontenery.library.model.Submeter
+import com.kontenery.data.Reading
+import com.kontenery.data.Submeter
 import com.kontenery.service.UtilitiesService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive

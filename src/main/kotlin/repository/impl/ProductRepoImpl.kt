@@ -1,6 +1,6 @@
 package com.kontenery.repository.impl
 
-import com.kontenery.library.model.Product
+import com.kontenery.data.Product
 import com.kontenery.repository.ProductRepo
 import com.kontenery.repository.entity.*
 

@@ -1,8 +1,8 @@
 package com.kontenery.repository.impl
 
-import com.kontenery.library.model.Reading
-import com.kontenery.library.model.Submeter
-import com.kontenery.library.utils.now
+import com.kontenery.data.Reading
+import com.kontenery.data.Submeter
+import com.kontenery.data.utils.now
 import com.kontenery.repository.UtilitiesRepo
 import com.kontenery.repository.entity.ClientEntity
 import com.kontenery.repository.entity.ReadingEntity

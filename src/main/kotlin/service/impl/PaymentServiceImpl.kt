@@ -1,12 +1,12 @@
 package com.kontenery.service.impl
 
-import com.kontenery.library.model.Client
-import com.kontenery.library.model.Payment
-import com.kontenery.library.model.PaymentDto
-import com.kontenery.library.model.invoice.Invoice
-import com.kontenery.library.utils.SellerAccount
-import com.kontenery.library.utils.errors.PaymentError
-import com.kontenery.library.utils.errors.ValidationErrorType
+import com.kontenery.data.Client
+import com.kontenery.data.Payment
+import com.kontenery.data.PaymentDto
+import com.kontenery.data.invoice.Invoice
+import com.kontenery.data.utils.SellerAccount
+import com.kontenery.data.utils.errors.PaymentError
+import com.kontenery.data.utils.errors.ValidationErrorType
 import com.kontenery.repository.PaymentRepo
 import com.kontenery.service.ClientService
 import com.kontenery.service.InvoiceService

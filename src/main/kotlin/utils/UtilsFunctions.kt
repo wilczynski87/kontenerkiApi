@@ -1,6 +1,6 @@
 package com.kontenery.utils
 
-import com.kontenery.library.utils.now
+import com.kontenery.data.utils.now
 import io.ktor.util.*
 import kotlinx.datetime.LocalDate
 

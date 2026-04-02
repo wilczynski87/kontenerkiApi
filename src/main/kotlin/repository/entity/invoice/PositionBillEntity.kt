@@ -1,6 +1,6 @@
 package com.kontenery.repository.entity.invoice
 
-import com.kontenery.library.model.invoice.Position
+import com.kontenery.data.invoice.Position
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID

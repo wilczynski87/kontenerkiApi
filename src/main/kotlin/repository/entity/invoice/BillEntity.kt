@@ -1,9 +1,7 @@
 package com.kontenery.repository.entity.invoice
 
-import com.kontenery.library.model.invoice.Invoice
-import com.kontenery.library.model.invoice.Subject
-import com.kontenery.repository.entity.invoice.InvoiceEntity.Companion.referrersOn
-import com.kontenery.repository.entity.invoice.InvoiceTable.nullable
+import com.kontenery.data.invoice.Invoice
+import com.kontenery.data.invoice.Subject
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID

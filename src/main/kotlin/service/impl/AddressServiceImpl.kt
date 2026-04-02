@@ -1,9 +1,8 @@
 package com.kontenery.service.impl
 
-import com.kontenery.library.model.Address
+import com.kontenery.data.Address
 import com.kontenery.repository.AddressRepo
 import com.kontenery.service.AddressService
-import org.jetbrains.exposed.sql.SizedIterable
 
 class AddressServiceImpl(
     private val addressRepo: AddressRepo,

@@ -1,10 +1,10 @@
 package com.kontenery.repository
 
-import com.kontenery.library.model.invoice.Invoice
-import com.kontenery.library.utils.endOfCurrentMonth
-import com.kontenery.library.utils.endOfCurrentYear
-import com.kontenery.library.utils.startOfCurrentMonth
-import com.kontenery.library.utils.startOfCurrentYear
+import com.kontenery.data.invoice.Invoice
+import com.kontenery.data.utils.endOfCurrentMonth
+import com.kontenery.data.utils.endOfCurrentYear
+import com.kontenery.data.utils.startOfCurrentMonth
+import com.kontenery.data.utils.startOfCurrentYear
 import kotlinx.datetime.*
 
 interface InvoiceRepo {

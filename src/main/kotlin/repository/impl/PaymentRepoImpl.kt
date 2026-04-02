@@ -1,6 +1,6 @@
 package com.kontenery.repository.impl
 
-import com.kontenery.library.model.Payment
+import com.kontenery.data.Payment
 import com.kontenery.repository.PaymentRepo
 import com.kontenery.repository.entity.*
 import com.kontenery.repository.entity.invoice.InvoiceEntity

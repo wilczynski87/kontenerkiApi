@@ -1,6 +1,6 @@
 package com.kontenery.repository
 
-import com.kontenery.library.model.Product
+import com.kontenery.data.Product
 
 interface ProductRepo {
 

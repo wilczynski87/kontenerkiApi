@@ -1,7 +1,7 @@
 package com.kontenery.repository.entity
 
-import com.kontenery.library.model.Reading
-import com.kontenery.library.model.Submeter
+import com.kontenery.data.Reading
+import com.kontenery.data.Submeter
 import com.kontenery.library.utils.UtilityType
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass

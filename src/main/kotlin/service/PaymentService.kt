@@ -1,8 +1,8 @@
 package com.kontenery.service
 
-import com.kontenery.library.model.Payment
-import com.kontenery.library.model.PaymentDto
-import com.kontenery.library.utils.errors.PaymentError
+import com.kontenery.data.Payment
+import com.kontenery.data.PaymentDto
+import com.kontenery.data.utils.errors.PaymentError
 import kotlinx.datetime.LocalDate
 
 interface PaymentService {

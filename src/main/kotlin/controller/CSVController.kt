@@ -1,12 +1,12 @@
 package com.kontenery.controller
 
-import com.kontenery.library.model.Payment
+import com.kontenery.data.Payment
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import com.kontenery.library.utils.MessageRequest
-import com.kontenery.library.utils.errors.PaymentError
+import com.kontenery.data.utils.MessageRequest
+import com.kontenery.data.utils.errors.PaymentError
 import com.kontenery.service.CSVService
 import com.kontenery.service.PaymentService
 import kotlinx.coroutines.coroutineScope

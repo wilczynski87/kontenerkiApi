@@ -1,7 +1,6 @@
 package com.kontenery.service
 
-import com.kontenery.library.model.Product
-
+import com.kontenery.data.Product
 
 interface ProductService {
     suspend fun save(product: Product): Product?

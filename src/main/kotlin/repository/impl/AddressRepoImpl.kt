@@ -1,6 +1,6 @@
 package com.kontenery.repository.impl
 
-import com.kontenery.library.model.Address
+import com.kontenery.data.Address
 import com.kontenery.repository.entity.AddressEntity
 import com.kontenery.repository.AddressRepo
 import com.kontenery.repository.entity.suspendTransaction

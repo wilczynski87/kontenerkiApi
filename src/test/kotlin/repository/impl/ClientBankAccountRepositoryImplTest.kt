@@ -1,8 +1,8 @@
 package repository.impl
 
-import com.kontenery.library.model.Client
-import com.kontenery.library.model.ClientBankAccount
-import com.kontenery.library.utils.now
+import com.kontenery.data.Client
+import com.kontenery.data.ClientBankAccount
+import com.kontenery.data.utils.now
 import com.kontenery.repository.entity.*
 import com.kontenery.repository.impl.ClientBankAccountRepositoryImpl
 import kotlinx.coroutines.runBlocking

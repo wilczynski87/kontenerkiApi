@@ -1,7 +1,7 @@
 package com.kontenery
 
-import com.kontenery.library.model.Product
-import com.kontenery.library.model.invoice.Subject
+import com.kontenery.data.Product
+import com.kontenery.data.invoice.Subject
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.*

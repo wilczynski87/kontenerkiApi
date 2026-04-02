@@ -1,7 +1,7 @@
 package com.kontenery.repository.entity.invoice
 
-import com.kontenery.library.model.Address
-import com.kontenery.library.model.invoice.Subject
+import com.kontenery.data.Address
+import com.kontenery.data.invoice.Subject
 import com.kontenery.repository.entity.*
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass

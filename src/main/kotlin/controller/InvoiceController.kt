@@ -1,12 +1,12 @@
 package com.kontenery.controller
 
-import com.kontenery.library.model.Client
-import com.kontenery.library.model.invoice.Invoice
-import com.kontenery.library.utils.endOfCurrentMonth
-import com.kontenery.library.utils.errors.ErrorMessage
-import com.kontenery.library.utils.now
-import com.kontenery.library.utils.startOfCurrentMonth
-import com.kontenery.library.utils.startOfCurrentYear
+import com.kontenery.data.Client
+import com.kontenery.data.invoice.Invoice
+import com.kontenery.data.utils.endOfCurrentMonth
+import com.kontenery.data.utils.errors.ErrorMessage
+import com.kontenery.data.utils.now
+import com.kontenery.data.utils.startOfCurrentMonth
+import com.kontenery.data.utils.startOfCurrentYear
 import com.kontenery.service.ClientService
 import com.kontenery.service.InvoiceService
 import com.kontenery.service.PrintService

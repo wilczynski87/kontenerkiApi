@@ -1,6 +1,6 @@
 package com.kontenery.controller
 
-import com.kontenery.library.model.Product
+import com.kontenery.data.Product
 import com.kontenery.service.ProductService
 import io.ktor.http.*
 import io.ktor.server.plugins.*

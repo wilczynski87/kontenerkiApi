@@ -1,7 +1,7 @@
 package com.kontenery.repository.impl
 
-import com.kontenery.library.model.invoice.Invoice
-import com.kontenery.library.utils.now
+import com.kontenery.data.invoice.Invoice
+import com.kontenery.data.utils.now
 import com.kontenery.repository.BillRepo
 import com.kontenery.repository.entity.AddressEntity
 import com.kontenery.repository.entity.ClientEntity

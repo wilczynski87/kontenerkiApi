@@ -1,7 +1,7 @@
 package com.kontenery.repository.entity
 
-import com.kontenery.library.model.Payment
-import com.kontenery.library.utils.SellerAccount
+import com.kontenery.data.Payment
+import com.kontenery.data.utils.SellerAccount
 import com.kontenery.repository.entity.invoice.InvoiceEntity
 import com.kontenery.repository.entity.invoice.InvoiceTable
 import org.jetbrains.exposed.dao.LongEntity

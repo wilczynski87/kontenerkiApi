@@ -1,11 +1,10 @@
 package com.kontenery.service.impl
 
-import com.kontenery.library.model.invoice.Invoice
+import com.kontenery.data.invoice.Invoice
 import com.kontenery.service.PrintService
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 

@@ -1,6 +1,6 @@
 package com.kontenery.service
 
-import com.kontenery.library.model.Address
+import com.kontenery.data.Address
 
 interface AddressService {
 

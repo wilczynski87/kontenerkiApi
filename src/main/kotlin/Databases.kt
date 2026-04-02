@@ -1,7 +1,7 @@
 package com.kontenery
 
 
-import com.kontenery.library.utils.Env
+import com.kontenery.data.utils.Env
 import com.kontenery.repository.entity.*
 import com.kontenery.repository.entity.invoice.*
 import org.jetbrains.exposed.sql.Database
