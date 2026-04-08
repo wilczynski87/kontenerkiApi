@@ -64,8 +64,9 @@ fun Route.listingRoute(
                 println("clientListBalance: $clientListBalance")
 
                 val clientsOverdueTo = if(to.year == LocalDate.now().year) to.minus(1, DateTimeUnit.MONTH) else to
+//                println("clientsOverdueTo: $clientsOverdueTo")
                 val clientsOverdue = listingService.clientsOverdue(from.minus(5, DateTimeUnit.YEAR), clientsOverdueTo)
-                println("clientListBalance: $clientListBalance")
+                println("clientsOverdue: $clientsOverdue")
 
                 val clientListPaymentsAndBalance: List<PaymentsListForFinanceTableWithBalance> = clientListPayments.map {
                     PaymentsListForFinanceTableWithBalance(

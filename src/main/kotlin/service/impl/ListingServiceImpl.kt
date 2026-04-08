@@ -18,7 +18,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -45,10 +47,10 @@ class ListingServiceImpl(
         val to: LocalDate = LocalDate.endOfCurrentYear()
         return try {
             ClientOnList(
-                id = client.id!!,
+                id = client.id,
                 name = client.getName(),
-                paymentsOverdue = clientOverdue(client.id!!, from, to),
-                contracts = getContractsIdForClient(client.id!!, true),
+                paymentsOverdue = clientOverdue(client.id, from, to),
+                contracts = getContractsIdForClient(client.id, true),
                 active = client.isActive ?: false,
                 invoice = client.needInvoice(),
                 lastBill = clientLastInvoiceSend(client),
@@ -66,24 +68,21 @@ class ListingServiceImpl(
 
     override suspend fun clientOverdue(clientId: Long, from: LocalDate, to: LocalDate): BigDecimal? {
         return try {
+            coroutineScope {
+                val payments = async { paymentsRepo.getPaymentsByClient(0, 1000, clientId, from, to.plus(1,DateTimeUnit.MONTH)) }
+                val invoices = async { invoicesRepo.getInvoicesForClient(0, 1000, clientId, from, to) }
+                val bills = async {  billRepo.getBillsForClient(0, 1000, clientId, from, to) }
 
-            val payments: List<Payment> = paymentsRepo.getPaymentsByClient(0, 1000, clientId, from, to)
-            val invoices: List<Invoice> =
-                invoicesRepo.getInvoicesForClient(0, 1000, clientId, from, to)
-            val bills: List<Invoice> = billRepo.getBillsForClient(0, 1000, clientId, from, to)
+                val paymentSum = payments.await().sumOf { it.amount }
+                val billsSum = bills.await().sumOf { it.priceSum?.toBigDecimal() ?: BigDecimal.ZERO }
+                val invoiceSum = invoices.await().sumOf { it.priceWithVatSum?.toBigDecimal() ?: BigDecimal.ZERO }
 
-            val paymentSum = payments.sumOf { it.amount }
-            val billsSum = bills.sumOf { it.priceSum?.toBigDecimal() ?: BigDecimal.ZERO }
-            val invoiceSum = invoices.sumOf { it.priceWithVatSum?.toBigDecimal() ?: BigDecimal.ZERO }
-
-
-            if(clientId.toInt() == 1) {
-                println("client Id: ${clientId}, from: $from, to: $to , paymentSum: $paymentSum, invoiceSum: $invoiceSum, billsSum: $billsSum")
-                invoices.forEach { println("invoice: $it") }
+//                if(clientId.toInt() == 1) {
+//                    println("client Id: ${clientId}, from: $from, to: $to , paymentSum: $paymentSum, invoiceSum: $invoiceSum, billsSum: $billsSum")
+//                    invoices.await().forEach { println("invoice: $it") }
+//                }
+                paymentSum - invoiceSum.setScale(2, RoundingMode.UP) - billsSum.setScale(2, RoundingMode.UP)
             }
-
-
-            paymentSum - invoiceSum.setScale(2, RoundingMode.UP) - billsSum.setScale(2, RoundingMode.UP)
         } catch (e: Exception) {
             println("clientOverdue: $e")
             null
