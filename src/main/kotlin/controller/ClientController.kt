@@ -1,12 +1,18 @@
 package com.kontenery.controller
 
 import com.kontenery.data.Client
+import com.kontenery.data.finance.ClientFinanceDto
+import com.kontenery.data.utils.startOfCurrentYear
+import com.kontenery.library.utils.now
 import com.kontenery.service.ClientService
 import io.ktor.http.*
 import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 
 fun Route.clientRoute(clientService: ClientService) {
     route("/client") {
@@ -71,6 +77,31 @@ fun Route.clientRoute(clientService: ClientService) {
             }
 
             call.respond("dostałem")
+        }
+
+        get("/finanseForClient/{id}") {
+            try {
+                val id = call.pathParameters["id"]?.toLongOrNull()
+                    ?: throw BadRequestException("Invalid ID format")
+                val from: String? = call.request.queryParameters["from"]
+                val to: String? = call.request.queryParameters["to"]
+                println("from: $from\nto: $to")
+
+                val fromLocalDate: LocalDate = if(from.isNullOrBlank()) LocalDate.startOfCurrentYear().minus(1, DateTimeUnit.YEAR)
+                    else LocalDate.parse(from)
+                val toLocalDate: LocalDate = if(to.isNullOrBlank()) LocalDate.startOfCurrentYear().minus(1, DateTimeUnit.DAY)
+                    else LocalDate.parse(to)
+
+                val clientFinanse: ClientFinanceDto = clientService.finanseForClient(id, fromLocalDate, toLocalDate)
+                    ?: throw NotFoundException("ClientFinance not found")
+
+                println("clientFinanse: $clientFinanse")
+                call.respond(clientFinanse)
+
+            } catch (e: Exception) {
+                println(e)
+                call.respond(HttpStatusCode.ExpectationFailed, e.message.toString())
+            }
         }
     }
 }

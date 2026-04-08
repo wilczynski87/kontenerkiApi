@@ -15,6 +15,7 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
 
+
 fun Route.listingRoute(
     listingService: ListingService
 ) {
@@ -63,7 +64,8 @@ fun Route.listingRoute(
                 val clientListBalance = listingService.clientsOverdue(from.minus(5, DateTimeUnit.YEAR), from.minus(1, DateTimeUnit.DAY))
                 println("clientListBalance: $clientListBalance")
 
-                val clientsOverdueTo = if(to.year == LocalDate.now().year) to.minus(1, DateTimeUnit.MONTH) else to
+                val endOfPreviousMonth = LocalDate(to.year, to.monthNumber, 1).minus(1, DateTimeUnit.DAY)
+                val clientsOverdueTo = if(to.year == LocalDate.now().year) endOfPreviousMonth else to
 //                println("clientsOverdueTo: $clientsOverdueTo")
                 val clientsOverdue = listingService.clientsOverdue(from.minus(5, DateTimeUnit.YEAR), clientsOverdueTo)
                 println("clientsOverdue: $clientsOverdue")

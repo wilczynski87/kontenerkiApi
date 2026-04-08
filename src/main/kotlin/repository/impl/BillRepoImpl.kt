@@ -111,8 +111,9 @@ class BillRepoImpl: BillRepo {
 
         BillEntity.find {
                 (BillTable.customer inList customersIds) and
-                (BillTable.billDate greaterEq from) and
-                (BillTable.billDate lessEq to)
+                (BillTable.billDate.between(from, to))
+//                (BillTable.billDate greaterEq from) and
+//                (BillTable.billDate lessEq to)
             }
             .limit(size)
             .offset(offset)

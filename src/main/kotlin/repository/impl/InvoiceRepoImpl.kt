@@ -37,7 +37,7 @@ class InvoiceRepoImpl(): InvoiceRepo {
         clientId: Long,
         from: LocalDate,
         to: LocalDate
-    ): List<Invoice> = suspendTransaction {
+    ): List<Invoice> = newSuspendedTransaction {
         val offset:Long = (page * size).toLong()
 
         val customersIds = SubjectEntity
@@ -46,8 +46,7 @@ class InvoiceRepoImpl(): InvoiceRepo {
 
         InvoiceEntity.find {
                 (InvoiceTable.customer inList customersIds) and
-                (InvoiceTable.invoiceDate greaterEq from) and
-                (InvoiceTable.invoiceDate lessEq to)
+                (InvoiceTable.invoiceDate.between(from, to))
             }
             .limit(size)
             .offset(offset)

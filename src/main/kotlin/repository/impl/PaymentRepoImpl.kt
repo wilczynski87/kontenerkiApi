@@ -5,7 +5,9 @@ import com.kontenery.repository.PaymentRepo
 import com.kontenery.repository.entity.*
 import com.kontenery.repository.entity.invoice.InvoiceEntity
 import com.kontenery.repository.entity.invoice.InvoiceTable
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
 import org.jetbrains.exposed.dao.with
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.and
@@ -18,19 +20,17 @@ class PaymentRepoImpl: PaymentRepo {
         clientId: Long,
         from: LocalDate,
         to: LocalDate
-    ): List<Payment> {
+    ): List<Payment> = newSuspendedTransaction {
         val countOffset: Long = (page * size).toLong()
-        return newSuspendedTransaction {
-            PaymentEntity
-                .find {
-                    (PaymentTable.fromClient eq clientId) and
-                    (PaymentTable.date.between(from, to))
-                }
-                .limit(size)
-                .offset(countOffset)
-                .with(PaymentEntity::fromClient, PaymentEntity::forInvoices)
-                .map { it.toDomain() }
-        }
+        PaymentEntity
+            .find {
+                (PaymentTable.fromClient eq clientId) and
+                (PaymentTable.date.between(from, to))
+            }
+            .limit(size)
+            .offset(countOffset)
+            .with(PaymentEntity::fromClient, PaymentEntity::forInvoices)
+            .map { it.toDomain() }
     }
 
     override suspend fun createPayment(payment: Payment): Payment = suspendTransaction {

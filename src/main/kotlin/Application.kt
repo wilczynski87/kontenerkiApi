@@ -60,12 +60,15 @@ fun Application.module() {
     println("\nMAIN API started\n")
     val apiConfig: ApiConfig = loadApiConfig()
     log.info("Environment: ${apiConfig.env}")
+    val paymentRepo:PaymentRepo = PaymentRepoImpl()
+    val invoiceRepo: InvoiceRepo = InvoiceRepoImpl()
+    val billRepo: BillRepo = BillRepoImpl()
 
     val addressRepo: AddressRepo = AddressRepoImpl()
     val addressService: AddressService = AddressServiceImpl(addressRepo)
 
     val clientRepo:ClientRepo = ClientRepoImpl(addressRepo)
-    val clientService:ClientService = ClientServiceImpl(clientRepo)
+    val clientService:ClientService = ClientServiceImpl(clientRepo, paymentRepo, invoiceRepo, billRepo)
 
     val productRepo: ProductRepo = ProductRepoImpl()
     val productService: ProductService = ProductServiceImp(productRepo)
@@ -73,13 +76,10 @@ fun Application.module() {
     val contractRepo: ContractRepo = ContractRepoImpl()
     val contractService: ContractService = ContractServiceImpl(contractRepo, clientService, productService)
 
-    val invoiceRepo: InvoiceRepo = InvoiceRepoImpl()
-    val billRepo: BillRepo = BillRepoImpl()
     val invoiceService: InvoiceService = InvoiceServiceImpl(invoiceRepo, billRepo, clientService, productService, contractService)
 
     val printService:PrintService = PrintServiceImpl(apiConfig.email.host, apiConfig.email.port.toString())
 
-    val paymentRepo:PaymentRepo = PaymentRepoImpl()
     val paymentService:PaymentService = PaymentServiceImpl(paymentRepo, clientService, invoiceService)
 
     val clientBankAccountRepository: ClientBankAccountRepository = ClientBankAccountRepositoryImpl()

@@ -1,6 +1,8 @@
 package com.kontenery.service
 
 import com.kontenery.data.Client
+import com.kontenery.data.finance.ClientFinanceDto
+import kotlinx.datetime.LocalDate
 
 
 interface ClientService {
@@ -16,4 +18,6 @@ interface ClientService {
     suspend fun updateClient(client: Client): Client?
 
     suspend fun paysVat(clientId: Long): Boolean
+
+    suspend fun finanseForClient(clientId: Long, from: LocalDate, to: LocalDate): ClientFinanceDto?
 }
