@@ -24,7 +24,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: wilczynski87/konteneryapi
+#    image: wilczynski87/konteneryapi
     container_name: api
     restart: unless-stopped
     expose:
@@ -69,21 +69,21 @@ services:
       EMAIL_PORT: 8200
       ENV: DEV
 
-  web:
-    build:
-      context: ../kontenerkiWeb
-      dockerfile: Dockerfile
-    image: wilczynski87/konteneryweb
-    container_name: web
-    restart: unless-stopped
-    expose:
-      - 80
-    ports:
-      - "80:80"
-    environment:
-      API_NAME: api
-      API_PORT: 8100
-      ENV: DEV
+#  web:
+#    build:
+#      context: ../kontenerkiWeb
+#      dockerfile: Dockerfile
+##    image: wilczynski87/konteneryweb
+#    container_name: web
+#    restart: unless-stopped
+#    expose:
+#      - 80
+#    ports:
+#      - "80:80"
+#    environment:
+#      API_NAME: api
+#      API_PORT: 8100
+#      ENV: DEV
 
 volumes:
   postgres_data:
