@@ -31,9 +31,6 @@ jobs:
             StrictHostKeyChecking no
           EOF
 
-#      - name: Upload repo to VPS
-#        run: |
-#          rsync -az --delete --exclude '.git' --exclude '.github' ./ vps:/opt/app/
       - name: Upload repo to VPS
         run: |
           rsync -az --delete --exclude '.git' --exclude '.github' ./ vps:/opt/app/ || {
