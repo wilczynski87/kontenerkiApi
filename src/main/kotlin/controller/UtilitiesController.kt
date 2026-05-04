@@ -1,7 +1,10 @@
 package com.kontenery.controller
 
 import com.kontenery.data.Reading
+import com.kontenery.data.ReadingDto
 import com.kontenery.data.Submeter
+import com.kontenery.data.invoice.Position
+import com.kontenery.service.ClientService
 import com.kontenery.service.UtilitiesService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
@@ -14,7 +17,11 @@ import io.ktor.server.routing.route
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import io.ktor.server.response.respond
-fun Route.utilitiesController(utilitiesService: UtilitiesService) {
+
+fun Route.utilitiesController(
+    utilitiesService: UtilitiesService,
+    clientService: ClientService,
+) {
     val logger: Logger = LoggerFactory.getLogger("utilitiesController")
 
     route("utilities") {
@@ -34,7 +41,7 @@ fun Route.utilitiesController(utilitiesService: UtilitiesService) {
                     val submeterId = call.parameters["id"]?.toLongOrNull()
                         ?: return@get call.respond(HttpStatusCode.BadRequest, "Brak lub błędne ID")
                     val result = utilitiesService.getSubmeter(submeterId)
-                        ?: return@get call.respond(HttpStatusCode.NotFound, "Nie znaleziono podlicznika")
+                        ?: return@get call.respond(HttpStatusCode.ExpectationFailed, "Nie znaleziono podlicznika")
 
                     call.respond(result)
                 } catch (e: Exception) {
@@ -109,6 +116,10 @@ fun Route.utilitiesController(utilitiesService: UtilitiesService) {
             post {
                 try {
                     val reading: Reading = call.receive()
+                    // Validation
+                    val submeterId: Long = reading.submeterId ?: throw NullPointerException("No submeter Id")
+                    utilitiesService.getSubmeter(submeterId) ?: throw NullPointerException("No submeter found in database: $submeterId")
+
                     val result = utilitiesService.postReading(reading)
                         ?: return@post call.respond(HttpStatusCode.InternalServerError, "Nie można zapisać odczytu")
 
@@ -118,6 +129,58 @@ fun Route.utilitiesController(utilitiesService: UtilitiesService) {
                     call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Unknown error")))
                 }
             }
+
+            post("check/{clientId}") {
+                try {
+                    val reading: Reading = call.receive()
+                    // Validation
+                    val clientId: Long = call.parameters["clientId"]?.toLongOrNull() ?: throw NullPointerException("No client Id")
+                    clientService.findClientById(clientId) ?: throw NullPointerException("No client found in database: $clientId")
+                    val submeterId: Long = reading.submeterId ?: throw NullPointerException("No submeter Id")
+                    utilitiesService.getSubmeter(submeterId) ?: throw NullPointerException("No submeter found in database: $submeterId")
+
+                    // TODO
+                    //  - czy kolejny odczyt nie będzie błędny
+                    //      - np mniejsza wartość niż poprzedni odczyt
+                    // - czy rodzaj mediów w odczycie i liczniku sie zgadzają
+                    // - czy data się zgadza
+
+//                    val result = utilitiesService.postReading(reading)
+//                        ?: return@post call.respond(HttpStatusCode.InternalServerError, "Nie można zapisać odczytu")
+
+                    call.respond(HttpStatusCode.Created, reading)
+                } catch (e: Exception) {
+                    logger.error("Błąd przy tworzeniu odczytu", e)
+                    call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Unknown error")))
+                }
+            }
+
+            post("createPosition/{clientId}") {
+                try {
+                    val readingDto: ReadingDto = call.receive()
+                    val reading = readingDto.toReading()
+                    // Validation
+                    val clientId: Long = call.parameters["clientId"]?.toLongOrNull() ?: throw NullPointerException("No client Id")
+                    clientService.findClientById(clientId) ?: throw NullPointerException("No client found in database: $clientId")
+                    val submeterId: Long = reading.submeterId ?: throw NullPointerException("No submeter Id")
+                    utilitiesService.getSubmeter(submeterId) ?: throw NullPointerException("No submeter found in database: $submeterId")
+
+                    // TODO
+                    //  - czy kolejny odczyt nie będzie błędny
+                    //      - np mniejsza wartość niż poprzedni odczyt
+                    // - czy rodzaj mediów w odczycie i liczniku sie zgadzają
+                    // - czy data się zgadza
+
+                    val result: Position = utilitiesService.createPosition(reading)
+                        ?: return@post call.respond(HttpStatusCode.InternalServerError, "Nie można zapisać odczytu")
+
+                    call.respond(HttpStatusCode.Created, result)
+                } catch (e: Exception) {
+                    logger.error("Błąd przy tworzeniu odczytu", e)
+                    call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Unknown error")))
+                }
+            }
+
             put("/{id}") {
                 try {
                     val readingId = call.parameters["id"]?.toLongOrNull()

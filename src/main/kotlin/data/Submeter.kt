@@ -1,6 +1,6 @@
 package com.kontenery.data
 
-import com.kontenery.library.utils.UtilityType
+import com.kontenery.data.utils.UtilityType
 import kotlinx.serialization.Serializable
 
 @Serializable

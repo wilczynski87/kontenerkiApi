@@ -54,7 +54,7 @@ services:
     build:
       context: ../kontenerkiEmail
       dockerfile: Dockerfile
-    image: wilczynski87/konteneryemail
+#    image: wilczynski87/konteneryemail
     container_name: email
     restart: unless-stopped
     expose:

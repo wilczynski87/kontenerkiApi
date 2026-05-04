@@ -2,7 +2,7 @@ package com.kontenery.repository.entity
 
 import com.kontenery.data.Reading
 import com.kontenery.data.Submeter
-import com.kontenery.library.utils.UtilityType
+import com.kontenery.data.utils.UtilityType
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -59,7 +59,7 @@ class ReadingEntity(id: EntityID<Long>) : LongEntity(id) {
         id = id.value,
         submeterId = submeter.id.value,
         utilityType = UtilityType.valueOf(utilityType),
-        reading = reading,
+        reading = BigDecimal(reading),
         date = date,
         currentUnitPriceNet = BigDecimal.valueOf(currentUnitPriceNet)
     )

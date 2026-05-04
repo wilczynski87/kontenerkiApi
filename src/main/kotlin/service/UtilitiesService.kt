@@ -2,6 +2,7 @@ package com.kontenery.service
 
 import com.kontenery.data.Reading
 import com.kontenery.data.Submeter
+import com.kontenery.data.invoice.Position
 
 interface UtilitiesService {
 
@@ -16,5 +17,7 @@ interface UtilitiesService {
     suspend fun postReading(reading:Reading): Reading?
     suspend fun updateReading(id: Long, reading: Reading): Reading?
     suspend fun deleteReading(id: Long): Boolean
+
+    suspend fun createPosition(newReading: Reading): Position?
 
 }

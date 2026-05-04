@@ -48,7 +48,7 @@ fun Application.configureRouting(
             CSVController(csvService, paymentService)
             bankAccountController(bankAccountService)
             listingRoute(listingService)
-            utilitiesController(utilitiesService)
+            utilitiesController(utilitiesService, clientService)
         }
         authController(authService)
     }

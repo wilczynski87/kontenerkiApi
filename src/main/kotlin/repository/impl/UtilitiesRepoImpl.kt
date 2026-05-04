@@ -65,7 +65,7 @@ class UtilitiesRepoImpl: UtilitiesRepo {
             ReadingEntity.new {
                 submeter = SubmeterEntity[submeterId]
                 utilityType = reading.utilityType?.name ?: throw NullPointerException("Nie ma typu mediów")
-                this.reading = reading.reading ?: throw NullPointerException("Nie ma odczytu zużycia")
+                this.reading = reading.reading.toString() ?: throw NullPointerException("Nie ma odczytu zużycia")
                 date = reading.date ?: LocalDate.now()
                 currentUnitPriceNet = reading.currentUnitPriceNet?.toDouble() ?: throw NullPointerException("Nie ma ceny za jednostkę mediów")
             }.toDomain()
@@ -89,7 +89,7 @@ class UtilitiesRepoImpl: UtilitiesRepo {
             entity.apply {
                 submeter = SubmeterEntity[submeterId]
                 utilityType = reading.utilityType?.name ?: utilityType
-                this.reading = reading.reading ?: this.reading
+                this.reading = reading.reading.toString() ?: this.reading
                 date = reading.date ?: date
                 currentUnitPriceNet = reading.currentUnitPriceNet?.toDouble() ?: currentUnitPriceNet
             }.toDomain()

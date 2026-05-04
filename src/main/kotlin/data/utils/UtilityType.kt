@@ -1,4 +1,4 @@
-package com.kontenery.library.utils
+package com.kontenery.data.utils
 
 enum class UtilityType(
     val polishName: String,
