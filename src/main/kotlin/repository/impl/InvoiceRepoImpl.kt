@@ -179,19 +179,22 @@ class InvoiceRepoImpl(): InvoiceRepo {
             ?.toDomain()
     }
 
-    override suspend fun confirmInvoiceSendDate(invoiceNumber: String, date: LocalDate): Boolean = suspendTransaction {
+    override suspend fun confirmInvoiceSendDate(invoiceNumber: String, date: LocalDate): Boolean = newSuspendedTransaction {
         val isInvoice = !invoiceNumber.endsWith('r')
         try {
             if(isInvoice) {
                 InvoiceEntity.find {
                     InvoiceTable.invoiceNumber eq invoiceNumber
-                }.firstOrNull()?.invoiceSendToClient = date
+                }.firstOrNull()?.apply {
+                    invoiceSendToClient = date
+                } != null
             } else {
-                BillEntity.find { BillTable.billNumber eq invoiceNumber }.firstOrNull()?.billSendToClient = date
+                BillEntity.find { BillTable.billNumber eq invoiceNumber }.firstOrNull()?.apply {
+                    billSendToClient = date
+                } != null
             }
-            true
         } catch (e: Exception) {
-            throw NullPointerException("confirmInvoiceSendDate: No invoice found for: $invoiceNumber")
+            throw IllegalArgumentException("confirmInvoiceSendDate: No invoice found for: $invoiceNumber, ${e.message}")
         }
     }
 
