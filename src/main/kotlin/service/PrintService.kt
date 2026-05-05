@@ -1,6 +1,7 @@
 package com.kontenery.service
 
 import com.kontenery.data.invoice.Invoice
+import com.kontenery.data.invoice.InvoiceSend
 
 interface PrintService {
 
@@ -12,5 +13,5 @@ interface PrintService {
 
     suspend fun sendPeriodicBill(invoice: Invoice)
 
-    suspend fun sendInvoiceAgain(invoice: Invoice)
+    suspend fun sendInvoiceAgain(invoice: Invoice): InvoiceSend
 }

@@ -1,12 +1,16 @@
 package com.kontenery.service.impl
 
 import com.kontenery.data.invoice.Invoice
+import com.kontenery.data.invoice.InvoiceSend
+import com.kontenery.data.utils.now
 import com.kontenery.service.PrintService
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
+import java.rmi.ServerException
 
 private val logger = LoggerFactory.getLogger("PrintServiceImpl")
 
@@ -57,8 +61,10 @@ class PrintServiceImpl(emailName: String, emailPort: String): PrintService {
         TODO("Not yet implemented")
     }
 
-    override suspend fun sendInvoiceAgain(invoice: Invoice) {
-        try {
+    override suspend fun sendInvoiceAgain(invoice: Invoice): InvoiceSend {
+        val invoiceSend = InvoiceSend(invoice.invoiceNumber, invoice.customer?.name, invoice.invoiceSendToClient,
+            LocalDate.now())
+        return try {
             val json:String = Json.encodeToString(invoice)
 
             val statusSend = client.post(sendInvoiceAgain) {
@@ -67,10 +73,12 @@ class PrintServiceImpl(emailName: String, emailPort: String): PrintService {
             }.status
 
             if(statusSend.isSuccess().not()) throw IllegalArgumentException(statusSend.description)
+            else invoiceSend.copy(sendLastTime = LocalDate.now())
 
         } catch (e:Exception) {
-            println("sendInvoiceAgain EXCEPTION, invoiceNumber: ${invoice.invoiceNumber}")
+            println("\nsendInvoiceAgain EXCEPTION, invoiceNumber: ${invoice.invoiceNumber}")
             println(e)
+            throw ServerException("Could not send Invoice by email: ${invoiceSend}, for Cl")
         }
     }
 

@@ -26,3 +26,13 @@ data class Invoice(
     val vatApply: Boolean = false,
 ) {
 }
+
+@Serializable
+data class InvoiceSend(
+    val invoiceNumber: String? = null,
+    val forClient: String? = null,
+    @Serializable(with = LocalDateSerializer::class)
+    val sendFirstTime: LocalDate? = null,
+    @Serializable(with = LocalDateSerializer::class)
+    val sendLastTime: LocalDate? = null,
+)

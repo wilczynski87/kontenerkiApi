@@ -232,19 +232,18 @@ fun Route.invoiceRoutes(
             }
         }
 
-        get("/{invoiceNumber}/sendAgain") {
+        post("/sendAgain") {
             try {
-                val invoiceNumber: String = call.pathParameters["invoiceNumber"]
-                    ?: throw TypeCastException("can not read invoice ID {invoiceId}/sendAgain")
+                val invoiceNumber: String = call.receive()
 
                 println("invoiceNumber: $invoiceNumber")
 
                 val invoice: Invoice = invoiceService.getInvoiceByNumber(invoiceNumber)
                     ?: throw IllegalStateException("Can not find Invoice with given ID: $invoiceNumber")
 
-                printService.sendInvoiceAgain(invoice)
+                val invoiceSend = printService.sendInvoiceAgain(invoice)
 
-                call.respond(Json.encodeToString("Invoice send"))
+                call.respond(invoiceSend)
             } catch (e: Exception) {
                 println("/{invoiceId}/sendAgain: ${e.message}")
                 call.respond(HttpStatusCode.Conflict,"${e.message}", )
