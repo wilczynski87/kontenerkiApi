@@ -39,6 +39,7 @@ services:
       DB_USER: admin_user
       EMAIL_HOST: email
       EMAIL_PORT: 8200
+      INTERNAL_API_KEY: secret123
       API_PORT: 8100
       API_ENV: PROD
       JWT_SECRET: secret
@@ -64,10 +65,11 @@ services:
     environment:
       EMAIL_PASSWORD: litcviutipqwkxsw
       EMAIL_USER: parkingostrowskiego@gmail.com
+      INTERNAL_API_KEY: secret123
       API_NAME: api
       API_PORT: 8100
       EMAIL_PORT: 8200
-      ENV: PROD
+      ENV: DEV
 
 #  web:
 #    build:

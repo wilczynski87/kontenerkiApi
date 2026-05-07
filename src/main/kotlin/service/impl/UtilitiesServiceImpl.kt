@@ -49,6 +49,11 @@ class UtilitiesServiceImpl(
         return utilitiesRepo.createReading(reading)
     }
 
+    override suspend fun addReading(reading: Reading): Submeter? {
+        val reading = postReading(reading)
+        return utilitiesRepo.getSubmeter(reading.submeterId ?: throw NullPointerException("No submeterId in saved reading"))
+    }
+
     override suspend fun updateReading(
         id: Long,
         reading: Reading

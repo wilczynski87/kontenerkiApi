@@ -3,6 +3,7 @@ package com.kontenery.controller
 import com.kontenery.data.Reading
 import com.kontenery.data.ReadingDto
 import com.kontenery.data.Submeter
+import com.kontenery.data.SubmeterDto
 import com.kontenery.data.invoice.Position
 import com.kontenery.service.ClientService
 import com.kontenery.service.UtilitiesService
@@ -65,8 +66,8 @@ fun Route.utilitiesController(
                 try {
                     val submeterId = call.parameters["id"]?.toLongOrNull()
                         ?: return@put call.respond(HttpStatusCode.BadRequest, "Brak lub błędne ID")
-                    val submeter: Submeter = call.receive()
-                    val result = utilitiesService.updateSubmeter(submeterId, submeter)
+                    val submeter: SubmeterDto = call.receive()
+                    val result = utilitiesService.updateSubmeter(submeterId, submeter.toSubmeter())
                         ?: return@put call.respond(HttpStatusCode.NotFound, "Nie można zaktualizować podlicznika")
 
                     call.respond(result)
@@ -115,12 +116,12 @@ fun Route.utilitiesController(
             }
             post {
                 try {
-                    val reading: Reading = call.receive()
+                    val reading: ReadingDto = call.receive()
                     // Validation
                     val submeterId: Long = reading.submeterId ?: throw NullPointerException("No submeter Id")
                     utilitiesService.getSubmeter(submeterId) ?: throw NullPointerException("No submeter found in database: $submeterId")
 
-                    val result = utilitiesService.postReading(reading)
+                    val result: Submeter = utilitiesService.addReading(reading.toReading())
                         ?: return@post call.respond(HttpStatusCode.InternalServerError, "Nie można zapisać odczytu")
 
                     call.respond(HttpStatusCode.Created, result)

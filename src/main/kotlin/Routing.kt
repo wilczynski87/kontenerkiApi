@@ -43,13 +43,13 @@ fun Application.configureRouting(
             productRouting(productService)
             contractRoutes(contractService, clientService, productService)
             invoiceRoutes(invoiceService, printService, clientService)
-            mailSendConfirmation(invoiceService)
             paymentRoute(paymentService)
             CSVController(csvService, paymentService)
             bankAccountController(bankAccountService)
             listingRoute(listingService)
             utilitiesController(utilitiesService, clientService)
         }
+        mailSendConfirmation(invoiceService)
         authController(authService)
     }
 }

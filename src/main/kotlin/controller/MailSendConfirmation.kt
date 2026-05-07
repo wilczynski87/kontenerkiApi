@@ -12,6 +12,12 @@ fun Route.mailSendConfirmation(invoiceService: InvoiceService) {
         get("/invoice") {
             println("mailSend/invoice")
             try {
+                val key = call.request.headers["X-Internal-Key"]
+                val expected = System.getenv("INTERNAL_API_KEY")
+                if (key != expected) {
+                    call.respond(HttpStatusCode.Unauthorized)
+                    return@get
+                }
                 val invoiceNumber: String = call.queryParameters[MailSendParam.INVOICE_NUMBER.param].toString()
                 val invoiceSendDate: LocalDate = LocalDate.parse(call.queryParameters[MailSendParam.SEND_DATE.param].toString())
                 println("mailSend/invoice: invoice send: $invoiceNumber, on date: $invoiceSendDate")
