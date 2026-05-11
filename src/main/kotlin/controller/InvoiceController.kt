@@ -240,6 +240,7 @@ fun Route.invoiceRoutes(
 
                 val invoice: Invoice = invoiceService.getInvoiceByNumber(invoiceNumber)
                     ?: throw IllegalStateException("Can not find Invoice with given ID: $invoiceNumber")
+//                println("sendInvoiceAgain: $invoice")
 
                 val invoiceSend = printService.sendInvoiceAgain(invoice)
 
