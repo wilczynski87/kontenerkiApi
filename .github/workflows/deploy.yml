@@ -38,6 +38,32 @@ jobs:
             exit 1
           }
 
+      - name: Create .env on VPS
+        run: |
+          ssh vps "cat <<EOF > /opt/app/.env
+          # === SECRETS ===
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN=${{ secrets.GOOGLE_REFRESH_TOKEN }}
+          INTERNAL_API_KEY=${{ secrets.INTERNAL_API_KEY }}
+          JWT_AUDIENCE=${{ secrets.JWT_AUDIENCE }}
+          JWT_REALM=${{ secrets.JWT_REALM }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          
+          # === VARIABLES ===
+          API_ENV=${{ vars.API_ENV }}
+          API_NAME=${{ vars.API_NAME }}
+          API_PORT=${{ vars.API_PORT }}
+          DB_HOST=${{ vars.DB_HOST }}
+          DB_NAME=${{ vars.DB_NAME }}
+          DB_PORT=${{ vars.DB_PORT }}
+          DB_USER=${{ vars.DB_USER }}
+          EMAIL_USER=${{ vars.EMAIL_USER }}
+          ENV=${{ vars.ENV }}
+          VALIDITY_MS=${{ vars.VALIDITY_MS }}
+          EOF"
+
       - name: Build and deploy (zero downtime)
         run: |
           ssh vps "
