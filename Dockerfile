@@ -24,17 +24,6 @@ COPY --from=build /app/build/libs/api.jar ./api.jar
 # Expose the port the Ktor app runs on
 EXPOSE 8100
 
-# Evirnomental variables
-ENV DB_HOST=localhost
-ENV DB_NAME=db1
-ENV DB_PASSWORD=postgres
-ENV DB_PORT=5432
-ENV DB_USER=admin_user
-ENV EMAIL_HOST=email
-ENV EMAIL_PORT=8200
-ENV API_PORT=8100
-ENV API_ENV=PROD
-
 # Run the app
 CMD ["java", "-jar", "api.jar"]
 

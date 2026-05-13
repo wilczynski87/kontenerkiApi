@@ -5,10 +5,8 @@ services:
     image: postgres:18
     container_name: db
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: admin_user
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: db1
+    env_file:
+      - .env
     ports:
       - "5431:5432"
     volumes:
@@ -31,22 +29,8 @@ services:
       - 8100
     ports:
       - "8100:8100"
-    environment:
-      DB_HOST: db
-      DB_NAME: db1
-      DB_PASSWORD: postgres
-      DB_PORT: 5432
-      DB_USER: admin_user
-      EMAIL_HOST: email
-      EMAIL_PORT: 8200
-      INTERNAL_API_KEY: secret123
-      API_PORT: 8100
-      API_ENV: PROD
-      JWT_SECRET: secret
-      JWT_AUDIENCE: jwt-audience
-      JWT_REALM: ktor sample app
-      VALIDITY_MS: 60000
-      GOOGLE_CLIENT_ID: 1234567890
+    env_file:
+      - .env
     depends_on:
       db:
         condition: service_healthy
@@ -62,14 +46,8 @@ services:
       - 8200
     ports:
       - "8200:8200"
-    environment:
-      EMAIL_PASSWORD: litcviutipqwkxsw
-      EMAIL_USER: parkingostrowskiego@gmail.com
-      INTERNAL_API_KEY: secret123
-      API_NAME: api
-      API_PORT: 8100
-      EMAIL_PORT: 8200
-      ENV: PROD
+    env_file:
+      - .env
 
 #  web:
 #    build:
