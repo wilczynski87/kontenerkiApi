@@ -65,14 +65,11 @@ jobs:
           VALIDITY_MS=${{ vars.VALIDITY_MS }}
           EOF"
 
-      - name: Build and deploy (zero downtime)
+      - name: Build and deploy
         run: |
           ssh vps "
-            docker stop api || true
-            docker rm api || true
-            docker rmi my-api:latest || true
             cd /opt/app
-            docker compose pull
+            docker compose down
             docker compose build --no-cache
-            docker compose up -d --build
+            docker compose up -d
           "
