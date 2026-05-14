@@ -1,34 +1,25 @@
 package com.kontenery.service.impl
 
+import com.kontenery.service.BankAccountService
+import io.mockk.coEvery
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Assertions.*
 import java.math.BigDecimal
-import kotlin.time.Duration.Companion.seconds
-
-
-//class CSVServiceImplTest {
-//    @BeforeEach
-//    fun setUp() {
-//        TODO("Not yet implemented")
-//    }
-//
-//    @Test
-//    fun readCSVNest() {
-//    }
-//
-//}
 
 class CSVServiceImplTest {
 
     private lateinit var service: CSVServiceImpl
+    private lateinit var bankAccountService: BankAccountService
 
     @BeforeEach
     fun setUp() {
+        bankAccountService = mockk()
+        coEvery { bankAccountService.findClientByAccountNumber(any()) } returns null
         service = CSVServiceImpl(
-            bankAccountService = TODO()
+            bankAccountService = bankAccountService
         )
     }
 
