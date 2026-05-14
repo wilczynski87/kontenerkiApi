@@ -2,6 +2,7 @@ package com.kontenery
 
 import com.kontenery.controller.*
 import com.kontenery.service.*
+import com.kontenery.validator.PaymentValidator
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.authenticate
@@ -23,6 +24,7 @@ fun Application.configureRouting(
     listingService: ListingService,
     utilitiesService: UtilitiesService,
     authService: AuthService,
+    paymentValidator: PaymentValidator,
 ) {
     routing {
 
@@ -44,7 +46,7 @@ fun Application.configureRouting(
             contractRoutes(contractService, clientService, productService)
             invoiceRoutes(invoiceService, printService, clientService)
             paymentRoute(paymentService)
-            CSVController(csvService, paymentService)
+            CSVController(csvService, paymentService, paymentValidator)
             bankAccountController(bankAccountService)
             listingRoute(listingService)
             utilitiesController(utilitiesService, clientService)

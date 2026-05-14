@@ -5,8 +5,6 @@ import com.kontenery.data.Payment
 import com.kontenery.data.PaymentDto
 import com.kontenery.data.invoice.Invoice
 import com.kontenery.data.utils.SellerAccount
-import com.kontenery.data.utils.errors.PaymentError
-import com.kontenery.data.utils.errors.ValidationErrorType
 import com.kontenery.repository.PaymentRepo
 import com.kontenery.service.ClientService
 import com.kontenery.service.InvoiceService
@@ -48,52 +46,6 @@ class PaymentServiceImpl(
     override suspend fun clientOverdue(clientId: Long, from: LocalDate, to: LocalDate): Double {
         TODO("Not yet implemented")
     }
-    override suspend fun validatePayment(
-        newPayment: Payment,
-        errors: MutableList<PaymentError>?
-    ): Boolean {
-        // it have to return TRUE if there is no error
-//        println("newPayment.referenceNumber: ${newPayment.referenceNumber}, ${newPayment.fromClient?.getName()} ${newPayment.date} ${newPayment.amount}")
-        if(newPayment.referenceNumber.isNullOrBlank()) {
-            val isDuplicated: Boolean = paymentRepo.isDuplicate(newPayment)
-            if(isDuplicated) {
-                errors?.add(
-                    PaymentError(
-                        ValidationErrorType.DUPLICATED.name,
-                        "Payment with same parameters already exists",
-                        newPayment
-                    )
-                )
-                return false
-            }
-            // if payment in db with given db -> return null because we do not want duplicates
-        } else if(paymentRepo.isPaymentWithReferenceNr(newPayment.referenceNumber!!)) {
-            errors?.add(
-                PaymentError(
-                    ValidationErrorType.DUPLICATED.name,
-                    "Payment with REFERENCE nr already exists",
-                    newPayment
-                )
-            )
-            return false
-        }
-        return true
-    }
-
-    override suspend fun validatePaymentByParams(
-        newPayment: Payment,
-        errors: MutableList<PaymentError>?
-    ): Boolean {
-        // give false when find similar in DB
-        if(paymentRepo.isDuplicate(newPayment)) {
-            println("payment error: $newPayment")
-            return false
-        }
-        println("Z płatnością ok od: ${newPayment.fromClient?.getName()}")
-        return true
-    }
-
-
     private suspend fun dtoToPayment(dto: PaymentDto): Payment {
         val client: Client? = dto.fromClientId?.let { clientService.findClientById(it) }
         println("client for payment: $client")

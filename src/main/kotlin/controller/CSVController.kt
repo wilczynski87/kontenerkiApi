@@ -9,10 +9,11 @@ import com.kontenery.data.utils.MessageRequest
 import com.kontenery.data.utils.errors.PaymentError
 import com.kontenery.service.CSVService
 import com.kontenery.service.PaymentService
+import com.kontenery.validator.PaymentValidator
 import kotlinx.coroutines.coroutineScope
 import org.slf4j.LoggerFactory
 
-fun Route.CSVController(csvService: CSVService, paymentService: PaymentService) {
+fun Route.CSVController(csvService: CSVService, paymentService: PaymentService, paymentValidator: PaymentValidator) {
     val logger = LoggerFactory.getLogger("CSVController")
     route("/csv") {
 
@@ -28,15 +29,14 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService) 
 
                     val errors: MutableList<PaymentError> = mutableListOf()
                     newPayments.filterNot { it.fromClient == null }
-                        .filter { paymentService.validatePayment(it, errors) }
+                        .filter { paymentValidator.validatePayment(it, errors) }
                         .map { it.toDto() }
                         .forEach {
                             try {
-//                                println("it: ${it.referenceNumber}")
                                 paymentService.createPayment(it)
                                 logger.info("payment created: ${it.paymentId}")
                             } catch (e: Exception) {
-//                                logger.error("createPayment error: id:${it.paymentId} \n ${e.message}")
+                                logger.error("createPayment error: id:${it.paymentId} - ${e.message}")
                             }
                         }
                     errors.forEach { error ->
@@ -59,7 +59,7 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService) 
                 val errors: MutableList<PaymentError> = mutableListOf()
                 coroutineScope {
                     val newPayments: List<Payment> = csvService.readCSVAlior(rawCSV.message)
-                        .filter { paymentService.validatePaymentByParams(it, errors) }
+                        .filter { paymentValidator.validatePaymentByParams(it) }
                     newPayments.forEach { println("payment: $it") }
                 }
                 call.respond(MessageRequest("OK"))
@@ -81,17 +81,14 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService) 
 
                     val errors: MutableList<PaymentError> = mutableListOf()
                     newPayments.filterNot { it.fromClient == null }
-                        .filter { paymentService.validatePayment(it, errors) }
+                        .filter { paymentValidator.validatePayment(it, errors) }
                         .map { it.toDto() }
                         .forEach {
                             try {
-//                                println("it: ${it.referenceNumber}")
                                 paymentService.createPayment(it)
-                                logger.info("payment created: $it " + ""
-//                                        "${it.paymentId}, ${it.title}, ${it.fromClientId}"
-                                )
+                                logger.info("payment created: ${it.paymentId}")
                             } catch (e: Exception) {
-//                                logger.error("createPayment error: id:${it.paymentId} \n ${e.message}")
+                                logger.error("createPayment error: id:${it.paymentId} - ${e.message}")
                             }
                         }
                     errors.forEach { error ->

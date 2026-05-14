@@ -43,6 +43,7 @@ import com.kontenery.service.impl.PaymentServiceImpl
 import com.kontenery.service.impl.PrintServiceImpl
 import com.kontenery.service.impl.ProductServiceImp
 import com.kontenery.service.impl.UtilitiesServiceImpl
+import com.kontenery.validator.PaymentValidator
 import com.kontenery.validator.validator
 import io.ktor.server.application.Application
 import io.ktor.server.application.log
@@ -87,6 +88,8 @@ fun Application.module() {
 
     val csvService: CSVService = CSVServiceImpl(bankAccountService)
 
+    val paymentValidator = PaymentValidator(paymentRepo)
+
     val listingService: ListingService = ListingServiceImpl(clientRepo, productRepo, contractRepo, paymentRepo, invoiceRepo, billRepo)
 
     val utilitiesRepo: UtilitiesRepo = UtilitiesRepoImpl()
@@ -103,5 +106,5 @@ fun Application.module() {
     validator(contractService)
     configureSecurity(jwtConfig)
     configureHTTP()
-    configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService, csvService, bankAccountService, listingService, utilitiesService, authService)
+    configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService, csvService, bankAccountService, listingService, utilitiesService, authService, paymentValidator)
 }
