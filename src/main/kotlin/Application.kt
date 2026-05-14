@@ -45,7 +45,7 @@ import com.kontenery.service.impl.ProductServiceImp
 import com.kontenery.service.impl.UtilitiesServiceImpl
 import com.kontenery.validator.BankAccountValidator
 import com.kontenery.validator.PaymentValidator
-import com.kontenery.validator.validator
+import com.kontenery.validator.httpValidator
 import io.ktor.server.application.Application
 import io.ktor.server.application.log
 import io.ktor.server.engine.embeddedServer
@@ -106,7 +106,7 @@ fun Application.module() {
     configureDatabases(apiConfig)
     val bankAccountValidator = BankAccountValidator(bankAccountService)
 
-    validator(contractService)
+    httpValidator(contractService)
     configureStatusPages()
     configureSecurity(jwtConfig)
     configureHTTP()
