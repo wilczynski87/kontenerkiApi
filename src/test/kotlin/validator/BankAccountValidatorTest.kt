@@ -1,5 +1,7 @@
 package com.kontenery.validator
 
+import com.kontenery.ErrorResponse
+import com.kontenery.configureStatusPages
 import com.kontenery.data.ClientBankAccount
 import com.kontenery.service.BankAccountService
 import com.kontenery.service.ContractService
@@ -8,7 +10,6 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.plugins.requestvalidation.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -16,6 +17,7 @@ import io.ktor.server.testing.*
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.datetime.LocalDate
+import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -28,15 +30,12 @@ class BankAccountValidatorTest {
         install(ContentNegotiation) { json() }
         application {
             validator(contractService, bankAccountService)
+            configureStatusPages()
         }
         routing {
             post("/bankAccount/add") {
-                try {
-                    val bankAccount = call.receive<ClientBankAccount>()
-                    call.respond(HttpStatusCode.OK, "saved")
-                } catch (e: RequestValidationException) {
-                    call.respond(HttpStatusCode.BadRequest, e.reasons.joinToString("; "))
-                }
+                val bankAccount = call.receive<ClientBankAccount>()
+                call.respond(HttpStatusCode.OK, "saved")
             }
         }
     }
@@ -70,8 +69,9 @@ class BankAccountValidatorTest {
         }
 
         assertEquals(HttpStatusCode.BadRequest, response.status)
-        val body = response.bodyAsText()
-        assertTrue(body.contains("already exists"))
+        val errorResponse = Json.decodeFromString<ErrorResponse>(response.bodyAsText())
+        assertEquals(400, errorResponse.status)
+        assertTrue(errorResponse.errors.any { it.contains("already exists") })
     }
 
     @Test
@@ -84,8 +84,8 @@ class BankAccountValidatorTest {
         }
 
         assertEquals(HttpStatusCode.BadRequest, response.status)
-        val body = response.bodyAsText()
-        assertTrue(body.contains("required"))
+        val errorResponse = Json.decodeFromString<ErrorResponse>(response.bodyAsText())
+        assertTrue(errorResponse.errors.any { it.contains("required") })
     }
 
     @Test
@@ -98,8 +98,8 @@ class BankAccountValidatorTest {
         }
 
         assertEquals(HttpStatusCode.BadRequest, response.status)
-        val body = response.bodyAsText()
-        assertTrue(body.contains("blank"))
+        val errorResponse = Json.decodeFromString<ErrorResponse>(response.bodyAsText())
+        assertTrue(errorResponse.errors.any { it.contains("blank") })
     }
 
     @Test

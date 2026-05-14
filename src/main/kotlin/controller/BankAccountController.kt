@@ -3,6 +3,7 @@ package com.kontenery.controller
 import com.kontenery.data.ClientBankAccount
 import com.kontenery.service.BankAccountService
 import io.ktor.http.*
+import io.ktor.server.plugins.requestvalidation.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -16,6 +17,8 @@ fun Route.bankAccountController(bankAccountService: BankAccountService) {
                 val savedBankAccount: ClientBankAccount? = bankAccountService.save(bankAccount)
 
                 call.respondNullable(HttpStatusCode.OK, savedBankAccount)
+            } catch (e: RequestValidationException) {
+                throw e
             } catch (e: Exception) {
                 println("Exception in /bankAccount/add: ${e.message}")
                 call.respondNullable(HttpStatusCode.ExpectationFailed, e.message)

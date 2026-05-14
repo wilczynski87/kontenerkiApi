@@ -104,6 +104,7 @@ fun Application.module() {
     configureSerialization()
     configureDatabases(apiConfig)
     validator(contractService, bankAccountService)
+    configureStatusPages()
     configureSecurity(jwtConfig)
     configureHTTP()
     configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService, csvService, bankAccountService, listingService, utilitiesService, authService, paymentValidator)
