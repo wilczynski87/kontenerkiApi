@@ -18,7 +18,7 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService) 
 
         post("/PeKaOSA") {
             try {
-                println("POST CSV")
+                println("POST CSV PeKaOSA")
                 val rawCSV: MessageRequest = call.receive<MessageRequest>()
 //                println("rawCSV: ${rawCSV.message}")
 
@@ -53,6 +53,7 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService) 
 
         post("/Alior") {
             try {
+                println("POST CSV Alior")
                 val rawCSV: MessageRequest = call.receive<MessageRequest>()
 //                println("rawCSV: $rawCSV")
                 val errors: MutableList<PaymentError> = mutableListOf()
@@ -63,6 +64,43 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService) 
                 }
                 call.respond(MessageRequest("OK"))
             } catch (e: Exception) {
+                println(e)
+                call.respond(HttpStatusCode.BadRequest, "Invalid request: ${e.message}")
+            }
+        }
+
+        post("/Nest") {
+            try {
+                println("POST CSV Nest")
+                val rawCSV: MessageRequest = call.receive<MessageRequest>()
+//                println("rawCSV: ${rawCSV.message}")
+
+                coroutineScope {
+                    val newPayments: List<Payment> = csvService.readCSVNest(rawCSV.message)
+//                    newPayments.forEach { println("payment: $it") }
+
+                    val errors: MutableList<PaymentError> = mutableListOf()
+                    newPayments.filterNot { it.fromClient == null }
+                        .filter { paymentService.validatePayment(it, errors) }
+                        .map { it.toDto() }
+                        .forEach {
+                            try {
+//                                println("it: ${it.referenceNumber}")
+                                paymentService.createPayment(it)
+                                logger.info("payment created: $it " + ""
+//                                        "${it.paymentId}, ${it.title}, ${it.fromClientId}"
+                                )
+                            } catch (e: Exception) {
+//                                logger.error("createPayment error: id:${it.paymentId} \n ${e.message}")
+                            }
+                        }
+                    errors.forEach { error ->
+                        logger.info("payment error: ${error.title} - ${error.message}, client: ${error.payment?.fromClient?.getName()} ${error.payment?.date} ${error.payment?.amount}")
+                    }
+                }
+
+                call.respond(MessageRequest("OK"))
+            } catch(e:Exception) {
                 println(e)
                 call.respond(HttpStatusCode.BadRequest, "Invalid request: ${e.message}")
             }

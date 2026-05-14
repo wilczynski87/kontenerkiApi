@@ -98,6 +98,34 @@ class CSVServiceImpl(
         )
     }
 
+    override suspend fun readCSVNest(csv: String): List<Payment> {
+        // Numer rachunku właściciela jest w pierwszym wierszu pliku
+        val ownerAccountNumber = csv.lineSequence()
+            .firstOrNull { it.startsWith("Numer rachunku:") }
+            ?.removePrefix("Numer rachunku:")
+            ?.trim()
+            ?: ""
+
+        return coroutineScope {
+            async {
+                csv.lineSequence()
+                    .dropWhile { !it.startsWith("Data księgowania") } // pomiń metadane banku
+                    .filter { it.isNotBlank() }
+                    .drop(1) // pomiń nagłówek CSV
+                    .toList()
+                    .mapNotNull { line ->
+                        val parts = parseCsvLine(line) // obsługa cudzysłowów z przecinkami w środku
+                        try {
+                            fromCsvLineNest(parts, ownerAccountNumber).CSVtoPaymentMapper()
+                        } catch (e: Exception) {
+                            println("Błąd parsowania wiersza: $line → ${e.message}")
+                            null
+                        }
+                    }
+            }.await()
+        }
+    }
+
     private suspend fun CSVData.CSVtoPaymentMapper(): Payment {
         val client: Client? = bankAccountService.findClientByAccountNumber(this.rachunekZrodlowy)
 //        println("this.rachunekZrodlowy: ${this.rachunekZrodlowy} -> ${client?.getName()}")
@@ -118,4 +146,61 @@ class CSVServiceImpl(
             referenceNumber = numerReferencyjny
         )
     }
+
+
+    private fun fromCsvLineNest(list: List<String>, ownerAccountNumber: String): CSVData {
+        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+        // "Dane kontrahenta" = "Nazwa|Adres" — rozdzielamy po pierwszym '|'
+        val kontrahentParts = list[5].split("|", limit = 2)
+        val nadawca = kontrahentParts.getOrElse(0) { "" }.trim()
+        val adres = kontrahentParts.getOrElse(1) { "" }.trim()
+
+        return CSVData(
+            dataKsiegowania = java.time.LocalDate.parse(list[0], formatter).toKotlinLocalDate(),
+            dataWaluty = java.time.LocalDate.parse(list[1], formatter).toKotlinLocalDate(),
+            nadawcaOdbiorca = nadawca,
+            adresNadawcyOdbiorcy = adres,
+            rachunekZrodlowy = list[6].trim(),           // Numer rachunku kontrahenta (nadawca)
+            rachunekDocelowy = ownerAccountNumber,        // Konto właściciela z nagłówka pliku
+            tytulem = list[7].trim(),
+            kwotaOperacji = BigDecimal(list[3].trim().replace(",", ".")),
+            waluta = list[4].trim(),
+            numerReferencyjny = "",
+            typOperacji = list[2].trim(),
+            kategoria = null,
+        )
+    }
+
+    // Parser CSV obsługujący pola w cudzysłowach zawierające przecinki
+    private fun parseCsvLine(line: String): List<String> {
+        val result = mutableListOf<String>()
+        val current = StringBuilder()
+        var inQuotes = false
+        for (ch in line) {
+            when {
+                ch == '"' -> inQuotes = !inQuotes
+                ch == ',' && !inQuotes -> {
+                    result.add(current.toString())
+                    current.clear()
+                }
+                else -> current.append(ch)
+            }
+        }
+        result.add(current.toString())
+        return result
+    }
+
+
+
 }
+
+
+
+
+
+
+
+
+
+
+
