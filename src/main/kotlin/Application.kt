@@ -104,10 +104,9 @@ fun Application.module() {
     configureFrameworks()
     configureSerialization()
     configureDatabases(apiConfig)
-    httpValidator(contractService)
     val bankAccountValidator = BankAccountValidator(bankAccountService)
 
-    validator(contractService)
+    httpValidator(contractService)
     configureStatusPages()
     configureSecurity(jwtConfig)
     configureHTTP()
