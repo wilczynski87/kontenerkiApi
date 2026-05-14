@@ -31,5 +31,16 @@ services:
       db:
         condition: service_healthy
 
+  email:
+    image: wilczynski87/konteneryemail
+    container_name: email
+    restart: unless-stopped
+    expose:
+      - 8200
+    ports:
+      - "${EMAIL_PORT:-8200}:${EMAIL_PORT:-8200}"
+    env_file:
+      - .env
+
 volumes:
   postgres_data:

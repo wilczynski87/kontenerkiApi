@@ -60,6 +60,8 @@ jobs:
           DB_NAME=${{ vars.DB_NAME }}
           DB_PORT=${{ vars.DB_PORT }}
           DB_USER=${{ vars.DB_USER }}
+          EMAIL_HOST=${{ vars.EMAIL_HOST }}
+          EMAIL_PORT=${{ vars.EMAIL_PORT }}
           EMAIL_USER=${{ vars.EMAIL_USER }}
           ENV=${{ vars.ENV }}
           VALIDITY_MS=${{ vars.VALIDITY_MS }}
@@ -70,6 +72,7 @@ jobs:
           ssh vps "
             cd /opt/app
             docker compose down
+            docker compose pull
             docker compose build --no-cache
             docker compose up -d
           "
