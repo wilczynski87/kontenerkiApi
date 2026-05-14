@@ -2,23 +2,27 @@ package com.kontenery.controller
 
 import com.kontenery.data.ClientBankAccount
 import com.kontenery.service.BankAccountService
+import com.kontenery.validator.BankAccountValidator
 import io.ktor.http.*
-import io.ktor.server.plugins.requestvalidation.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-fun Route.bankAccountController(bankAccountService: BankAccountService) {
+fun Route.bankAccountController(bankAccountService: BankAccountService, bankAccountValidator: BankAccountValidator) {
     route("/bankAccount") {
 
         post("add") {
             try {
                 val bankAccount: ClientBankAccount = call.receive<ClientBankAccount>()
-                val savedBankAccount: ClientBankAccount? = bankAccountService.save(bankAccount)
 
+                val error = bankAccountValidator.validate(bankAccount)
+                if (error != null) {
+                    call.respond(HttpStatusCode.BadRequest, error)
+                    return@post
+                }
+
+                val savedBankAccount: ClientBankAccount? = bankAccountService.save(bankAccount)
                 call.respondNullable(HttpStatusCode.OK, savedBankAccount)
-            } catch (e: RequestValidationException) {
-                throw e
             } catch (e: Exception) {
                 println("Exception in /bankAccount/add: ${e.message}")
                 call.respondNullable(HttpStatusCode.ExpectationFailed, e.message)

@@ -43,6 +43,7 @@ import com.kontenery.service.impl.PaymentServiceImpl
 import com.kontenery.service.impl.PrintServiceImpl
 import com.kontenery.service.impl.ProductServiceImp
 import com.kontenery.service.impl.UtilitiesServiceImpl
+import com.kontenery.validator.BankAccountValidator
 import com.kontenery.validator.PaymentValidator
 import com.kontenery.validator.validator
 import io.ktor.server.application.Application
@@ -103,9 +104,11 @@ fun Application.module() {
     configureFrameworks()
     configureSerialization()
     configureDatabases(apiConfig)
-    validator(contractService, bankAccountService)
+    val bankAccountValidator = BankAccountValidator(bankAccountService)
+
+    validator(contractService)
     configureStatusPages()
     configureSecurity(jwtConfig)
     configureHTTP()
-    configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService, csvService, bankAccountService, listingService, utilitiesService, authService, paymentValidator)
+    configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService, csvService, bankAccountService, listingService, utilitiesService, authService, paymentValidator, bankAccountValidator)
 }
