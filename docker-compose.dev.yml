@@ -31,5 +31,33 @@ services:
       db:
         condition: service_healthy
 
+  email:
+    build:
+      context: ../kontenerkiEmail
+      dockerfile: Dockerfile
+    container_name: email
+    restart: unless-stopped
+    expose:
+      - 8200
+    ports:
+      - "${EMAIL_PORT:-8200}:${EMAIL_PORT:-8200}"
+    env_file:
+      - .env
+
+  web:
+    build:
+      context: ../kontenerkiWeb
+      dockerfile: Dockerfile
+    container_name: web
+    restart: unless-stopped
+    expose:
+      - 80
+    ports:
+      - "80:80"
+    environment:
+      API_NAME: api
+      API_PORT: 8100
+      ENV: DEV
+
 volumes:
   postgres_data:
