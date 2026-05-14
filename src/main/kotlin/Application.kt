@@ -44,7 +44,7 @@ import com.kontenery.service.impl.PrintServiceImpl
 import com.kontenery.service.impl.ProductServiceImp
 import com.kontenery.service.impl.UtilitiesServiceImpl
 import com.kontenery.validator.PaymentValidator
-import com.kontenery.validator.validator
+import com.kontenery.validator.httpValidator
 import io.ktor.server.application.Application
 import io.ktor.server.application.log
 import io.ktor.server.engine.embeddedServer
@@ -103,7 +103,7 @@ fun Application.module() {
     configureFrameworks()
     configureSerialization()
     configureDatabases(apiConfig)
-    validator(contractService)
+    httpValidator(contractService)
     configureSecurity(jwtConfig)
     configureHTTP()
     configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService, csvService, bankAccountService, listingService, utilitiesService, authService, paymentValidator)

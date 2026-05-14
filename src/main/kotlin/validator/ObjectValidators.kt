@@ -18,20 +18,20 @@ data class ObjectValidators(
     private val logger = LoggerFactory.getLogger(ObjectValidators::class.java)
 
     fun validateClient(client: Client): Boolean {
-        var resut = false
+        var result = false
         if(client.id == null)  {
             errorList.add(InvoiceErrorMessage("no Client Id", "for Client: $client"))
             logger.error("no Client Id")
-            resut = true
+            result = true
         }
 
         if(client.isActive == false) {
             errorList.add(InvoiceErrorMessage("Client is no longer ACTIVE", "for Client: $client"))
             logger.error("Client is no longer ACTIVE, id: ${client.id ?: client.getName()}")
-            resut = true
+            result = true
         }
 
-        return resut
+        return result
     }
 
     fun validateContractsList(contracts: List<Contract>, period: LocalDate, client: Client): Boolean {

@@ -7,7 +7,7 @@ import com.kontenery.service.ContractService
 import io.ktor.server.application.*
 import io.ktor.server.plugins.requestvalidation.*
 
-fun Application.validator(contractService: ContractService) {
+fun Application.httpValidator(contractService: ContractService) {
     install(RequestValidation) {
         validate<Address> { address ->
             if (address.id != null && address.id!! <= 1)
