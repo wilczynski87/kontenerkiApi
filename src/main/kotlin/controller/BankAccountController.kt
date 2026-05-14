@@ -11,19 +11,13 @@ fun Route.bankAccountController(bankAccountService: BankAccountService) {
     route("/bankAccount") {
 
         post("add") {
-            println("/bankAccount/add: ")
             try {
                 val bankAccount: ClientBankAccount = call.receive<ClientBankAccount>()
-                val bankAccountNumber: String = bankAccount.bankAccount ?: throw NullPointerException("There is no bank Account")
-//                val formatted = BankAccount.toPolishIbanFormatted("PL", bankAccountNumber)
-                println("bankAccount before: $bankAccount")
-
                 val savedBankAccount: ClientBankAccount? = bankAccountService.save(bankAccount)
-                println("bankAccount after: $savedBankAccount")
 
                 call.respondNullable(HttpStatusCode.OK, savedBankAccount)
             } catch (e: Exception) {
-                println("Exception in /bankAccount/add")
+                println("Exception in /bankAccount/add: ${e.message}")
                 call.respondNullable(HttpStatusCode.ExpectationFailed, e.message)
             }
         }
