@@ -51,6 +51,7 @@ jobs:
           JWT_AUDIENCE=${{ secrets.JWT_AUDIENCE }}
           JWT_REALM=${{ secrets.JWT_REALM }}
           JWT_SECRET=${{ secrets.JWT_SECRET }}
+          APP_SECRET=${{ vars.APP_SECRET }}
           
           # === VARIABLES ===
           API_ENV=${{ vars.API_ENV }}
@@ -65,6 +66,7 @@ jobs:
           EMAIL_USER=${{ vars.EMAIL_USER }}
           ENV=${{ vars.ENV }}
           VALIDITY_MS=${{ vars.VALIDITY_MS }}
+          APP_LOGIN=${{ vars.APP_LOGIN }}
           EOF"
 
       - name: Build and deploy

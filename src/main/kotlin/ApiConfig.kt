@@ -26,6 +26,8 @@ data class AuthConfig(
     val accessTokenExpiry: Long = 3600000,
     val refreshTokenExpiry: Long = 2592000000,
     val googleClientId: String,
+    val appLogin: String?,
+    val appSecret: String?,
 )
 @Serializable
 data class ApiConfig(
@@ -61,7 +63,9 @@ fun Application.loadApiConfig(): ApiConfig {
             realm = cfg.propertyOrNull("api.auth.realm")?.getString() ?: "ktor sample app",
             accessTokenExpiry = cfg.propertyOrNull("api.auth.validity")?.getString()?.toLong() ?: 3600000,
             refreshTokenExpiry = cfg.propertyOrNull("api.auth.validity")?.getString()?.toLong() ?: 2592000000,
-            googleClientId = cfg.propertyOrNull("api.auth.googleClientId")?.getString() ?: "1234567890"
+            googleClientId = cfg.propertyOrNull("api.auth.googleClientId")?.getString() ?: "1234567890",
+            appLogin = cfg.propertyOrNull("api.auth.appLogin")?.getString() ?: error("No login details"),
+            appSecret = cfg.propertyOrNull("api.auth.appSecret")?.getString() ?: error("No password details"),
         )
     )
 }

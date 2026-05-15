@@ -27,5 +27,7 @@ api:
       realm: ${JWT_REALM:ktor sample app}
       validityMs: ${VALIDITY_MS:60000}
       googleClientId: ${GOOGLE_CLIENT_ID:1234567890}
+      appSecret: ${APP_SECRET}
+      appLogin: ${APP_LOGIN}
     
 

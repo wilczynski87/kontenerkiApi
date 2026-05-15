@@ -3,6 +3,7 @@ package com.kontenery.service.impl
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.kontenery.ApiConfig
+import com.kontenery.AuthConfig
 import com.kontenery.library.model.auth.LoginRequest
 import com.kontenery.library.model.auth.LoginResponse
 import com.kontenery.library.model.auth.TokenResponse
@@ -11,10 +12,13 @@ import com.kontenery.service.JwtConfig
 import com.kontenery.service.TokenValidationResult
 import java.util.Date
 
-class AuthServiceImpl(private val jwtConfig: JwtConfig): AuthService {
+class AuthServiceImpl(private val jwtConfig: JwtConfig, authConfig: AuthConfig): AuthService {
+    val appLogin = authConfig.appLogin
+    val appPassword = authConfig.appSecret
+
     override fun login(loginRequest: LoginRequest): LoginResponse? {
 //        TODO("Not yet implemented")
-        return if(loginRequest.email == "ppp" && loginRequest.password == "ppp")
+        return if(loginRequest.email == appLogin && loginRequest.password == appPassword)
             LoginResponse("0", "admin")
         else null
     }
