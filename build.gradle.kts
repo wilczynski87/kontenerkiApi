@@ -63,6 +63,28 @@ dependencies {
 
 }
 
+tasks.named<JavaExec>("run") {
+    val envFilePath = System.getenv("ENV_FILE")
+    val envFile = when {
+        envFilePath != null -> file(envFilePath).takeIf { it.exists() }
+        else -> file(".env").takeIf { it.exists() }
+    }
+
+    if (envFile != null) {
+        envFile.readLines()
+            .filter { it.isNotBlank() && !it.startsWith("#") }
+            .mapNotNull { line ->
+                val parts = line.split("=", limit = 2)
+                if (parts.size == 2) parts[0].trim() to parts[1].trim()
+                else null
+            }
+            .forEach { (key, value) ->
+                environment(key, value)
+            }
+        println("Loaded env from: ${envFile.absolutePath}")
+    }
+}
+
 tasks.withType<Jar> {
     manifest {
         attributes["Main-Class"] = "io.ktor.server.netty.EngineMain"

@@ -37,35 +37,40 @@ data class ApiConfig(
     val auth: AuthConfig,
 )
 
-fun Application.loadApiConfig(): ApiConfig {
-    val cfg = environment.config
+private fun env(name: String, default: String): String =
+    System.getenv(name)?.ifBlank { null } ?: default
 
+private fun envOrNull(name: String): String? =
+    System.getenv(name)?.ifBlank { null }
+
+fun Application.loadApiConfig(): ApiConfig {
     return ApiConfig(
-        env = cfg.propertyOrNull("api.env")?.getString() ?: "DEV",
+        env = env("API_ENV", "DEV"),
 
         email = EmailConfig(
-            host = cfg.propertyOrNull("api.email.host")?.getString() ?: "localhost",
-            port = cfg.propertyOrNull("api.email.port")?.getString()?.toInt() ?: 8200
+            host = env("EMAIL_HOST", "localhost"),
+            port = env("EMAIL_PORT", "8200").toInt()
         ),
 
         db = DbConfig(
-            host = cfg.propertyOrNull("api.db.host")?.getString() ?: "localhost",
-            port = cfg.propertyOrNull("api.db.port")?.getString()?.toInt() ?: 5431,
-            name = cfg.propertyOrNull("api.db.name")?.getString() ?: "db1",
-            user = cfg.propertyOrNull("api.db.user")?.getString() ?: "admin_user",
-            password = cfg.propertyOrNull("api.db.password")?.getString() ?: "postgres"
+            host = env("DB_HOST", "localhost"),
+            port = env("DB_PORT", "5431").toInt(),
+            name = env("DB_NAME", "db1"),
+            user = env("DB_USER", "admin_user"),
+            password = env("DB_PASSWORD", "postgres")
         ),
+
         auth = AuthConfig(
-            secretAuth = cfg.propertyOrNull("api.auth.secretAuth")?.getString() ?: "secretAuth",
-            secretRefresh = cfg.propertyOrNull("api.auth.secretRefresh")?.getString() ?: "secretRefresh",
-            issuer = cfg.propertyOrNull("api.auth.issuer")?.getString() ?: "ktor sample app",
-            audience = cfg.propertyOrNull("api.auth.audience")?.getString() ?: "jwt-audience",
-            realm = cfg.propertyOrNull("api.auth.realm")?.getString() ?: "ktor sample app",
-            accessTokenExpiry = cfg.propertyOrNull("api.auth.validity")?.getString()?.toLong() ?: 3600000,
-            refreshTokenExpiry = cfg.propertyOrNull("api.auth.validity")?.getString()?.toLong() ?: 2592000000,
-            googleClientId = cfg.propertyOrNull("api.auth.googleClientId")?.getString() ?: "1234567890",
-            appLogin = cfg.propertyOrNull("api.auth.appLogin")?.getString() ?: error("No login details"),
-            appSecret = cfg.propertyOrNull("api.auth.appSecret")?.getString() ?: error("No password details"),
+            secretAuth = env("JWT_SECRET", "secretAuth"),
+            secretRefresh = env("JWT_SECRET", "secretRefresh"),
+            issuer = env("JWT_ISSUER", "ktor sample app"),
+            audience = env("JWT_AUDIENCE", "jwt-audience"),
+            realm = env("JWT_REALM", "ktor sample app"),
+            accessTokenExpiry = env("VALIDITY_MS", "3600000").toLong(),
+            refreshTokenExpiry = env("VALIDITY_MS", "2592000000").toLong(),
+            googleClientId = env("GOOGLE_CLIENT_ID", "1234567890"),
+            appLogin = envOrNull("APP_LOGIN"),
+            appSecret = envOrNull("APP_SECRET"),
         )
     )
 }
