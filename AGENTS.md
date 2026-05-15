@@ -2,10 +2,6 @@
 
 ## Cursor Cloud specific instructions
 
-### Communication style
-
-Użytkownik uczy się profesjonalnego kodowania — przy każdej zmianie kodu wyjaśniaj **co** zostało zmienione i **dlaczego**, z przykładami "było/jest" oraz opisem zastosowanych wzorców i zasad.
-
 ### Project overview
 
 Kontenerki is a Kotlin/Ktor backend API for managing container and yard rentals. It uses PostgreSQL (via Exposed ORM), JWT authentication, and Koin for DI. See `README.md` for the official feature list and build/run tasks.
