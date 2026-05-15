@@ -40,6 +40,10 @@ data class ApiConfig(
 private fun env(name: String, default: String): String =
     System.getenv(name)?.ifBlank { null } ?: default
 
+private fun envRequired(name: String): String =
+    System.getenv(name)?.ifBlank { null }
+        ?: error("Required environment variable $name is not set")
+
 private fun envOrNull(name: String): String? =
     System.getenv(name)?.ifBlank { null }
 
@@ -61,8 +65,8 @@ fun Application.loadApiConfig(): ApiConfig {
         ),
 
         auth = AuthConfig(
-            secretAuth = env("JWT_SECRET", "secretAuth"),
-            secretRefresh = env("JWT_SECRET", "secretRefresh"),
+            secretAuth = envRequired("JWT_SECRET"),
+            secretRefresh = envRequired("JWT_SECRET"),
             issuer = env("JWT_ISSUER", "ktor sample app"),
             audience = env("JWT_AUDIENCE", "jwt-audience"),
             realm = env("JWT_REALM", "ktor sample app"),

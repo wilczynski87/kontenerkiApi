@@ -10,21 +10,14 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.sql.DriverManager
 
 fun configureDatabases(apiConfig: ApiConfig) {
-    "docker run --name db1 -e POSTGRES_USER=admin_user -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=db1 -p 5434:5432 -d postgres:latest"
-
     val dbHost = apiConfig.db.host
     val dbPort = apiConfig.db.port
     val dbName = apiConfig.db.name
     val dbUser = apiConfig.db.user
-//    val dbUser = "admin_user"
     val dbPassword = apiConfig.db.password
-//    val dbPassword = "postgres"
     val env: Env = Env.valueOf(System.getenv("ENV") ?: "DEV")
     val url = "jdbc:postgresql://$dbHost:$dbPort/$dbName"
-//    val url = "jdbc:postgresql://217.154.148.172:5431/db1"
-    println()
-    println("url: $url, user: $dbUser, password: $dbPassword")
-    println()
+    println("Connecting to: $url")
 
     val connection = {
         DriverManager.getConnection(url, dbUser, dbPassword)
