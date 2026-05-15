@@ -97,7 +97,7 @@ fun Application.module() {
     val utilitiesService: UtilitiesService = UtilitiesServiceImpl(utilitiesRepo)
 
     val jwtConfig = JwtConfig(apiConfig)
-    val authService: AuthService = AuthServiceImpl(jwtConfig)
+    val authService: AuthService = AuthServiceImpl(jwtConfig, apiConfig.auth)
 
 
     logger()
