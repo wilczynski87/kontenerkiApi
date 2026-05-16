@@ -53,10 +53,10 @@ fun Route.utilitiesController(
             post {
                 try {
                     val submeter: Submeter = call.receive()
-                    val result = utilitiesService.postSubmeter(submeter)
+                    utilitiesService.postSubmeter(submeter)
                         ?: return@post call.respond(HttpStatusCode.InternalServerError, "Nie można zapisać podlicznika")
 
-                    call.respond(HttpStatusCode.Created, result)
+                    call.respond(HttpStatusCode.Created, utilitiesService.getSubmeters())
                 } catch (e: Exception) {
                     logger.error("Błąd przy tworzeniu podlicznika", e)
                     call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Unknown error")))

@@ -15,6 +15,7 @@ object SubmeterTable: LongIdTable("submeter") {
     val location = varchar("location", 250)
     val number = varchar("number", 50).nullable()
     val utilityType = varchar("utility_type", 50)
+    val fotoUrl = varchar("foto_url", length = 100)
 }
 
 object ReadingTable: LongIdTable("reading") {
@@ -32,6 +33,7 @@ class SubmeterEntity(id: EntityID<Long>) : LongEntity(id) {
     var location by SubmeterTable.location
     var number by SubmeterTable.number
     var utilityType by SubmeterTable.utilityType
+    var fotoUrl by SubmeterTable.fotoUrl
 
     // relacja 1-to-many
     val readings by ReadingEntity referrersOn ReadingTable.submeter
@@ -42,6 +44,7 @@ class SubmeterEntity(id: EntityID<Long>) : LongEntity(id) {
         location = location,
         number = number,
         utilityType = UtilityType.valueOf(utilityType),
+        fotoUrl = fotoUrl,
         readings = readings.map { it.toDomain() }
     )
 }

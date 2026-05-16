@@ -12,6 +12,7 @@ data class Submeter(
     val utilityType: UtilityType? = null,
     val readings: List<Reading> = emptyList(),
     val number: String? = null,
+    val fotoUrl: String? = null,
 )
 
 @Serializable
@@ -22,6 +23,7 @@ data class SubmeterDto(
     val utilityType: UtilityType? = null,
     val readings: List<ReadingDto> = emptyList(),
     val number: String? = null,
+    val fotoUrl: String? = null,
 ){
     fun toSubmeter() = Submeter(
             id = id,
@@ -30,5 +32,6 @@ data class SubmeterDto(
             utilityType = utilityType,
             readings = readings.map { dto -> dto.toReading() },
             number = number,
+            fotoUrl = fotoUrl,
         )
 }
