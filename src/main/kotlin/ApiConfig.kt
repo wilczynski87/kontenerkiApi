@@ -71,7 +71,7 @@ fun Application.loadApiConfig(): ApiConfig {
             audience = env("JWT_AUDIENCE", "jwt-audience"),
             realm = env("JWT_REALM", "ktor sample app"),
             accessTokenExpiry = env("VALIDITY_MS", "3600000").toLong(),
-            refreshTokenExpiry = env("VALIDITY_MS", "2592000000").toLong(),
+            refreshTokenExpiry = env("VALIDITY_REFRESH_MS", "2592000000").toLong(),
             googleClientId = env("GOOGLE_CLIENT_ID", "1234567890"),
             appLogin = envOrNull("APP_LOGIN"),
             appSecret = envOrNull("APP_SECRET"),

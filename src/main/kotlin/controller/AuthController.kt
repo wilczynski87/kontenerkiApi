@@ -45,14 +45,15 @@ fun Route.authController(
                     )
                 )
 
+                println("wydane tokeny: $tokenResponse")
                 // Zwróć tokeny w response body (nie w cookies!)
                 call.respond(HttpStatusCode.OK, AuthResponse(
                     loginResponse = loginResponse,
                     tokenResponse = tokenResponse,
                 ))
             } catch (e: Exception) {
-                println("Exception in /auth/login")
-                call.respond(HttpStatusCode.ExpectationFailed, "Login failed")
+                println("Exception in /auth/login: $e")
+                call.respond(HttpStatusCode.ExpectationFailed, e)
             }
         }
 //        authenticate("refresh-jwt") {
@@ -109,8 +110,8 @@ fun Route.authController(
                     )
 
                 } catch (e: Exception) {
-                    println("Exception in /auth/refresh")
-                    call.respond(HttpStatusCode.Unauthorized, "Invalid refresh token")
+                    println("Exception in /auth/refresh: $e")
+                    call.respond(HttpStatusCode.Unauthorized, e)
                 }
             }
 //        }
@@ -172,7 +173,7 @@ fun Route.authController(
 
 
                 } catch (e: Exception) {
-                    println("Exception in /auth/logout")
+                    println("Exception in /auth/logout: $e")
                 }
             }
         }

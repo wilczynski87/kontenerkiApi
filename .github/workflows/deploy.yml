@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout main repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Configure SSH
         env:
@@ -67,6 +67,7 @@ jobs:
           EMAIL_USER=${{ vars.EMAIL_USER }}
           ENV=${{ vars.ENV }}
           VALIDITY_MS=${{ vars.VALIDITY_MS }}
+          VALIDITY_REFRESH_MS=${{ vars.VALIDITY_REFRESH_MS }}
           EOF"
 
       - name: Build and deploy
