@@ -15,7 +15,7 @@ object SubmeterTable: LongIdTable("submeter") {
     val location = varchar("location", 250)
     val number = varchar("number", 50).nullable()
     val utilityType = varchar("utility_type", 50)
-    val fotoUrl = varchar("foto_url", length = 100)
+    val fotoUrl = varchar("foto_url", length = 100).nullable()
 }
 
 object ReadingTable: LongIdTable("reading") {

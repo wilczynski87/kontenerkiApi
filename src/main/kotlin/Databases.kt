@@ -35,6 +35,7 @@ fun configureDatabases(apiConfig: ApiConfig) {
                 BillTable, PositionsBill,
                 PaymentTable, PaymentInvoices,
                 ClientBankAccountTable,
+                SubmeterTable, ReadingTable
             )
             Unit
         } else SchemaUtils.createMissingTablesAndColumns(

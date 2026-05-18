@@ -21,6 +21,7 @@ class UtilitiesRepoImpl: UtilitiesRepo {
                 location = submeter.location ?: throw NullPointerException("Nie ma lokalizacji dla podlicznika")
                 number = submeter.number
                 utilityType = submeter.utilityType?.name ?: throw NullPointerException("Nie ma typu dla podlicznika")
+                fotoUrl = submeter.fotoUrl
             }.toDomain()
         }
 
