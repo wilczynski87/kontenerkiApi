@@ -6,6 +6,7 @@ import com.kontenery.data.utils.now
 import com.kontenery.service.PrintService
 import io.ktor.client.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
@@ -15,8 +16,6 @@ import java.rmi.ServerException
 private val logger = LoggerFactory.getLogger("PrintServiceImpl")
 
 class PrintServiceImpl(emailName: String, emailPort: String): PrintService {
-//    val emailName:String = env["EMAIL_HOST"] ?: throw NullPointerException("There is no email address")
-//    val emailPort:String = env["EMAIL_PORT"] ?: throw NullPointerException("There is no email port")
 
     val client = HttpClient()
     private val emailContainerAddress = "http://$emailName:$emailPort/sendMailWithAttachment/withVat"
@@ -27,15 +26,17 @@ class PrintServiceImpl(emailName: String, emailPort: String): PrintService {
 
     override suspend fun sendPeriodicInvoice(invoice: Invoice) {
         try {
-            val json:String = Json.encodeToString(invoice)
-//            println("invoice: $json")
+            val json: String = Json.encodeToString(invoice)
 
-            client.post(emailContainerAddress) {
+            val response = client.post(emailContainerAddress) {
                 contentType(ContentType.Application.Json)
                 setBody(json)
             }
-        } catch (e:Exception) {
-            logger.error("sendPeriodicInvoice EXCEPTION, invoiceNumber: ${invoice.invoiceNumber}\n $e")
+            if (!response.status.isSuccess()) {
+                logger.error("sendPeriodicInvoice failed with status ${response.status}: ${response.bodyAsText()}")
+            }
+        } catch (e: Exception) {
+            logger.error("sendPeriodicInvoice EXCEPTION, invoiceNumber: ${invoice.invoiceNumber}", e)
         }
     }
 
@@ -43,13 +44,15 @@ class PrintServiceImpl(emailName: String, emailPort: String): PrintService {
         try {
             val jsons: String = Json.encodeToString(invoices)
 
-            client.post(printInvoicesAddress) {
+            val response = client.post(printInvoicesAddress) {
                 contentType(ContentType.Application.Json)
                 setBody(jsons)
             }
-        } catch (e:Exception) {
-            println("printInvoices EXCEPTION, invoiceNumber: ${invoices.map { it.invoiceNumber }}")
-            println(e)
+            if (!response.status.isSuccess()) {
+                logger.error("printInvoices failed with status ${response.status}: ${response.bodyAsText()}")
+            }
+        } catch (e: Exception) {
+            logger.error("printInvoices EXCEPTION, invoiceNumbers: ${invoices.map { it.invoiceNumber }}", e)
         }
     }
 
@@ -62,23 +65,29 @@ class PrintServiceImpl(emailName: String, emailPort: String): PrintService {
     }
 
     override suspend fun sendInvoiceAgain(invoice: Invoice): InvoiceSend {
-        val invoiceSend = InvoiceSend(invoice.invoiceNumber, invoice.customer?.name, invoice.invoiceSendToClient,
-            LocalDate.now())
+        val invoiceSend = InvoiceSend(
+            invoice.invoiceNumber,
+            invoice.customer?.name,
+            invoice.invoiceSendToClient,
+            LocalDate.now()
+        )
         return try {
-            val json:String = Json.encodeToString(invoice)
+            val json: String = Json.encodeToString(invoice)
 
-            val statusSend = client.post(sendInvoiceAgain) {
+            val response = client.post(sendInvoiceAgain) {
                 contentType(ContentType.Application.Json)
                 setBody(json)
-            }.status
+            }
 
-            if(statusSend.isSuccess().not()) throw IllegalArgumentException(statusSend.description)
-            else invoiceSend.copy(sendLastTime = LocalDate.now())
+            if (!response.status.isSuccess()) {
+                throw IllegalArgumentException("Email service returned ${response.status}: ${response.bodyAsText()}")
+            }
+            
+            invoiceSend.copy(sendLastTime = LocalDate.now())
 
-        } catch (e:Exception) {
-            println("\nsendInvoiceAgain EXCEPTION, invoiceNumber: ${invoice.invoiceNumber}")
-            println(e)
-            throw ServerException("Could not send Invoice by email: ${invoiceSend}, for Cl")
+        } catch (e: Exception) {
+            logger.error("sendInvoiceAgain EXCEPTION, invoiceNumber: ${invoice.invoiceNumber}", e)
+            throw ServerException("Could not send Invoice by email: ${invoice.invoiceNumber}")
         }
     }
 
