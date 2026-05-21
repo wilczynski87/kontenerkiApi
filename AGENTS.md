@@ -65,6 +65,26 @@ There is no separate lint tool configured; Kotlin compiler warnings serve that r
 
 The dev login is hardcoded in `AuthServiceImpl`: email=`ppp`, password=`ppp`. Use `POST /auth/login` with JSON body `{"email":"ppp","password":"ppp"}` to get a JWT. Pass it as `Authorization: Bearer <token>` for authenticated routes.
 
+### KSeF integration
+
+KSeF (Krajowy System e-Faktur) API v2 is integrated under `com.kontenery.ksef` (client → repository → service → `/ksef` routes). Authentication uses a **KSeF system token** (generated in the KSeF portal), not the app JWT.
+
+Add to `.env`:
+
+```
+KSEF_BASE_URL=https://api-test.ksef.mf.gov.pl
+KSEF_API_SUFFIX=v2
+KSEF_TOKEN=<token from KSeF portal>
+KSEF_NIP=<company NIP for context>
+```
+
+For production use `KSEF_BASE_URL=https://api.ksef.mf.gov.pl`.
+
+JWT-protected endpoints:
+
+- `GET /ksef/login` — authenticate to KSeF and return access token metadata
+- `GET /ksef/invoices` — list invoice metadata (`pageOffset`, `pageSize` 10–250, optional `from`/`to` ISO dates, `subjectType` default `Subject1`)
+
 ### Key gotchas
 
 - The `email` service (separate repo at `../kontenerkiEmail`) is optional. The API catches exceptions if it's unavailable -- invoice-sending features won't work but the app runs fine.

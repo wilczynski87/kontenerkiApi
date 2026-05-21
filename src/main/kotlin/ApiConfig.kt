@@ -30,11 +30,20 @@ data class AuthConfig(
     val appSecret: String?,
 )
 @Serializable
+data class KsefConfig(
+    val baseUrl: String,
+    val apiSuffix: String,
+    val token: String?,
+    val nip: String?,
+)
+
+@Serializable
 data class ApiConfig(
     val env: String,
     val email: EmailConfig,
     val db: DbConfig,
     val auth: AuthConfig,
+    val ksef: KsefConfig,
 )
 
 private fun env(name: String, default: String): String =
@@ -75,6 +84,13 @@ fun Application.loadApiConfig(): ApiConfig {
             googleClientId = env("GOOGLE_CLIENT_ID", "1234567890"),
             appLogin = envOrNull("APP_LOGIN"),
             appSecret = envOrNull("APP_SECRET"),
-        )
+        ),
+
+        ksef = KsefConfig(
+            baseUrl = env("KSEF_BASE_URL", "https://api-test.ksef.mf.gov.pl"),
+            apiSuffix = env("KSEF_API_SUFFIX", "v2"),
+            token = envOrNull("KSEF_TOKEN"),
+            nip = envOrNull("KSEF_NIP"),
+        ),
     )
 }

@@ -43,6 +43,11 @@ import com.kontenery.service.impl.PaymentServiceImpl
 import com.kontenery.service.impl.PrintServiceImpl
 import com.kontenery.service.impl.ProductServiceImp
 import com.kontenery.service.impl.UtilitiesServiceImpl
+import com.kontenery.ksef.client.KsefApiClient
+import com.kontenery.ksef.repository.KsefRepository
+import com.kontenery.ksef.repository.impl.KsefRepositoryImpl
+import com.kontenery.ksef.service.KsefService
+import com.kontenery.ksef.service.impl.KsefServiceImpl
 import com.kontenery.validator.BankAccountValidator
 import com.kontenery.validator.PaymentValidator
 import com.kontenery.validator.httpValidator
@@ -99,6 +104,9 @@ fun Application.module() {
     val jwtConfig = JwtConfig(apiConfig)
     val authService: AuthService = AuthServiceImpl(jwtConfig, apiConfig.auth)
 
+    val ksefRepository: KsefRepository = KsefRepositoryImpl(KsefApiClient(apiConfig.ksef))
+    val ksefService: KsefService = KsefServiceImpl(apiConfig.ksef, ksefRepository)
+
 
     logger()
     configureFrameworks()
@@ -110,5 +118,5 @@ fun Application.module() {
     configureStatusPages()
     configureSecurity(jwtConfig)
     configureHTTP()
-    configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService, csvService, bankAccountService, listingService, utilitiesService, authService, paymentValidator, bankAccountValidator)
+    configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService, csvService, bankAccountService, listingService, utilitiesService, authService, ksefService, paymentValidator, bankAccountValidator)
 }

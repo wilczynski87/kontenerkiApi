@@ -1,0 +1,169 @@
+package com.kontenery.ksef.service.impl
+
+import com.kontenery.KsefConfig
+import com.kontenery.ksef.crypto.KsefTokenEncryptor
+import com.kontenery.ksef.dto.KsefInvoiceListResponse
+import com.kontenery.ksef.dto.KsefInvoiceQueryDateRange
+import com.kontenery.ksef.dto.KsefInvoiceQueryFilters
+import com.kontenery.ksef.dto.KsefLoginResponse
+import com.kontenery.ksef.dto.KsefPublicKeyCertificate
+import com.kontenery.ksef.exception.KsefException
+import com.kontenery.ksef.repository.KsefRepository
+import com.kontenery.ksef.service.KsefService
+import kotlinx.coroutines.delay
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+
+class KsefServiceImpl(
+    private val config: KsefConfig,
+    private val repository: KsefRepository,
+) : KsefService {
+
+    @Volatile
+    private var cachedAccessToken: String? = null
+
+    @Volatile
+    private var cachedAccessTokenValidUntil: Instant? = null
+
+    override suspend fun login(): KsefLoginResponse {
+        val tokens = authenticate()
+        return KsefLoginResponse(
+            accessToken = tokens.first,
+            validUntil = tokens.second,
+        )
+    }
+
+    override suspend fun listInvoices(
+        from: String?,
+        to: String?,
+        pageOffset: Int,
+        pageSize: Int,
+        subjectType: String,
+    ): KsefInvoiceListResponse {
+        require(pageSize in 10..250) {
+            "pageSize must be between 10 and 250"
+        }
+
+        val accessToken = obtainAccessToken()
+        val dateRange = buildDateRange(from, to)
+        val filters = KsefInvoiceQueryFilters(
+            subjectType = subjectType,
+            dateRange = dateRange,
+        )
+
+        val response = repository.queryInvoices(
+            accessToken = accessToken,
+            pageOffset = pageOffset,
+            pageSize = pageSize,
+            sortOrder = "Asc",
+            filters = filters,
+        )
+
+        return KsefInvoiceListResponse(
+            invoices = response.invoices,
+            hasMore = response.hasMore ?: false,
+            pageOffset = pageOffset,
+            pageSize = pageSize,
+        )
+    }
+
+    private suspend fun obtainAccessToken(): String {
+        val now = Clock.System.now()
+        val cached = cachedAccessToken
+        val validUntil = cachedAccessTokenValidUntil
+        if (cached != null && validUntil != null && now < validUntil.minus(60, DateTimeUnit.SECOND)) {
+            return cached
+        }
+        val (token, validUntilStr) = authenticate()
+        cachedAccessToken = token
+        cachedAccessTokenValidUntil = validUntilStr?.let { Instant.parse(it) }
+        return token
+    }
+
+    private suspend fun authenticate(): Pair<String, String?> {
+        val ksefToken = config.token?.trim()?.takeIf { it.isNotEmpty() }
+            ?: throw KsefException("KSEF_TOKEN environment variable is not set")
+        val nip = config.nip?.trim()?.takeIf { it.isNotEmpty() }
+            ?: throw KsefException("KSEF_NIP environment variable is not set")
+
+        val tokenEncryptionCert = resolveTokenEncryptionCertificate(repository.fetchPublicKeyCertificates())
+        val (challenge, timestampMs) = repository.fetchAuthChallenge()
+        val encryptedToken = KsefTokenEncryptor.encryptToken(
+            ksefToken = ksefToken,
+            timestampMs = timestampMs,
+            certificateBase64 = tokenEncryptionCert.certificate,
+        )
+
+        val authResponse = repository.submitKsefTokenAuth(
+            challenge = challenge,
+            nip = nip,
+            encryptedToken = encryptedToken,
+            publicKeyId = tokenEncryptionCert.publicKeyId,
+        )
+
+        awaitAuthReady(
+            referenceNumber = authResponse.referenceNumber,
+            authenticationToken = authResponse.authenticationToken.token,
+        )
+
+        val tokens = repository.redeemAuthToken(authResponse.authenticationToken.token)
+        return tokens.accessToken.token to tokens.accessToken.validUntil
+    }
+
+    private suspend fun awaitAuthReady(referenceNumber: String, authenticationToken: String) {
+        repeat(AUTH_POLL_MAX_ATTEMPTS) { attempt ->
+            val status = repository.fetchAuthStatus(referenceNumber, authenticationToken)
+            when (status.status.code) {
+                AUTH_SUCCESS_CODE -> return
+                in AUTH_PENDING_CODES -> {
+                    if (attempt < AUTH_POLL_MAX_ATTEMPTS - 1) {
+                        delay(AUTH_POLL_INTERVAL_MS)
+                    }
+                }
+                else -> throw KsefException(
+                    "KSeF authentication failed: ${status.status.code} ${status.status.description}",
+                )
+            }
+        }
+        throw KsefException("KSeF authentication timed out after ${AUTH_POLL_MAX_ATTEMPTS} attempts")
+    }
+
+    private fun resolveTokenEncryptionCertificate(
+        certificates: List<KsefPublicKeyCertificate>,
+    ): KsefPublicKeyCertificate {
+        val now = Clock.System.now()
+        return certificates
+            .filter { cert ->
+                cert.usage.any { it.equals("KsefTokenEncryption", ignoreCase = true) }
+            }
+            .filter { cert ->
+                val validFrom = cert.validFrom?.let { Instant.parse(it) }
+                val validTo = cert.validTo?.let { Instant.parse(it) }
+                (validFrom == null || validFrom <= now) && (validTo == null || now < validTo)
+            }
+            .maxByOrNull { it.validFrom?.let { Instant.parse(it) } ?: Instant.DISTANT_PAST }
+            ?: throw KsefException("No valid KSeF token encryption certificate found")
+    }
+
+    private fun buildDateRange(from: String?, to: String?): KsefInvoiceQueryDateRange {
+        val now = Clock.System.now()
+        val defaultTo = now.toString()
+        val defaultFrom = now.minus(365, DateTimeUnit.DAY, TimeZone.UTC).toString()
+
+        return KsefInvoiceQueryDateRange(
+            dateType = "Invoicing",
+            from = from ?: defaultFrom,
+            to = to ?: defaultTo,
+        )
+    }
+
+    companion object {
+        private const val AUTH_SUCCESS_CODE = 200
+        private val AUTH_PENDING_CODES = setOf(100, 150)
+        private const val AUTH_POLL_MAX_ATTEMPTS = 30
+        private const val AUTH_POLL_INTERVAL_MS = 2_000L
+    }
+}
