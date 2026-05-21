@@ -1,0 +1,61 @@
+package com.kontenery.ksef.mapper
+
+import com.kontenery.data.Address
+import com.kontenery.data.invoice.Invoice
+import com.kontenery.data.invoice.Position
+import com.kontenery.data.invoice.Subject
+import kotlinx.datetime.LocalDate
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+
+class InvoiceToKsefFa3MapperTest {
+
+    @Test
+    fun `toFa3Xml maps seller customer and positions`() {
+        val invoice = sampleInvoice()
+        val xml = InvoiceToKsefFa3Mapper.toFa3Xml(invoice)
+
+        assertTrue(xml.contains("<NIP>8943278612</NIP>"))
+        assertTrue(xml.contains("<Nazwa>Kontenery Magazynowe sp z o.o.</Nazwa>"))
+        assertTrue(xml.contains("<NIP>1234567890</NIP>"))
+        assertTrue(xml.contains("<P_2>FV/1/2025</P_2>"))
+        assertTrue(xml.contains("<P_7>Wynajem kontenera</P_7>"))
+        assertTrue(xml.contains("<RodzajFaktury>VAT</RodzajFaktury>"))
+    }
+
+    @Test
+    fun `toFa3Xml requires invoice number`() {
+        assertThrows<IllegalArgumentException> {
+            InvoiceToKsefFa3Mapper.toFa3Xml(sampleInvoice().copy(invoiceNumber = null))
+        }
+    }
+
+    private fun sampleInvoice(): Invoice = Invoice(
+        invoiceNumber = "FV/1/2025",
+        invoiceDate = LocalDate(2025, 5, 15),
+        paymentDay = LocalDate(2025, 5, 29),
+        seller = Subject.Seller.company("FV/1/2025"),
+        customer = Subject.Customer(
+            name = "Test Klient Sp. z o.o.",
+            address = Address(street = "Testowa", house = "1", city = "Wrocław", postCode = "50-001"),
+            nip = "1234567890",
+            email = "klient@example.com",
+            phone = "123456789",
+        ),
+        products = listOf(
+            Position(
+                productName = "Wynajem kontenera",
+                unitPrice = "100.00",
+                quantity = "1",
+                price = "100.00",
+                vatRate = "23",
+                vatAmount = "23.00",
+                priceWithVat = "123.00",
+            ),
+        ),
+        vatAmountSum = "23.00",
+        priceSum = "100.00",
+        priceWithVatSum = "123.00",
+    )
+}

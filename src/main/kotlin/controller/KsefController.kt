@@ -1,13 +1,17 @@
 package com.kontenery.controller
 
+import com.kontenery.data.invoice.Invoice
 import com.kontenery.ksef.dto.KsefInvoiceListResponse
 import com.kontenery.ksef.dto.KsefLoginResponse
+import com.kontenery.ksef.dto.KsefSendInvoiceResponse
 import com.kontenery.ksef.exception.KsefException
 import com.kontenery.ksef.service.KsefService
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
+import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import org.slf4j.LoggerFactory
 
@@ -51,6 +55,22 @@ fun Route.ksefRoutes(ksefService: KsefService) {
                 call.respond(
                     e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
                     mapOf("error" to (e.message ?: "KSeF invoice list failed")),
+                )
+            }
+        }
+
+        post("/invoices/send") {
+            try {
+                val invoice: Invoice = call.receive()
+                val response: KsefSendInvoiceResponse = ksefService.sendInvoice(invoice)
+                call.respond(HttpStatusCode.Accepted, response)
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "Invalid invoice")))
+            } catch (e: KsefException) {
+                logger.error("KSeF invoice send failed", e)
+                call.respond(
+                    e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
+                    mapOf("error" to (e.message ?: "KSeF invoice send failed")),
                 )
             }
         }

@@ -1,15 +1,20 @@
 package com.kontenery.ksef.service.impl
 
 import com.kontenery.KsefConfig
+import com.kontenery.data.invoice.Invoice
 import com.kontenery.ksef.crypto.KsefTokenEncryptor
 import com.kontenery.ksef.dto.KsefInvoiceListResponse
 import com.kontenery.ksef.dto.KsefInvoiceQueryDateRange
 import com.kontenery.ksef.dto.KsefInvoiceQueryFilters
 import com.kontenery.ksef.dto.KsefLoginResponse
 import com.kontenery.ksef.dto.KsefPublicKeyCertificate
+import com.kontenery.ksef.dto.KsefSendInvoiceResponse
+import com.kontenery.ksef.dto.KsefSessionInvoiceStatusResponse
 import com.kontenery.ksef.exception.KsefException
+import com.kontenery.ksef.mapper.InvoiceToKsefFa3Mapper
 import com.kontenery.ksef.repository.KsefRepository
 import com.kontenery.ksef.service.KsefService
+import java.nio.charset.StandardCharsets
 import kotlinx.coroutines.delay
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
@@ -68,6 +73,64 @@ class KsefServiceImpl(
             pageOffset = pageOffset,
             pageSize = pageSize,
         )
+    }
+
+    override suspend fun sendInvoice(invoice: Invoice): KsefSendInvoiceResponse {
+        val invoiceXml = InvoiceToKsefFa3Mapper.toFa3Xml(invoice).toByteArray(StandardCharsets.UTF_8)
+        val accessToken = obtainAccessToken()
+        val encryptionData = repository.createEncryptionData()
+        val session = repository.openOnlineSession(accessToken, encryptionData)
+
+        try {
+            val sendResponse = repository.sendInvoiceToSession(
+                accessToken = accessToken,
+                sessionReferenceNumber = session.referenceNumber,
+                invoiceXml = invoiceXml,
+                encryptionData = encryptionData,
+            )
+
+            val invoiceStatus = awaitInvoiceProcessed(
+                accessToken = accessToken,
+                sessionReferenceNumber = session.referenceNumber,
+                invoiceReferenceNumber = sendResponse.referenceNumber,
+            )
+
+            return KsefSendInvoiceResponse(
+                sessionReferenceNumber = session.referenceNumber,
+                invoiceReferenceNumber = sendResponse.referenceNumber,
+                ksefNumber = invoiceStatus.ksefNumber,
+                invoiceNumber = invoiceStatus.invoiceNumber ?: invoice.invoiceNumber,
+            )
+        } finally {
+            runCatching { repository.closeOnlineSession(accessToken, session.referenceNumber) }
+        }
+    }
+
+    private suspend fun awaitInvoiceProcessed(
+        accessToken: String,
+        sessionReferenceNumber: String,
+        invoiceReferenceNumber: String,
+    ): KsefSessionInvoiceStatusResponse {
+        repeat(INVOICE_POLL_MAX_ATTEMPTS) { attempt ->
+            val status = repository.fetchSessionInvoiceStatus(
+                accessToken,
+                sessionReferenceNumber,
+                invoiceReferenceNumber,
+            )
+            if (!status.ksefNumber.isNullOrBlank() || status.permanentStorageDate != null) {
+                return status
+            }
+            val code = status.status?.code
+            if (code != null && code !in INVOICE_PENDING_CODES) {
+                throw KsefException(
+                    "KSeF invoice processing failed: $code ${status.status.description}",
+                )
+            }
+            if (attempt < INVOICE_POLL_MAX_ATTEMPTS - 1) {
+                delay(INVOICE_POLL_INTERVAL_MS)
+            }
+        }
+        throw KsefException("KSeF invoice processing timed out")
     }
 
     private suspend fun obtainAccessToken(): String {
@@ -165,5 +228,8 @@ class KsefServiceImpl(
         private val AUTH_PENDING_CODES = setOf(100, 150)
         private const val AUTH_POLL_MAX_ATTEMPTS = 30
         private const val AUTH_POLL_INTERVAL_MS = 2_000L
+        private val INVOICE_PENDING_CODES = setOf(100, 150)
+        private const val INVOICE_POLL_MAX_ATTEMPTS = 30
+        private const val INVOICE_POLL_INTERVAL_MS = 2_000L
     }
 }

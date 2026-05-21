@@ -84,6 +84,9 @@ JWT-protected endpoints:
 
 - `GET /ksef/login` — authenticate to KSeF and return access token metadata
 - `GET /ksef/invoices` — list invoice metadata (`pageOffset`, `pageSize` 10–250, optional `from`/`to` ISO dates, `subjectType` default `Subject1`)
+- `POST /ksef/invoices/send` — map `Invoice` (domain DTO) to FA(3) XML and send via KSeF online session; returns `sessionReferenceNumber`, `invoiceReferenceNumber`, optional `ksefNumber`
+
+Mapper: `ksef/mapper/InvoiceToKsefFa3Mapper.kt` (`Invoice` → XML FA v3).
 
 ### Key gotchas
 
