@@ -24,20 +24,24 @@ The container exposes PostgreSQL on host port **5431** (mapped to container port
 
 ### Environment variables
 
-Create a `.env` file at the repo root (gitignored). Required variables for local dev:
+Copy `.env.example` to `.env` at the repo root (`.env` is gitignored):
 
+```sh
+cp .env.example .env
 ```
-POSTGRES_USER=admin_user
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=db1
-DB_HOST=localhost
-DB_PORT=5431
-DB_NAME=db1
-DB_USER=admin_user
-DB_PASSWORD=postgres
-API_PORT=8100
-API_ENV=DEV
+
+`DB_PORT=5431` is the **host** port for PostgreSQL. `docker compose` maps it to port `5432` inside the `db` container and overrides `DB_HOST`/`DB_PORT` for the `api` service on the internal network.
+
+### Docker Compose (full stack)
+
+```sh
+cp .env.example .env   # if missing
+docker compose up -d --build
 ```
+
+API: `http://localhost:8100`. Database from the host: `localhost:${DB_PORT}` (default `5431`).
+
+`docker-compose.dev.yml` also builds `web` and `email` from sibling repos (`../kontenerkiWeb`, `../kontenerkiEmail`).
 
 When `API_ENV=DEV`, the app auto-creates database tables on startup via `SchemaUtils.createMissingTablesAndColumns`.
 
