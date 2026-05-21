@@ -59,6 +59,24 @@ fun Route.ksefRoutes(ksefService: KsefService) {
             }
         }
 
+        post("/invoices/{invoiceId}/send") {
+            try {
+                val invoiceId = call.parameters["invoiceId"]?.toLongOrNull()
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid invoiceId"))
+
+                val response: KsefSendInvoiceResponse = ksefService.sendInvoiceById(invoiceId)
+                call.respond(HttpStatusCode.Accepted, response)
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "Invalid invoice")))
+            } catch (e: KsefException) {
+                logger.error("KSeF invoice send by id failed", e)
+                call.respond(
+                    e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
+                    mapOf("error" to (e.message ?: "KSeF invoice send failed")),
+                )
+            }
+        }
+
         post("/invoices/send") {
             try {
                 val invoice: Invoice = call.receive()

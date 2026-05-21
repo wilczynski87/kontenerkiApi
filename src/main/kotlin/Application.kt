@@ -105,7 +105,7 @@ fun Application.module() {
     val authService: AuthService = AuthServiceImpl(jwtConfig, apiConfig.auth)
 
     val ksefRepository: KsefRepository = KsefRepositoryImpl(KsefApiClient(apiConfig.ksef))
-    val ksefService: KsefService = KsefServiceImpl(apiConfig.ksef, ksefRepository)
+    val ksefService: KsefService = KsefServiceImpl(apiConfig.ksef, ksefRepository, invoiceService)
 
 
     logger()

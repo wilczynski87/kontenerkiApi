@@ -14,6 +14,7 @@ import com.kontenery.ksef.exception.KsefException
 import com.kontenery.ksef.mapper.InvoiceToKsefFa3Mapper
 import com.kontenery.ksef.repository.KsefRepository
 import com.kontenery.ksef.service.KsefService
+import com.kontenery.service.InvoiceService
 import java.nio.charset.StandardCharsets
 import kotlinx.coroutines.delay
 import kotlinx.datetime.Clock
@@ -25,6 +26,7 @@ import kotlinx.datetime.minus
 class KsefServiceImpl(
     private val config: KsefConfig,
     private val repository: KsefRepository,
+    private val invoiceService: InvoiceService,
 ) : KsefService {
 
     @Volatile
@@ -73,6 +75,12 @@ class KsefServiceImpl(
             pageOffset = pageOffset,
             pageSize = pageSize,
         )
+    }
+
+    override suspend fun sendInvoiceById(invoiceId: Long): KsefSendInvoiceResponse {
+        val invoice = invoiceService.getInvoiceById(invoiceId)
+            ?: throw KsefException("Invoice not found: $invoiceId", statusCode = 404)
+        return sendInvoice(invoice)
     }
 
     override suspend fun sendInvoice(invoice: Invoice): KsefSendInvoiceResponse {

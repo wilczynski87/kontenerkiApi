@@ -12,11 +12,13 @@ import com.kontenery.ksef.dto.KsefTokenInfo
 import com.kontenery.ksef.exception.KsefException
 import com.kontenery.ksef.repository.KsefRepository
 import com.kontenery.ksef.service.impl.KsefServiceImpl
+import com.kontenery.service.InvoiceService
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 
 class KsefServiceImplTest {
@@ -54,7 +56,8 @@ class KsefServiceImplTest {
             hasMore = false,
         )
 
-        val service = KsefServiceImpl(config, repository)
+        val invoiceService = mockk<InvoiceService>()
+        val service = KsefServiceImpl(config, repository, invoiceService)
         val result = service.listInvoices(pageOffset = 0, pageSize = 10)
 
         assertEquals(1, result.invoices.size)
@@ -64,7 +67,8 @@ class KsefServiceImplTest {
     @Test
     fun `listInvoices rejects invalid page size`() {
         val repository = mockk<KsefRepository>()
-        val service = KsefServiceImpl(config, repository)
+        val invoiceService = mockk<InvoiceService>()
+        val service = KsefServiceImpl(config, repository, invoiceService)
 
         assertThrows(IllegalArgumentException::class.java) {
             runBlocking { service.listInvoices(pageSize = 5) }
@@ -72,9 +76,24 @@ class KsefServiceImplTest {
     }
 
     @Test
+    fun `sendInvoiceById fails when invoice not found`() {
+        val repository = mockk<KsefRepository>()
+        val invoiceService = mockk<InvoiceService>()
+        coEvery { invoiceService.getInvoiceById(99L) } returns null
+
+        val service = KsefServiceImpl(config, repository, invoiceService)
+
+        val ex = assertThrows(KsefException::class.java) {
+            runBlocking { service.sendInvoiceById(99L) }
+        }
+        assertEquals(404, ex.statusCode)
+    }
+
+    @Test
     fun `login fails when token is missing`() {
         val service = KsefServiceImpl(
             config.copy(token = null),
+            mockk(),
             mockk(),
         )
 

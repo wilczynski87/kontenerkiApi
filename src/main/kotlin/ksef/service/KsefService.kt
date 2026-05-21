@@ -15,4 +15,5 @@ interface KsefService {
         subjectType: String = "Subject1",
     ): KsefInvoiceListResponse
     suspend fun sendInvoice(invoice: Invoice): KsefSendInvoiceResponse
+    suspend fun sendInvoiceById(invoiceId: Long): KsefSendInvoiceResponse
 }
