@@ -6,7 +6,6 @@ services:
     env_file:
       - .env
     ports:
-      # Host port (DB_PORT) maps to PostgreSQL inside the container (always 5432).
       - "${DB_PORT:-5431}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
@@ -28,11 +27,6 @@ services:
       - "${API_PORT:-8100}:${API_PORT:-8100}"
     env_file:
       - .env
-    environment:
-      # Inside the Compose network PostgreSQL listens on 5432, regardless of host DB_PORT.
-      DB_HOST: db
-      DB_PORT: "5432"
-      EMAIL_HOST: email
     depends_on:
       db:
         condition: service_healthy
