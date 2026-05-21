@@ -2,6 +2,8 @@ package com.kontenery.repository.entity.invoice
 
 import com.kontenery.data.invoice.Invoice
 import com.kontenery.data.invoice.Subject
+import com.kontenery.repository.entity.ksef.KsefSessionInvoiceStatusEntity
+import com.kontenery.repository.entity.ksef.KsefSessionInvoiceStatusTable
 import org.jetbrains.exposed.dao.LongEntity
 import org.jetbrains.exposed.dao.LongEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -49,6 +51,7 @@ class InvoiceEntity(id: EntityID<Long>) : LongEntity(id) {
     var invoiceType by InvoiceTable.invoiceType
 
     val positions by PositionEntity referrersOn Positions.invoice
+    val ksefSessionInvoiceStatuses by KsefSessionInvoiceStatusEntity referrersOn KsefSessionInvoiceStatusTable.invoice
 
     fun toDomain(): Invoice = Invoice(
         invoiceNumber = invoiceNumber,

@@ -12,13 +12,14 @@ import com.kontenery.ksef.dto.KsefTokenInfo
 import com.kontenery.ksef.exception.KsefException
 import com.kontenery.ksef.repository.KsefRepository
 import com.kontenery.ksef.service.impl.KsefServiceImpl
+import com.kontenery.repository.InvoiceRepo
+import com.kontenery.repository.KsefSessionInvoiceStatusRepo
 import com.kontenery.service.InvoiceService
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 
 class KsefServiceImplTest {
@@ -57,7 +58,9 @@ class KsefServiceImplTest {
         )
 
         val invoiceService = mockk<InvoiceService>()
-        val service = KsefServiceImpl(config, repository, invoiceService)
+        val ksefSessionInvoiceStatusRepo = mockk<KsefSessionInvoiceStatusRepo>(relaxed = true)
+        val invoiceRepo = mockk<InvoiceRepo>(relaxed = true)
+        val service = KsefServiceImpl(config, repository, invoiceService, ksefSessionInvoiceStatusRepo, invoiceRepo)
         val result = service.listInvoices(pageOffset = 0, pageSize = 10)
 
         assertEquals(1, result.invoices.size)
@@ -68,7 +71,9 @@ class KsefServiceImplTest {
     fun `listInvoices rejects invalid page size`() {
         val repository = mockk<KsefRepository>()
         val invoiceService = mockk<InvoiceService>()
-        val service = KsefServiceImpl(config, repository, invoiceService)
+        val ksefSessionInvoiceStatusRepo = mockk<KsefSessionInvoiceStatusRepo>(relaxed = true)
+        val invoiceRepo = mockk<InvoiceRepo>(relaxed = true)
+        val service = KsefServiceImpl(config, repository, invoiceService, ksefSessionInvoiceStatusRepo, invoiceRepo)
 
         assertThrows(IllegalArgumentException::class.java) {
             runBlocking { service.listInvoices(pageSize = 5) }
@@ -81,7 +86,9 @@ class KsefServiceImplTest {
         val invoiceService = mockk<InvoiceService>()
         coEvery { invoiceService.getInvoiceById(99L) } returns null
 
-        val service = KsefServiceImpl(config, repository, invoiceService)
+        val ksefSessionInvoiceStatusRepo = mockk<KsefSessionInvoiceStatusRepo>(relaxed = true)
+        val invoiceRepo = mockk<InvoiceRepo>(relaxed = true)
+        val service = KsefServiceImpl(config, repository, invoiceService, ksefSessionInvoiceStatusRepo, invoiceRepo)
 
         val ex = assertThrows(KsefException::class.java) {
             runBlocking { service.sendInvoiceById(99L) }
@@ -95,6 +102,8 @@ class KsefServiceImplTest {
             config.copy(token = null),
             mockk(),
             mockk(),
+            mockk(relaxed = true),
+            mockk(relaxed = true),
         )
 
         assertThrows(KsefException::class.java) {

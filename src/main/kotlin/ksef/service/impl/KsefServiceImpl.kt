@@ -14,6 +14,8 @@ import com.kontenery.ksef.exception.KsefException
 import com.kontenery.ksef.mapper.InvoiceToKsefFa3Mapper
 import com.kontenery.ksef.repository.KsefRepository
 import com.kontenery.ksef.service.KsefService
+import com.kontenery.repository.InvoiceRepo
+import com.kontenery.repository.KsefSessionInvoiceStatusRepo
 import com.kontenery.service.InvoiceService
 import java.nio.charset.StandardCharsets
 import kotlinx.coroutines.delay
@@ -27,6 +29,8 @@ class KsefServiceImpl(
     private val config: KsefConfig,
     private val repository: KsefRepository,
     private val invoiceService: InvoiceService,
+    private val ksefSessionInvoiceStatusRepo: KsefSessionInvoiceStatusRepo,
+    private val invoiceRepo: InvoiceRepo,
 ) : KsefService {
 
     @Volatile
@@ -80,10 +84,15 @@ class KsefServiceImpl(
     override suspend fun sendInvoiceById(invoiceId: Long): KsefSendInvoiceResponse {
         val invoice = invoiceService.getInvoiceById(invoiceId)
             ?: throw KsefException("Invoice not found: $invoiceId", statusCode = 404)
-        return sendInvoice(invoice)
+        return sendInvoiceToKsef(invoice, invoiceId)
     }
 
     override suspend fun sendInvoice(invoice: Invoice): KsefSendInvoiceResponse {
+        val invoiceId = invoice.invoiceNumber?.let { invoiceRepo.getInvoiceIdByNumber(it) }
+        return sendInvoiceToKsef(invoice, invoiceId)
+    }
+
+    private suspend fun sendInvoiceToKsef(invoice: Invoice, invoiceId: Long?): KsefSendInvoiceResponse {
         val invoiceXml = InvoiceToKsefFa3Mapper.toFa3Xml(invoice).toByteArray(StandardCharsets.UTF_8)
         val accessToken = obtainAccessToken()
         val encryptionData = repository.createEncryptionData()
@@ -102,6 +111,10 @@ class KsefServiceImpl(
                 sessionReferenceNumber = session.referenceNumber,
                 invoiceReferenceNumber = sendResponse.referenceNumber,
             )
+
+            if (invoiceId != null) {
+                ksefSessionInvoiceStatusRepo.save(invoiceId, invoiceStatus)
+            }
 
             return KsefSendInvoiceResponse(
                 sessionReferenceNumber = session.referenceNumber,

@@ -63,6 +63,13 @@ class InvoiceRepoImpl(): InvoiceRepo {
             ?.toDomain()
     }
 
+    override suspend fun getInvoiceIdByNumber(invoiceNumber: String): Long? = suspendTransaction {
+        InvoiceEntity.find { InvoiceTable.invoiceNumber eq invoiceNumber }
+            .firstOrNull()
+            ?.id
+            ?.value
+    }
+
     override suspend fun saveInvoice(invoice: Invoice): Invoice = suspendTransaction {
         println("saveInvoice start, number: ${invoice.invoiceNumber}")
         // Create seller address

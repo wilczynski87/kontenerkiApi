@@ -4,6 +4,7 @@ package com.kontenery
 import com.kontenery.data.utils.Env
 import com.kontenery.repository.entity.*
 import com.kontenery.repository.entity.invoice.*
+import com.kontenery.repository.entity.ksef.KsefSessionInvoiceStatusTable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -35,7 +36,8 @@ fun configureDatabases(apiConfig: ApiConfig) {
                 BillTable, PositionsBill,
                 PaymentTable, PaymentInvoices,
                 ClientBankAccountTable,
-                SubmeterTable, ReadingTable
+                SubmeterTable, ReadingTable,
+                KsefSessionInvoiceStatusTable,
             )
             Unit
         } else SchemaUtils.createMissingTablesAndColumns(
@@ -47,7 +49,8 @@ fun configureDatabases(apiConfig: ApiConfig) {
             BillTable, PositionsBill,
             PaymentTable, PaymentInvoices,
             ClientBankAccountTable,
-            SubmeterTable, ReadingTable
+            SubmeterTable, ReadingTable,
+            KsefSessionInvoiceStatusTable,
         )
     }
 }

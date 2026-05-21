@@ -6,6 +6,7 @@ import com.kontenery.repository.ClientBankAccountRepository
 import com.kontenery.repository.ClientRepo
 import com.kontenery.repository.ContractRepo
 import com.kontenery.repository.InvoiceRepo
+import com.kontenery.repository.KsefSessionInvoiceStatusRepo
 import com.kontenery.repository.PaymentRepo
 import com.kontenery.repository.ProductRepo
 import com.kontenery.repository.UtilitiesRepo
@@ -15,6 +16,7 @@ import com.kontenery.repository.impl.ClientBankAccountRepositoryImpl
 import com.kontenery.repository.impl.ClientRepoImpl
 import com.kontenery.repository.impl.ContractRepoImpl
 import com.kontenery.repository.impl.InvoiceRepoImpl
+import com.kontenery.repository.impl.KsefSessionInvoiceStatusRepoImpl
 import com.kontenery.repository.impl.PaymentRepoImpl
 import com.kontenery.repository.impl.ProductRepoImpl
 import com.kontenery.repository.impl.UtilitiesRepoImpl
@@ -104,8 +106,15 @@ fun Application.module() {
     val jwtConfig = JwtConfig(apiConfig)
     val authService: AuthService = AuthServiceImpl(jwtConfig, apiConfig.auth)
 
+    val ksefSessionInvoiceStatusRepo: KsefSessionInvoiceStatusRepo = KsefSessionInvoiceStatusRepoImpl()
     val ksefRepository: KsefRepository = KsefRepositoryImpl(KsefApiClient(apiConfig.ksef))
-    val ksefService: KsefService = KsefServiceImpl(apiConfig.ksef, ksefRepository, invoiceService)
+    val ksefService: KsefService = KsefServiceImpl(
+        apiConfig.ksef,
+        ksefRepository,
+        invoiceService,
+        ksefSessionInvoiceStatusRepo,
+        invoiceRepo,
+    )
 
 
     logger()
