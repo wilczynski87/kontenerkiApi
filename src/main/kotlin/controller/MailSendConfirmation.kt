@@ -25,9 +25,12 @@ fun Route.mailSendConfirmation(invoiceService: InvoiceService) {
                 invoiceService.confirmInvoiceSendDate(invoiceNumber, invoiceSendDate)
 
                 call.respond(HttpStatusCode.OK)
-            } catch (e:Exception) {
+            } catch (e: Exception) {
                 println("mailSendConfirmation/invoice error: $e")
-                call.respondNullable(HttpStatusCode.ExpectationFailed, e.message)
+                call.respondText(
+                    text = e.message ?: e.toString(),
+                    status = HttpStatusCode.ExpectationFailed,
+                )
             }
         }
     }
