@@ -24,23 +24,11 @@ The container exposes PostgreSQL on host port **5431** (mapped to container port
 
 ### Environment variables
 
-Copy `.env.example` to `.env` at the repo root (`.env` is gitignored), then set real values (passwords, `JWT_SECRET`, etc.) in `.env` only — never commit secrets.
+Copy `.env.example` to `.env` at the repo root (`.env` is gitignored). Put real `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, and `KSEF_TOKEN` only in `.env` — not in committed files.
 
-```
-POSTGRES_USER=admin_user
-POSTGRES_PASSWORD=your-postgres-password
-POSTGRES_DB=db1
-DB_HOST=db
-DB_PORT=5431
-DB_NAME=db1
-DB_USER=admin_user
-DB_PASSWORD=your-postgres-password
-API_PORT=8100
-API_ENV=DEV
-JWT_SECRET=change-me-generate-a-long-random-secret
-```
+For **Gradle on the host**, use `DB_HOST=localhost` and `DB_PORT=5432` (or `5431` if Docker maps Postgres to 5431).
 
-`DB_PORT=5431` is the **host** port for PostgreSQL. `docker compose` maps it to port `5432` inside the `db` container and overrides `DB_HOST`/`DB_PORT` for the `api` service on the internal network. The `email` service additionally needs `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `INTERNAL_API_KEY`, and `EMAIL_USER` in `.env` (see deploy workflow / VPS secrets).
+For **docker compose**, set `DB_PORT=5431` in `.env` for the host mapping; compose overrides `DB_HOST`/`DB_PORT` for the `api` service on the internal network.
 
 ### Docker Compose (full stack)
 
