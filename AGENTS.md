@@ -24,13 +24,23 @@ The container exposes PostgreSQL on host port **5431** (mapped to container port
 
 ### Environment variables
 
-Copy `.env.example` to `.env` at the repo root (`.env` is gitignored):
+Copy `.env.example` to `.env` at the repo root (`.env` is gitignored). Example local values:
 
-```sh
-cp .env.example .env
+```
+POSTGRES_USER=admin_user
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=db1
+DB_HOST=db
+DB_PORT=5431
+DB_NAME=db1
+DB_USER=admin_user
+DB_PASSWORD=postgres
+API_PORT=8100
+API_ENV=DEV
+JWT_SECRET=secretAuth
 ```
 
-`DB_PORT=5431` is the **host** port for PostgreSQL. `docker compose` maps it to port `5432` inside the `db` container and overrides `DB_HOST`/`DB_PORT` for the `api` service on the internal network.
+`DB_PORT=5431` is the **host** port for PostgreSQL. `docker compose` maps it to port `5432` inside the `db` container and overrides `DB_HOST`/`DB_PORT` for the `api` service on the internal network. The `email` service additionally needs `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `INTERNAL_API_KEY`, and `EMAIL_USER` in `.env` (see deploy workflow / VPS secrets).
 
 ### Docker Compose (full stack)
 
