@@ -53,6 +53,7 @@ jobs:
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           APP_SECRET=${{ secrets.APP_SECRET }}
           APP_LOGIN=${{ secrets.APP_LOGIN }}
+          KSEF_TOKEN=${{ secrets.KSEF_TOKEN }}
           
           # === VARIABLES ===
           API_ENV=${{ vars.API_ENV }}

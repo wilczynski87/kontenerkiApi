@@ -57,5 +57,6 @@ fun Application.configureRouting(
         }
         mailSendConfirmation(invoiceService)
         authController(authService)
+        bramaController()
     }
 }
