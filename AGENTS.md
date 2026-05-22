@@ -43,7 +43,7 @@ API: `http://localhost:8100`. Database from the host: `localhost:${DB_PORT}` (de
 
 `docker-compose.dev.yml` also builds `web` and `email` from sibling repos (`../kontenerkiWeb`, `../kontenerkiEmail`).
 
-When `API_ENV=DEV`, the app auto-creates database tables on startup via `SchemaUtils.createMissingTablesAndColumns`.
+When `API_ENV` is not `PROD`, the app auto-creates database tables and **missing columns** on startup via `SchemaUtils.createMissingTablesAndColumns`. For `API_ENV=PROD`, run SQL from `src/main/resources/db/migrations/` manually (e.g. `001_add_invoice_ksef_number.sql` if `invoice.ksef_number` is missing).
 
 ### Running the application locally
 

@@ -1,7 +1,5 @@
 package com.kontenery
 
-
-import com.kontenery.data.utils.Env
 import com.kontenery.repository.entity.*
 import com.kontenery.repository.entity.invoice.*
 import com.kontenery.repository.entity.ksef.KsefSessionInvoiceStatusTable
@@ -13,15 +11,36 @@ import java.sql.DriverManager
 
 private val dbLog = LoggerFactory.getLogger("Databases")
 
+private val schemaTables = arrayOf(
+    AddressTable,
+    ClientPersonalDataTable,
+    ClientCompanyDataTable,
+    ClientTable,
+    ProductTable,
+    ContractTable,
+    DepositTable,
+    Subjects,
+    Positions,
+    InvoiceTable,
+    BillTable,
+    PositionsBill,
+    PaymentTable,
+    PaymentInvoices,
+    ClientBankAccountTable,
+    SubmeterTable,
+    ReadingTable,
+    KsefSessionInvoiceStatusTable,
+)
+
 fun configureDatabases(apiConfig: ApiConfig) {
     val dbHost = apiConfig.db.host
     val dbPort = apiConfig.db.port
     val dbName = apiConfig.db.name
     val dbUser = apiConfig.db.user
     val dbPassword = apiConfig.db.password
-    val env: Env = Env.valueOf(System.getenv("ENV") ?: "DEV")
+    val isProd = apiConfig.env.equals("PROD", ignoreCase = true)
     val url = "jdbc:postgresql://$dbHost:$dbPort/$dbName"
-    dbLog.info("Connecting to PostgreSQL at {}:{}/{}", dbHost, dbPort, dbName)
+    dbLog.info("Connecting to PostgreSQL at {}:{}/{} (API_ENV={})", dbHost, dbPort, dbName, apiConfig.env)
 
     val connection = {
         DriverManager.getConnection(url, dbUser, dbPassword)
@@ -29,31 +48,12 @@ fun configureDatabases(apiConfig: ApiConfig) {
     val database: Database = Database.connect(connection)
 
     transaction(database) {
-        if(env == Env.PROD) {
-            arrayOf(
-                AddressTable,
-                ClientPersonalDataTable, ClientCompanyDataTable, ClientTable,
-                ProductTable,
-                ContractTable, DepositTable,
-                Subjects, Positions, InvoiceTable,
-                BillTable, PositionsBill,
-                PaymentTable, PaymentInvoices,
-                ClientBankAccountTable,
-                SubmeterTable, ReadingTable,
-                KsefSessionInvoiceStatusTable,
-            )
-            Unit
-        } else SchemaUtils.createMissingTablesAndColumns(
-            AddressTable,
-            ClientPersonalDataTable, ClientCompanyDataTable, ClientTable,
-            ProductTable,
-            ContractTable, DepositTable,
-            Subjects, Positions, InvoiceTable,
-            BillTable, PositionsBill,
-            PaymentTable, PaymentInvoices,
-            ClientBankAccountTable,
-            SubmeterTable, ReadingTable,
-            KsefSessionInvoiceStatusTable,
-        )
+        if (isProd) {
+            dbLog.info("API_ENV=PROD — automatic schema sync disabled; apply SQL migrations manually")
+        } else {
+            dbLog.info("API_ENV={} — running SchemaUtils.createMissingTablesAndColumns", apiConfig.env)
+            SchemaUtils.createMissingTablesAndColumns(*schemaTables)
+            dbLog.info("Schema sync finished")
+        }
     }
 }

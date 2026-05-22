@@ -123,8 +123,6 @@ class ListingServiceImpl(
         to: LocalDate,
     ): List<PaymentsListForFinanceTable> = coroutineScope {
 
-        println("page: $page, size: $size, from: $from, to: $to")
-
         val clients = withContext(Dispatchers.IO) {
             clientsRepo.getAllClients(page, size)
         }
