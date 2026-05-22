@@ -31,6 +31,7 @@ data class AuthConfig(
 )
 @Serializable
 data class KsefConfig(
+    val environment: String,
     val baseUrl: String,
     val apiSuffix: String,
     val token: String?,
@@ -56,9 +57,51 @@ private fun envRequired(name: String): String =
 private fun envOrNull(name: String): String? =
     System.getenv(name)?.ifBlank { null }
 
+/** NIP sprzedawcy (Kontenery) — domyślny kontekst KSeF w DEV, gdy KSEF_NIP nie jest ustawiony. */
+internal const val KSEF_DEV_DEFAULT_NIP = "8943278612"
+
+internal fun resolveKsefConfig(
+    apiEnv: String,
+    getenv: (String) -> String? = { System.getenv(it) },
+): KsefConfig {
+    val isDev = apiEnv.equals("DEV", ignoreCase = true)
+    val ksefEnvironment = KsefEnvironment.fromEnvValue(getenv("KSEF_ENV"))
+        ?: if (isDev) KsefEnvironment.DEV_DEFAULT else KsefEnvironment.PRODUCTION
+
+    val baseUrl = getenv("KSEF_BASE_URL")?.trim()?.takeIf { it.isNotEmpty() }
+        ?: ksefEnvironment.baseUrl
+    val apiSuffix = getenv("KSEF_API_SUFFIX")?.trim()?.takeIf { it.isNotEmpty() }
+        ?: ksefEnvironment.apiSuffix
+
+    if (isDev && baseUrl.contains("api.ksef.mf.gov.pl") && !baseUrl.contains("-test") && !baseUrl.contains("-demo")) {
+        error(
+            "API_ENV=DEV nie może używać produkcyjnego KSEF_BASE_URL ($baseUrl). " +
+                "Ustaw KSEF_ENV=TEST lub KSEF_BASE_URL=https://api-test.ksef.mf.gov.pl",
+        )
+    }
+
+    val nip = getenv("KSEF_NIP")?.trim()?.takeIf { it.isNotEmpty() }
+        ?: if (isDev) KSEF_DEV_DEFAULT_NIP else null
+
+    val tokenFromFile = getenv("KSEF_TOKEN_FILE")?.trim()?.takeIf { it.isNotEmpty() }?.let { path ->
+        runCatching { java.io.File(path).readText().trim() }
+            .getOrElse { throw IllegalStateException("Cannot read KSEF_TOKEN_FILE at $path: ${it.message}") }
+    }
+    val token = getenv("KSEF_TOKEN")?.trim()?.takeIf { it.isNotEmpty() } ?: tokenFromFile
+
+    return KsefConfig(
+        environment = ksefEnvironment.name,
+        baseUrl = baseUrl,
+        apiSuffix = apiSuffix,
+        token = token,
+        nip = nip,
+    )
+}
+
 fun Application.loadApiConfig(): ApiConfig {
+    val apiEnv = env("API_ENV", "DEV")
     return ApiConfig(
-        env = env("API_ENV", "DEV"),
+        env = apiEnv,
 
         email = EmailConfig(
             host = env("EMAIL_HOST", "localhost"),
@@ -86,11 +129,6 @@ fun Application.loadApiConfig(): ApiConfig {
             appSecret = envOrNull("APP_SECRET"),
         ),
 
-        ksef = KsefConfig(
-            baseUrl = env("KSEF_BASE_URL", "https://api-test.ksef.mf.gov.pl"),
-            apiSuffix = env("KSEF_API_SUFFIX", "v2"),
-            token = envOrNull("KSEF_TOKEN"),
-            nip = envOrNull("KSEF_NIP"),
-        ),
+        ksef = resolveKsefConfig(apiEnv),
     )
 }

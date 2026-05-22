@@ -69,6 +69,15 @@ fun Application.module() {
     println("\nMAIN API started\n")
     val apiConfig: ApiConfig = loadApiConfig()
     log.info("Environment: ${apiConfig.env}")
+    val ksef = apiConfig.ksef
+    log.info(
+        "KSeF [{}]: {}/{} | NIP={} | token={}",
+        ksef.environment,
+        ksef.baseUrl,
+        ksef.apiSuffix,
+        ksef.nip ?: "(not set)",
+        if (ksef.token.isNullOrBlank()) "MISSING — set KSEF_TOKEN in .env (token from KSeF TEST portal)" else "configured",
+    )
     val paymentRepo:PaymentRepo = PaymentRepoImpl()
     val invoiceRepo: InvoiceRepo = InvoiceRepoImpl()
     val billRepo: BillRepo = BillRepoImpl()

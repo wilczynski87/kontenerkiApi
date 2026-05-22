@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test
 class KsefServiceImplTest {
 
     private val config = KsefConfig(
+        environment = "TEST",
         baseUrl = "https://api-test.ksef.mf.gov.pl",
         apiSuffix = "v2",
         token = "secret-token",

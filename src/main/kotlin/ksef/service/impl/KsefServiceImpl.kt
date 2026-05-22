@@ -173,9 +173,16 @@ class KsefServiceImpl(
 
     private suspend fun authenticate(): Pair<String, String?> {
         val ksefToken = config.token?.trim()?.takeIf { it.isNotEmpty() }
-            ?: throw KsefException("KSEF_TOKEN environment variable is not set")
+            ?: throw KsefException(
+                "KSEF_TOKEN is not set (environment=${config.environment}, api=${config.baseUrl}). " +
+                    "Generate a system token in the KSeF ${config.environment} portal for NIP ${config.nip ?: "?"} " +
+                    "and add it to .env or KSEF_TOKEN_FILE.",
+            )
         val nip = config.nip?.trim()?.takeIf { it.isNotEmpty() }
-            ?: throw KsefException("KSEF_NIP environment variable is not set")
+            ?: throw KsefException(
+                "KSEF_NIP is not set (environment=${config.environment}). " +
+                    "Use the NIP of the entity the KSEF_TOKEN was issued for.",
+            )
 
         val tokenEncryptionCert = resolveTokenEncryptionCertificate(repository.fetchPublicKeyCertificates())
         val (challenge, timestampMs) = repository.fetchAuthChallenge()
@@ -212,7 +219,10 @@ class KsefServiceImpl(
                     }
                 }
                 else -> throw KsefException(
-                    "KSeF authentication failed: ${status.status.code} ${status.status.description}",
+                    "KSeF authentication failed [${config.environment}, ${config.baseUrl}]: " +
+                        "${status.status.code} ${status.status.description}. " +
+                        "Token must be generated for the same environment and NIP (${config.nip}). " +
+                        "In DEV use KSEF_ENV=TEST and api-test.ksef.mf.gov.pl.",
                 )
             }
         }

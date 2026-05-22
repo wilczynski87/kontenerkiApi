@@ -27,6 +27,14 @@ services:
       - "${API_PORT:-8100}:${API_PORT:-8100}"
     env_file:
       - .env
+    environment:
+      # DEV w Dockerze: baza w sieci compose + KSeF sandbox (TEST)
+      DB_HOST: db
+      DB_PORT: "5432"
+      KSEF_ENV: ${KSEF_ENV:-TEST}
+      KSEF_BASE_URL: ${KSEF_BASE_URL:-https://api-test.ksef.mf.gov.pl}
+      KSEF_API_SUFFIX: ${KSEF_API_SUFFIX:-v2}
+      KSEF_NIP: ${KSEF_NIP:-8943278612}
     depends_on:
       db:
         condition: service_healthy

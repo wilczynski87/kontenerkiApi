@@ -73,16 +73,23 @@ The dev login is hardcoded in `AuthServiceImpl`: email=`ppp`, password=`ppp`. Us
 
 KSeF (Krajowy System e-Faktur) API v2 is integrated under `com.kontenery.ksef` (client → repository → service → `/ksef` routes). Authentication uses a **KSeF system token** (generated in the KSeF portal), not the app JWT.
 
-Add to `.env`:
+With **`API_ENV=DEV`**, KSeF defaults to **TEST (sandbox)**: `https://api-test.ksef.mf.gov.pl`, API `v2`, `KSEF_NIP` from `.env` or `8943278612`. Override with `KSEF_ENV` (`TEST` | `DEMO` | `PRODUCTION`) or explicit `KSEF_BASE_URL`. Production URL is blocked when `API_ENV=DEV`.
+
+Add to `.env` (copy from `.env.example`):
 
 ```
+KSEF_ENV=TEST
 KSEF_BASE_URL=https://api-test.ksef.mf.gov.pl
 KSEF_API_SUFFIX=v2
-KSEF_TOKEN=<token from KSeF portal>
-KSEF_NIP=<company NIP for context>
+KSEF_NIP=8943278612
+KSEF_TOKEN=<token from KSeF TEST portal — same NIP as KSEF_NIP>
 ```
 
-For production use `KSEF_BASE_URL=https://api.ksef.mf.gov.pl`.
+Optional: `KSEF_TOKEN_FILE=/path/to/token.txt` instead of `KSEF_TOKEN`.
+
+`docker compose` sets `DB_HOST=db`, `KSEF_ENV=TEST` and sandbox URL on the `api` service unless `.env` overrides them.
+
+For production: `API_ENV=PROD`, `KSEF_ENV=PRODUCTION`, `KSEF_BASE_URL=https://api.ksef.mf.gov.pl`, and a production token.
 
 JWT-protected endpoints:
 
