@@ -20,14 +20,20 @@ data class ObjectValidators(
     fun validateClient(client: Client): Boolean {
         var result = false
         if(client.id == null)  {
-            errorList.add(InvoiceErrorMessage("no Client Id", "for Client: $client"))
-            logger.error("no Client Id")
+            errorList.add(InvoiceErrorMessage("no Client Id", "client name: ${client.getName()}"))
+            logger.error("no Client Id for client: {}", client.getName())
             result = true
         }
 
         if(client.isActive == false) {
-            errorList.add(InvoiceErrorMessage("Client is no longer ACTIVE", "for Client: $client"))
-            logger.error("Client is no longer ACTIVE, id: ${client.id ?: client.getName()}")
+            errorList.add(
+                InvoiceErrorMessage(
+                    "Client is no longer ACTIVE",
+                    "client id=${client.id}, name=${client.getName()}",
+                    clientId = client.id,
+                )
+            )
+            logger.error("Client is no longer ACTIVE, id: {}", client.id)
             result = true
         }
 
@@ -38,9 +44,11 @@ data class ObjectValidators(
         var resut = false
         if(contracts.isEmpty()) {
             errorList.add(InvoiceErrorMessage(
-                "no contracts",
-                "for Client: $client, there are no active contracts, for period from: ${LocalDate.startOfCurrentMonth(period)} to: ${LocalDate.endOfCurrentMonth(period)}")
-            )
+                title = "no contracts",
+                message = "client id=${client.id}, name=${client.getName()}, no active contracts for period from: ${LocalDate.startOfCurrentMonth(period)} to: ${LocalDate.endOfCurrentMonth(period)}",
+                clientId = client.id,
+                period = period,
+            ))
             logger.error("no contracts, for given client: ${client.getName()}")
             resut = true
         }

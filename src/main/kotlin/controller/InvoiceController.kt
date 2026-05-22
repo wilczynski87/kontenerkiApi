@@ -14,7 +14,9 @@ import com.kontenery.ksef.service.KsefService
 import com.kontenery.service.ClientService
 import com.kontenery.service.InvoiceService
 import com.kontenery.service.PrintService
+import com.kontenery.utils.ApiErrorResponse
 import com.kontenery.utils.cookRawPeriod
+import com.kontenery.utils.respondInternalError
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -38,8 +40,7 @@ fun Route.invoiceRoutes(
                 val invoice:Invoice? = invoiceService.getInvoiceByNumber(invoiceNumber)
                 call.respondNullable(invoice)
             } catch (e:Exception) {
-                println("/{invoiceNumber}/id Error: $e")
-                call.respond(e.message.toString())
+                call.respondInternalError(e, "Failed to load invoice")
             }
 
         }
@@ -50,12 +51,9 @@ fun Route.invoiceRoutes(
                     ?: throw NullPointerException("There is no valid invoiceNumber")
 
                 val invoice:Invoice? = invoiceService.getInvoiceByNumber(invoiceNumber)
-                println("invoiceNumber: $invoice")
-
                 call.respond(invoice ?: "brak")
             } catch (e:Exception) {
-                println("/{invoiceId}/id Error: $e")
-                call.respond(e.message.toString())
+                call.respondInternalError(e, "Failed to load invoice")
             }
 
         }
@@ -70,21 +68,16 @@ fun Route.invoiceRoutes(
                     ?: throw NullPointerException("Brak Id klienta")
                 val from: LocalDate = call.queryParameters["from"]?.let { LocalDate.parse(it) } ?: LocalDate.startOfCurrentYear()
                 val to: LocalDate = call.queryParameters["to"]?.let { LocalDate.parse(it) } ?: LocalDate.now()
-                println("/{clientId}/forClient: clientId: $clientId, from: $from, to: $to")
-
                 val invoices: List<Invoice> = invoiceService.getInvoicesAndBillsForClient(
                     clientId = clientId,
                     from = from,
                     to = to
                 )
-                println("Numery faktur/rachunków utworzonych:")
-                invoices.forEach { println(it) }
 
                 call.respond(invoices)
 
             } catch (e: Exception) {
-                println(e)
-                call.respond(e)
+                call.respondInternalError(e, "Failed to load invoices for client")
             }
         }
 
@@ -132,42 +125,40 @@ fun Route.invoiceRoutes(
                 println("$e, errorList: $errorList")
                 call.respond(HttpStatusCode.ExpectationFailed, errorList)
             } catch (e:Exception) {
-                println("post invoice: $e")
-                call.respond(HttpStatusCode.ExpectationFailed, e)
+                if (errorList.isNotEmpty()) {
+                    call.respond(HttpStatusCode.ExpectationFailed, errorList)
+                } else {
+                    call.respondInternalError(e, "Failed to create invoice")
+                }
             }
         }
         post("/sendInvoices/forAll") {
+            val errorList: MutableList<ErrorMessage> = mutableListOf()
             try {
-                println("clientId: /sendInvoices/forAll")
                 val periodRaw:String = call.queryParameters["period"].toString()
-//                println("periodRaw: $periodRaw")
 
                 val period: LocalDate = cookRawPeriod(periodRaw, "/sendInvoices/forAll")
 
                 val allClients: List<Client> = clientService.getFilteredClients(true)
-                println("clients: ${allClients.map{ it.getName()}}")
-
-                // create Validator
-                val errorList: MutableList<ErrorMessage> = mutableListOf()
 
                 val createdInvoice:List<Invoice> =
                     allClients.mapNotNull { invoiceService.createPeriodicInvoiceForClient(it, period, errorList) }
-                println("createdInvoice: ${createdInvoice.map { it.invoiceNumber }}")
 
                 val savedInvoices: List<Invoice> = createdInvoice.mapNotNull { invoice ->
                     saveInvoiceWithOptionalKsef(invoice, invoiceService, ksefService, errorList)
                 }
-                println("savedInvoices: ${savedInvoices.map { it.invoiceNumber }}")
 
                 savedInvoices.forEach { savedInvoice ->
-                    println("document send: vat apply - ${savedInvoice.vatApply}, numer - ${savedInvoice.invoiceNumber}")
                     printService.sendPeriodicInvoice(savedInvoice)
                 }
 
                 call.respond(errorList)
             } catch (e:Exception) {
-                println("post invoice: $e")
-                call.respond(e.message.toString())
+                if (errorList.isNotEmpty()) {
+                    call.respond(HttpStatusCode.ExpectationFailed, errorList)
+                } else {
+                    call.respondInternalError(e, "Failed to send invoices")
+                }
             }
         }
 
@@ -189,7 +180,7 @@ fun Route.invoiceRoutes(
                 } catch (e: Exception) {
                     return@post call.respond(
                         HttpStatusCode.BadRequest,
-                        mapOf("error" to "Invalid invoice body: ${e.message}")
+                        ApiErrorResponse("Invalid invoice body"),
                     )
                 }
 
@@ -221,11 +212,7 @@ fun Route.invoiceRoutes(
                     mapOf("error" to "Could not save invoice")
                 )
             } catch (e:Exception) {
-                println("post invoice error: $e")
-                call.respond(
-                    HttpStatusCode.InternalServerError,
-                    mapOf("error" to e.message)
-                )
+                call.respondInternalError(e, "Failed to create custom invoice")
             }
         }
 
@@ -264,8 +251,7 @@ fun Route.invoiceRoutes(
 
                 call.respond(invoiceSend)
             } catch (e: Exception) {
-                println("/{invoiceId}/sendAgain: ${e.message}")
-                call.respond(HttpStatusCode.Conflict,"${e.message}", )
+                call.respond(HttpStatusCode.Conflict, ApiErrorResponse("Failed to resend invoice"))
             }
         }
     }
@@ -286,11 +272,10 @@ private suspend fun saveInvoiceWithOptionalKsef(
             if (errorList != null) {
                 errorList.add(
                     InvoiceErrorMessage(
-                        "Wysyłka do Ksef",
-                        e.message,
-                        null,
-                        createdInvoice.customer?.client?.id,
-                        createdInvoice.invoiceDate,
+                        title = "Wysyłka do Ksef",
+                        message = "Nie udało się wysłać faktury do KSeF",
+                        clientId = createdInvoice.customer?.client?.id,
+                        period = createdInvoice.invoiceDate,
                     ),
                 )
                 return null

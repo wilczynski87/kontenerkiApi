@@ -40,7 +40,7 @@ class KsefServiceImpl(
     override suspend fun login(): KsefLoginResponse {
         val tokens = authenticate()
         return KsefLoginResponse(
-            accessToken = tokens.first,
+            authenticated = true,
             validUntil = tokens.second,
         )
     }

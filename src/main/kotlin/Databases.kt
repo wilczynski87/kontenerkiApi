@@ -8,7 +8,10 @@ import com.kontenery.repository.entity.ksef.KsefSessionInvoiceStatusTable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.slf4j.LoggerFactory
 import java.sql.DriverManager
+
+private val dbLog = LoggerFactory.getLogger("Databases")
 
 fun configureDatabases(apiConfig: ApiConfig) {
     val dbHost = apiConfig.db.host
@@ -18,7 +21,7 @@ fun configureDatabases(apiConfig: ApiConfig) {
     val dbPassword = apiConfig.db.password
     val env: Env = Env.valueOf(System.getenv("ENV") ?: "DEV")
     val url = "jdbc:postgresql://$dbHost:$dbPort/$dbName"
-    println("Connecting to: $url")
+    dbLog.info("Connecting to PostgreSQL at {}:{}/{}", dbHost, dbPort, dbName)
 
     val connection = {
         DriverManager.getConnection(url, dbUser, dbPassword)

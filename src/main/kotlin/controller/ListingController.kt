@@ -35,13 +35,9 @@ fun Route.listingRoute(
 
             get("/clients/count") {
                 val clientListSize: Long = listingService.clientsListSize()
-                println("clientListCount: $clientListSize")
                 headers {
                     append("Accept", "application/json")
                 }
-                val cookie = call.request.cookies.rawCookies
-                println("RAW COOKIE!: $cookie")
-
                 call.respond(clientListSize)
             }
 
@@ -59,16 +55,12 @@ fun Route.listingRoute(
 //                println("from: $from, to: $to")
 
                 val clientListPayments: List<PaymentsListForFinanceTable> = listingService.clientsFinancesList(page, size, from, to)
-                println("clientListPayments: $clientListPayments")
 
                 val clientListBalance = listingService.clientsOverdue(from.minus(5, DateTimeUnit.YEAR), from.minus(1, DateTimeUnit.DAY))
-                println("clientListBalance: $clientListBalance")
 
                 val endOfPreviousMonth = LocalDate(to.year, to.monthNumber, 1).minus(1, DateTimeUnit.DAY)
                 val clientsOverdueTo = if(to.year == LocalDate.now().year) endOfPreviousMonth else to
-//                println("clientsOverdueTo: $clientsOverdueTo")
                 val clientsOverdue = listingService.clientsOverdue(from.minus(5, DateTimeUnit.YEAR), clientsOverdueTo)
-                println("clientsOverdue: $clientsOverdue")
 
                 val clientListPaymentsAndBalance: List<PaymentsListForFinanceTableWithBalance> = clientListPayments.map {
                     PaymentsListForFinanceTableWithBalance(
@@ -77,7 +69,6 @@ fun Route.listingRoute(
                         clientListBalance[it.client?.clientId],
                         clientsOverdue[it.client?.clientId])
                 }
-                println("clientListPaymentsAndBalance: $clientListPaymentsAndBalance")
 
                 call.respond(clientListPaymentsAndBalance)
             }
@@ -86,22 +77,11 @@ fun Route.listingRoute(
 
     //        get("/allProducts") {
             get("/products") {
-                println("GET ALL PRODUCT")
                 val page: Int = call.queryParameters["page"]?.toInt() ?: 0
                 val size: Int = call.queryParameters["size"]?.toInt() ?: 100
-                try {
-
-                    val products: List<Any> = listingService.productList(page, size)
-    //                println("controller print: $products")
-
-                    val resp = products.map { it as Product }.toList()
-
-                    println("Products response: print: $resp")
-
-                    call.respond(resp)
-                } catch (e: Exception) {
-                    println(e)
-                }
+                val products: List<Any> = listingService.productList(page, size)
+                val resp = products.map { it as Product }.toList()
+                call.respond(resp)
             }
 
         }

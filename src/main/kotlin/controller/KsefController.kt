@@ -6,6 +6,7 @@ import com.kontenery.ksef.dto.KsefLoginResponse
 import com.kontenery.ksef.dto.KsefSendInvoiceResponse
 import com.kontenery.ksef.exception.KsefException
 import com.kontenery.ksef.service.KsefService
+import com.kontenery.utils.ApiErrorResponse
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
@@ -27,7 +28,7 @@ fun Route.ksefRoutes(ksefService: KsefService) {
                 logger.error("KSeF login failed", e)
                 call.respond(
                     e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
-                    mapOf("error" to (e.message ?: "KSeF login failed")),
+                    ApiErrorResponse("KSeF login failed"),
                 )
             }
         }
@@ -49,12 +50,12 @@ fun Route.ksefRoutes(ksefService: KsefService) {
                 )
                 call.respond(HttpStatusCode.OK, response)
             } catch (e: IllegalArgumentException) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "Invalid request")))
+                call.respond(HttpStatusCode.BadRequest, ApiErrorResponse("Invalid request"))
             } catch (e: KsefException) {
                 logger.error("KSeF invoice list failed", e)
                 call.respond(
                     e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
-                    mapOf("error" to (e.message ?: "KSeF invoice list failed")),
+                    ApiErrorResponse("KSeF invoice list failed"),
                 )
             }
         }
@@ -62,17 +63,17 @@ fun Route.ksefRoutes(ksefService: KsefService) {
         post("/invoices/{invoiceNumber}/send") {
             try {
                 val invoiceNumber: String? = call.parameters["invoiceNumber"]
-                if(invoiceNumber.isNullOrBlank()) return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid invoiceNumber"))
+                if(invoiceNumber.isNullOrBlank()) return@post call.respond(HttpStatusCode.BadRequest, ApiErrorResponse("Invalid invoiceNumber"))
 
                 val response: KsefSendInvoiceResponse = ksefService.sendInvoiceToKsefByNumber(invoiceNumber)
                 call.respond(HttpStatusCode.Accepted, response)
             } catch (e: IllegalArgumentException) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "Invalid invoice")))
+                call.respond(HttpStatusCode.BadRequest, ApiErrorResponse("Invalid invoice"))
             } catch (e: KsefException) {
                 logger.error("KSeF invoice send by number failed", e)
                 call.respond(
                     e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
-                    mapOf("error" to (e.message ?: "KSeF invoice send failed")),
+                    ApiErrorResponse("KSeF invoice send failed"),
                 )
             }
         }
@@ -83,12 +84,12 @@ fun Route.ksefRoutes(ksefService: KsefService) {
                 val response: KsefSendInvoiceResponse = ksefService.sendInvoiceToKsef(invoice)
                 call.respond(HttpStatusCode.Accepted, response)
             } catch (e: IllegalArgumentException) {
-                call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "Invalid invoice")))
+                call.respond(HttpStatusCode.BadRequest, ApiErrorResponse("Invalid invoice"))
             } catch (e: KsefException) {
                 logger.error("KSeF invoice send failed", e)
                 call.respond(
                     e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
-                    mapOf("error" to (e.message ?: "KSeF invoice send failed")),
+                    ApiErrorResponse("KSeF invoice send failed"),
                 )
             }
         }

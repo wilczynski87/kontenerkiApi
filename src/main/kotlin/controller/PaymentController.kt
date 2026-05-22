@@ -28,13 +28,9 @@ fun Route.paymentRoute(paymentService: PaymentService) {
                     from = from,
                     to = to
                 )
-                payments.forEach { println(it) }
-
                 call.respond(payments)
 
             } catch (e:Exception) {
-                println("payment/{clientId}/byClient")
-                println(e)
                 call.respond(HttpStatusCode.ExpectationFailed)
             }
         }
@@ -55,15 +51,13 @@ fun Route.paymentRoute(paymentService: PaymentService) {
                 call.respond(payments)
 
             } catch (e: Exception) {
-                println(e)
-                call.respond(e)
+                call.respond(HttpStatusCode.ExpectationFailed)
             }
         }
 
         post() {
             try {
                 val paymentDtoReceived = call.receive<PaymentDto>()
-                println("paymentDtoReceived: $paymentDtoReceived")
                 val paymentSaved: Payment = paymentService.createPayment(paymentDtoReceived)
 
                 call.respond(paymentSaved)
