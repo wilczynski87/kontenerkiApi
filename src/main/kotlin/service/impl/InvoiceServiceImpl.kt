@@ -73,10 +73,6 @@ class InvoiceServiceImpl(
             else invoiceRepo.getInvoiceByNumber(invoiceNumber)
     }
 
-    override suspend fun getInvoiceById(invoiceId: Long): Invoice? {
-        return invoiceRepo.getInvoiceById(invoiceId)
-    }
-
     override suspend fun saveInvoice(invoice: Invoice): Invoice? {
         return invoiceRepo.saveInvoice(invoice)
     }
@@ -281,12 +277,14 @@ class InvoiceServiceImpl(
                 val invoiceWithNumber: Invoice = invoice.copy(
                     invoiceNumber = createInvoiceNumber()
                 )
-                invoiceRepo.saveInvoice(invoiceWithNumber)
+                invoiceWithNumber
+//                invoiceRepo.saveInvoice(invoiceWithNumber)
             } else {
                 val billWithNumber: Invoice = invoice.copy(
                     invoiceNumber = createBillNumber()
                 )
-                billRepo.saveBill(billWithNumber)
+                billWithNumber
+//                billRepo.saveBill(billWithNumber)
             }
         } catch (e: Exception) {
             println()

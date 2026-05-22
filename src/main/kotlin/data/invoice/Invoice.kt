@@ -2,6 +2,7 @@ package com.kontenery.data.invoice
 
 import com.kontenery.data.serializers.LocalDateSerializer
 import com.kontenery.data.utils.InvoiceType
+import com.kontenery.ksef.dto.KsefInvoiceMetadata
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 
@@ -19,11 +20,12 @@ data class Invoice(
     val priceWithVatSum:String? = null,
     @Serializable(with = LocalDateSerializer::class)
     val paymentDay:LocalDate? = null,
-    val mainAccount:String = "50 1950 0001 2006 0023 6241 0001",
+    val mainAccount:String = "51 1870 1045 2078 1089 5944 0001",
     @Serializable(with = LocalDateSerializer::class)
     val invoiceSendToClient: LocalDate? = null,
     val type: String? = InvoiceType.PERIODIC.name,
     val vatApply: Boolean = false,
+    val ksefNumber: String? = null,
 ) {
 }
 

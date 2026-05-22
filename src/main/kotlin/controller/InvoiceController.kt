@@ -4,9 +4,13 @@ import com.kontenery.data.Client
 import com.kontenery.data.invoice.Invoice
 import com.kontenery.data.utils.endOfCurrentMonth
 import com.kontenery.data.utils.errors.ErrorMessage
+import com.kontenery.data.utils.errors.InvoiceErrorMessage
 import com.kontenery.data.utils.now
 import com.kontenery.data.utils.startOfCurrentMonth
 import com.kontenery.data.utils.startOfCurrentYear
+import com.kontenery.ksef.dto.KsefSendInvoiceResponse
+import com.kontenery.ksef.exception.KsefException
+import com.kontenery.ksef.service.KsefService
 import com.kontenery.service.ClientService
 import com.kontenery.service.InvoiceService
 import com.kontenery.service.PrintService
@@ -22,18 +26,19 @@ fun Route.invoiceRoutes(
     invoiceService: InvoiceService,
     printService: PrintService,
     clientService: ClientService,
+    ksefService: KsefService,
 ) {
     route("/invoice") {
 
-        get("/{invoiceId}/id") {
+        get("/{invoiceNumber}/id") {
             try {
-                val invoiceId:Long = call.pathParameters["invoiceId"]?.toLongOrNull()
+                val invoiceNumber:String = call.pathParameters["invoiceNumber"]
                     ?: throw NullPointerException("There is no valid invoiceId")
 
-                val invoice:Invoice? = invoiceService.getInvoiceById(invoiceId)
+                val invoice:Invoice? = invoiceService.getInvoiceByNumber(invoiceNumber)
                 call.respondNullable(invoice)
             } catch (e:Exception) {
-                println("/{invoiceId}/id Error: $e")
+                println("/{invoiceNumber}/id Error: $e")
                 call.respond(e.message.toString())
             }
 
@@ -82,6 +87,7 @@ fun Route.invoiceRoutes(
                 call.respond(e)
             }
         }
+
         // create SINGLE PERIODIC invoice for client
         post("/{clientId}") {
             // TODO logger!
@@ -105,14 +111,22 @@ fun Route.invoiceRoutes(
                 val client: Client = clientService.findClientById(clientId)
                     ?: throw NullPointerException("no Client with given Id: $clientId")
 
-                val createInvoice: Invoice = invoiceService.createPeriodicInvoiceForClient(client, period, errorList)
+                val createdInvoice: Invoice = invoiceService.createPeriodicInvoiceForClient(client, period, errorList)
                     ?: throw IllegalStateException("Could not create invoice for client: $clientId")
-                println("savedInvoice: $createInvoice")
+                println("created Invoice/Bill: $createdInvoice")
 
-                val savedInvoice: Invoice = invoiceService.saveInvoiceWithErrors(client.needInvoice(), createInvoice, errorList)
-                    ?: throw IllegalStateException("Could not create or save invoice for client: $clientId")
+                val savedInvoice: Invoice = if(createdInvoice.vatApply) {
+                    val ksefResponse: KsefSendInvoiceResponse =
+                        ksefService.sendInvoiceToKsef(createdInvoice)
+                    val ksefedInvoice: Invoice =
+                        createdInvoice.copy(ksefNumber = ksefResponse.ksefNumber)
+                    println("ksefedInvoice: $ksefedInvoice")
 
-                // TODO: Send Invoice to Client
+                    invoiceService.saveInvoice(ksefedInvoice)
+                        ?: throw NoSuchElementException("Could not save Invoice")
+                } else invoiceService.saveInvoice(createdInvoice)
+                    ?: throw NoSuchElementException("Could not save Bill")
+
                 printService.sendPeriodicInvoice(savedInvoice)
                 println("Mail wysłany, od clientId: $clientId")
 
@@ -143,10 +157,24 @@ fun Route.invoiceRoutes(
 
                 val createdInvoice:List<Invoice> =
                     allClients.mapNotNull { invoiceService.createPeriodicInvoiceForClient(it, period, errorList) }
-                println("invoices: ${createdInvoice.map{ it.invoiceNumber}}")
+                println("createdInvoice: ${createdInvoice.forEach{ it.invoiceNumber}}")
+
+                val ksefInvoices = createdInvoice.mapNotNull {
+                    if(it.vatApply) {
+                        try {
+                            val ksefResponse: KsefSendInvoiceResponse =
+                                ksefService.sendInvoiceToKsef(it)
+                            it.copy(ksefNumber = ksefResponse.ksefNumber)
+                        } catch (e: KsefException) {
+                            errorList.add(InvoiceErrorMessage("Wysyłka do Ksef", e.message, null, it.customer?.client?.id, it.invoiceDate))
+                            null
+                        }
+                    } else it
+                }
+                println("ksefInvoices: ${ksefInvoices.forEach{ it.invoiceNumber}}")
 
 //                val savedInvoices:List<Invoice> = createdInvoice.mapNotNull { invoiceService.saveInvoice(it) }
-                val savedInvoices:List<Invoice> = createdInvoice.mapNotNull { invoiceService.saveInvoiceWithErrors(it.vatApply, it, errorList) }
+                val savedInvoices:List<Invoice> = ksefInvoices.mapNotNull { invoiceService.saveInvoiceWithErrors(it.vatApply, it, errorList) }
 
                 savedInvoices.forEach { savedInvoice ->
                     println("document send: vat apply - ${savedInvoice.vatApply}, numer - ${savedInvoice.invoiceNumber}")
@@ -163,10 +191,11 @@ fun Route.invoiceRoutes(
         post("/{customerId}/custom") {
             println("Custom Invoice creation:")
             try {
-                val customerId: Long = call.pathParameters["customerId"]?.toLongOrNull() ?: return@post call.respond(
-                    HttpStatusCode.BadRequest,
-                    mapOf("error" to "Invalid customerId")
-                )
+                val customerId: Long =
+                    call.pathParameters["customerId"]?.toLongOrNull() ?: return@post call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("error" to "Invalid customerId")
+                    )
                 val client = clientService.findClientById(customerId) ?: return@post call.respond(
                     HttpStatusCode.NotFound,
                     mapOf("error" to "Client not found with id $customerId")
@@ -187,21 +216,33 @@ fun Route.invoiceRoutes(
                     )
                 )
 
-                val savedInvoice:Invoice? = invoiceService.createCustomInvoice(updatedInvoice)
-                println("invoice saved: $savedInvoice")
+                val createdInvoice: Invoice = invoiceService.createCustomInvoice(updatedInvoice)
+                    ?: throw NoSuchElementException("Could not created Invoice/Bill")
+                println("createdInvoice: $createdInvoice")
 
-                if(savedInvoice == null) {
-                    call.respond(
-                        HttpStatusCode.InternalServerError,
-                        mapOf("error" to "Could not save invoice")
-                    )
-                } else {
-//                    println("invoice is not null: $savedInvoice")
-                    // Send Invoice to Clients
-                    printService.sendPeriodicInvoice(savedInvoice)
-                    // Respond to front
-                    call.respond(savedInvoice)
-                }
+                val savedInvoice: Invoice = if(createdInvoice.vatApply) {
+                    val ksefResponse: KsefSendInvoiceResponse =
+                        ksefService.sendInvoiceToKsef(createdInvoice)
+                    val ksefedInvoice: Invoice =
+                        createdInvoice.copy(ksefNumber = ksefResponse.ksefNumber)
+                    println("ksefedInvoice: $ksefedInvoice")
+
+                    invoiceService.saveInvoice(ksefedInvoice)
+                        ?: throw NoSuchElementException("Could not save Invoice/Bill")
+                } else invoiceService.saveInvoice(createdInvoice)
+                    ?: throw NoSuchElementException("Could not save Invoice/Bill")
+
+                printService.sendPeriodicInvoice(savedInvoice)
+
+                // Respond to front
+                call.respond(savedInvoice)
+
+            } catch (e: NoSuchElementException) {
+                println("post invoice error: $e")
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    mapOf("error" to "Could not save invoice")
+                )
             } catch (e:Exception) {
                 println("post invoice error: $e")
                 call.respond(

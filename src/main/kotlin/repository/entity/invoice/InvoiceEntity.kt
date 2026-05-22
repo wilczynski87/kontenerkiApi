@@ -28,6 +28,7 @@ object InvoiceTable: LongIdTable() {
     val invoiceSendToClient = date("invoice_send").nullable()
 
     val invoiceType = varchar("invoice_type", 50).nullable()
+    val ksefNumber = varchar("ksef_number", 100).nullable()
 }
 
 class InvoiceEntity(id: EntityID<Long>) : LongEntity(id) {
@@ -51,6 +52,7 @@ class InvoiceEntity(id: EntityID<Long>) : LongEntity(id) {
     var invoiceType by InvoiceTable.invoiceType
 
     val positions by PositionEntity referrersOn Positions.invoice
+    var ksefNumber by InvoiceTable.ksefNumber
     val ksefSessionInvoiceStatuses by KsefSessionInvoiceStatusEntity referrersOn KsefSessionInvoiceStatusTable.invoice
 
     fun toDomain(): Invoice = Invoice(
@@ -68,5 +70,6 @@ class InvoiceEntity(id: EntityID<Long>) : LongEntity(id) {
         invoiceSendToClient = invoiceSendToClient,
         type = invoiceType,
         vatApply = true,
+        ksefNumber = ksefNumber
     )
 }

@@ -47,7 +47,7 @@ fun Application.configureRouting(
             clientRoute(clientService)
             productRouting(productService)
             contractRoutes(contractService, clientService, productService)
-            invoiceRoutes(invoiceService, printService, clientService)
+            invoiceRoutes(invoiceService, printService, clientService, ksefService)
             paymentRoute(paymentService)
             CSVController(csvService, paymentService, paymentValidator)
             bankAccountController(bankAccountService, bankAccountValidator)

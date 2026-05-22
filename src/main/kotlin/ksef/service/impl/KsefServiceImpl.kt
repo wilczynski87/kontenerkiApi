@@ -47,7 +47,7 @@ class KsefServiceImpl(
         )
     }
 
-    override suspend fun listInvoices(
+    override suspend fun listInvoicesKsef(
         from: String?,
         to: String?,
         pageOffset: Int,
@@ -81,18 +81,13 @@ class KsefServiceImpl(
         )
     }
 
-    override suspend fun sendInvoiceById(invoiceId: Long): KsefSendInvoiceResponse {
-        val invoice = invoiceService.getInvoiceById(invoiceId)
-            ?: throw KsefException("Invoice not found: $invoiceId", statusCode = 404)
-        return sendInvoiceToKsef(invoice, invoiceId)
+    override suspend fun sendInvoiceToKsefByNumber(invoiceNumber: String): KsefSendInvoiceResponse {
+        val invoice = invoiceService.getInvoiceByNumber(invoiceNumber)
+            ?: throw KsefException("Invoice not found: $invoiceNumber", statusCode = 404)
+        return sendInvoiceToKsef(invoice)
     }
 
-    override suspend fun sendInvoice(invoice: Invoice): KsefSendInvoiceResponse {
-        val invoiceId = invoice.invoiceNumber?.let { invoiceRepo.getInvoiceIdByNumber(it) }
-        return sendInvoiceToKsef(invoice, invoiceId)
-    }
-
-    private suspend fun sendInvoiceToKsef(invoice: Invoice, invoiceId: Long?): KsefSendInvoiceResponse {
+    override suspend fun sendInvoiceToKsef(invoice: Invoice): KsefSendInvoiceResponse {
         val invoiceXml = InvoiceToKsefFa3Mapper.toFa3Xml(invoice).toByteArray(StandardCharsets.UTF_8)
         val accessToken = obtainAccessToken()
         val encryptionData = repository.createEncryptionData()
@@ -112,9 +107,7 @@ class KsefServiceImpl(
                 invoiceReferenceNumber = sendResponse.referenceNumber,
             )
 
-            if (invoiceId != null) {
-                ksefSessionInvoiceStatusRepo.save(invoiceId, invoiceStatus)
-            }
+            ksefSessionInvoiceStatusRepo.save(invoice.invoiceNumber!!, invoiceStatus)
 
             return KsefSendInvoiceResponse(
                 sessionReferenceNumber = session.referenceNumber,
@@ -122,6 +115,8 @@ class KsefServiceImpl(
                 ksefNumber = invoiceStatus.ksefNumber,
                 invoiceNumber = invoiceStatus.invoiceNumber ?: invoice.invoiceNumber,
             )
+        } catch (e: Exception) {
+            throw KsefException("Problem to sendInvoiceToKsef:\n error: $e \ninvoice:${invoice},")
         } finally {
             runCatching { repository.closeOnlineSession(accessToken, session.referenceNumber) }
         }

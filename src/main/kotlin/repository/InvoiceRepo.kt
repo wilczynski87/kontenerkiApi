@@ -12,11 +12,7 @@ interface InvoiceRepo {
 
     suspend fun getInvoicesForClient(page:Int = 0, size:Int = 100, clientId:Long, from: LocalDate = LocalDate.startOfCurrentYear(), to:LocalDate = LocalDate.endOfCurrentYear()): List<Invoice>
 
-    suspend fun getInvoiceById(invoiceId:Long): Invoice?
-
     suspend fun getInvoiceByNumber(invoiceNumber: String): Invoice?
-
-    suspend fun getInvoiceIdByNumber(invoiceNumber: String): Long?
 
     suspend fun saveInvoice(invoice: Invoice): Invoice?
 

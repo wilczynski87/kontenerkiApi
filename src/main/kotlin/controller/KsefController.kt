@@ -40,7 +40,7 @@ fun Route.ksefRoutes(ksefService: KsefService) {
                 val to = call.request.queryParameters["to"]
                 val subjectType = call.request.queryParameters["subjectType"] ?: "Subject1"
 
-                val response: KsefInvoiceListResponse = ksefService.listInvoices(
+                val response: KsefInvoiceListResponse = ksefService.listInvoicesKsef(
                     from = from,
                     to = to,
                     pageOffset = pageOffset,
@@ -59,12 +59,12 @@ fun Route.ksefRoutes(ksefService: KsefService) {
             }
         }
 
-        post("/invoices/{invoiceId}/send") {
+        post("/invoices/{invoiceNumber}/send") {
             try {
-                val invoiceId = call.parameters["invoiceId"]?.toLongOrNull()
-                    ?: return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid invoiceId"))
+                val invoiceNumber: String? = call.parameters["invoiceNumber"]
+                if(invoiceNumber.isNullOrBlank()) return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid invoiceId"))
 
-                val response: KsefSendInvoiceResponse = ksefService.sendInvoiceById(invoiceId)
+                val response: KsefSendInvoiceResponse = ksefService.sendInvoiceToKsefByNumber(invoiceNumber)
                 call.respond(HttpStatusCode.Accepted, response)
             } catch (e: IllegalArgumentException) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "Invalid invoice")))
@@ -80,7 +80,7 @@ fun Route.ksefRoutes(ksefService: KsefService) {
         post("/invoices/send") {
             try {
                 val invoice: Invoice = call.receive()
-                val response: KsefSendInvoiceResponse = ksefService.sendInvoice(invoice)
+                val response: KsefSendInvoiceResponse = ksefService.sendInvoiceToKsef(invoice)
                 call.respond(HttpStatusCode.Accepted, response)
             } catch (e: IllegalArgumentException) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "Invalid invoice")))

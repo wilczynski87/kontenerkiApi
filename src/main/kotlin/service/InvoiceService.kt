@@ -16,8 +16,6 @@ interface InvoiceService {
 
     suspend fun getInvoiceByNumber(invoiceNumber: String): Invoice?
 
-    suspend fun getInvoiceById(invoiceId:Long): Invoice?
-
     suspend fun saveInvoice(invoice: Invoice): Invoice?
 
     suspend fun saveInvoiceWithErrors(
