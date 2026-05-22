@@ -6,7 +6,7 @@ import com.kontenery.ksef.dto.KsefSessionInvoiceStatusResponse
 interface KsefSessionInvoiceStatusRepo {
     suspend fun save(invoiceNumber: String, status: KsefSessionInvoiceStatusResponse): KsefSessionInvoiceStatus
 
-    suspend fun getLatestByInvoiceId(invoiceId: Long): KsefSessionInvoiceStatus?
+    suspend fun getLatestByInvoiceNumber(invoiceNumber: String): KsefSessionInvoiceStatus?
 
     suspend fun getAllByInvoiceId(invoiceId: Long): List<KsefSessionInvoiceStatus>
 }

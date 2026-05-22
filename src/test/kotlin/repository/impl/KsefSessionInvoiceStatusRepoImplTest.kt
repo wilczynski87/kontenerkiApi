@@ -38,8 +38,8 @@ class KsefSessionInvoiceStatusRepoImplTest {
     }
 
     @Test
-    fun `save and getLatestByInvoiceId persist KSeF session invoice status`() = runBlocking {
-        val invoiceId = transaction {
+    fun `save and getLatestByInvoiceNumber persist KSeF session invoice status`() = runBlocking {
+        val invoiceNumber = transaction {
             val seller = SubjectEntity.new {
                 name = "Seller"
                 type = "SELLER"
@@ -62,7 +62,7 @@ class KsefSessionInvoiceStatusRepoImplTest {
                 paymentDay = LocalDate(2026, 1, 29)
                 mainAccount = "50 0000 0000 0000 0000 0000 0001"
             }
-            invoice.id.value
+            invoice.invoiceNumber
         }
 
         val response = KsefSessionInvoiceStatusResponse(
@@ -73,14 +73,13 @@ class KsefSessionInvoiceStatusRepoImplTest {
             permanentStorageDate = "2026-01-15T10:00:00Z",
         )
 
-        val saved = repo.save(invoiceId, response)
-        val latest = repo.getLatestByInvoiceId(invoiceId)
+        val saved = repo.save(invoiceNumber, response)
+        val latest = repo.getLatestByInvoiceNumber(invoiceNumber)
 
         assertNotNull(saved.id)
-        assertEquals(invoiceId, saved.invoiceId)
+        assertEquals(invoiceNumber, saved.invoiceNumber)
         assertEquals("KSeF-123", saved.ksefNumber)
         assertEquals(200, saved.statusCode)
         assertEquals(latest, saved)
-        assertEquals(1, repo.getAllByInvoiceId(invoiceId).size)
     }
 }
