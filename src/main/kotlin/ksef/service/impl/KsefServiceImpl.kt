@@ -14,7 +14,6 @@ import com.kontenery.ksef.exception.KsefException
 import com.kontenery.ksef.mapper.InvoiceToKsefFa3Mapper
 import com.kontenery.ksef.repository.KsefRepository
 import com.kontenery.ksef.service.KsefService
-import com.kontenery.repository.InvoiceRepo
 import com.kontenery.repository.KsefSessionInvoiceStatusRepo
 import com.kontenery.service.InvoiceService
 import java.nio.charset.StandardCharsets
@@ -30,7 +29,6 @@ class KsefServiceImpl(
     private val repository: KsefRepository,
     private val invoiceService: InvoiceService,
     private val ksefSessionInvoiceStatusRepo: KsefSessionInvoiceStatusRepo,
-    private val invoiceRepo: InvoiceRepo,
 ) : KsefService {
 
     @Volatile
@@ -107,19 +105,30 @@ class KsefServiceImpl(
                 invoiceReferenceNumber = sendResponse.referenceNumber,
             )
 
-            ksefSessionInvoiceStatusRepo.save(invoice.invoiceNumber!!, invoiceStatus)
+            val deferredSessionStatus = runCatching {
+                ksefSessionInvoiceStatusRepo.save(invoice.invoiceNumber!!, invoiceStatus)
+                null
+            }.getOrElse { invoiceStatus }
 
             return KsefSendInvoiceResponse(
                 sessionReferenceNumber = session.referenceNumber,
                 invoiceReferenceNumber = sendResponse.referenceNumber,
                 ksefNumber = invoiceStatus.ksefNumber,
                 invoiceNumber = invoiceStatus.invoiceNumber ?: invoice.invoiceNumber,
+                sessionStatus = deferredSessionStatus,
             )
         } catch (e: Exception) {
             throw KsefException("Problem to sendInvoiceToKsef:\n error: $e \ninvoice:${invoice},")
         } finally {
             runCatching { repository.closeOnlineSession(accessToken, session.referenceNumber) }
         }
+    }
+
+    override suspend fun persistSessionStatus(
+        invoiceNumber: String,
+        status: KsefSessionInvoiceStatusResponse,
+    ) {
+        ksefSessionInvoiceStatusRepo.save(invoiceNumber, status)
     }
 
     private suspend fun awaitInvoiceProcessed(

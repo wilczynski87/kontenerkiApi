@@ -66,4 +66,6 @@ data class KsefSendInvoiceResponse(
     val invoiceReferenceNumber: String,
     val ksefNumber: String? = null,
     val invoiceNumber: String? = null,
+    @kotlinx.serialization.Transient
+    val sessionStatus: KsefSessionInvoiceStatusResponse? = null,
 )

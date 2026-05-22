@@ -115,17 +115,12 @@ fun Route.invoiceRoutes(
                     ?: throw IllegalStateException("Could not create invoice for client: $clientId")
                 println("created Invoice/Bill: $createdInvoice")
 
-                val savedInvoice: Invoice = if(createdInvoice.vatApply) {
-                    val ksefResponse: KsefSendInvoiceResponse =
-                        ksefService.sendInvoiceToKsef(createdInvoice)
-                    val ksefedInvoice: Invoice =
-                        createdInvoice.copy(ksefNumber = ksefResponse.ksefNumber)
-                    println("ksefedInvoice: $ksefedInvoice")
-
-                    invoiceService.saveInvoice(ksefedInvoice)
-                        ?: throw NoSuchElementException("Could not save Invoice")
-                } else invoiceService.saveInvoice(createdInvoice)
-                    ?: throw NoSuchElementException("Could not save Bill")
+                val savedInvoice: Invoice = saveInvoiceWithOptionalKsef(
+                    createdInvoice,
+                    invoiceService,
+                    ksefService,
+                    errorList,
+                ) ?: throw IllegalStateException("Could not create or save invoice for client: $clientId")
 
                 printService.sendPeriodicInvoice(savedInvoice)
                 println("Mail wysłany, od clientId: $clientId")
@@ -157,24 +152,12 @@ fun Route.invoiceRoutes(
 
                 val createdInvoice:List<Invoice> =
                     allClients.mapNotNull { invoiceService.createPeriodicInvoiceForClient(it, period, errorList) }
-                println("createdInvoice: ${createdInvoice.forEach{ it.invoiceNumber}}")
+                println("createdInvoice: ${createdInvoice.map { it.invoiceNumber }}")
 
-                val ksefInvoices = createdInvoice.mapNotNull {
-                    if(it.vatApply) {
-                        try {
-                            val ksefResponse: KsefSendInvoiceResponse =
-                                ksefService.sendInvoiceToKsef(it)
-                            it.copy(ksefNumber = ksefResponse.ksefNumber)
-                        } catch (e: KsefException) {
-                            errorList.add(InvoiceErrorMessage("Wysyłka do Ksef", e.message, null, it.customer?.client?.id, it.invoiceDate))
-                            null
-                        }
-                    } else it
+                val savedInvoices: List<Invoice> = createdInvoice.mapNotNull { invoice ->
+                    saveInvoiceWithOptionalKsef(invoice, invoiceService, ksefService, errorList)
                 }
-                println("ksefInvoices: ${ksefInvoices.forEach{ it.invoiceNumber}}")
-
-//                val savedInvoices:List<Invoice> = createdInvoice.mapNotNull { invoiceService.saveInvoice(it) }
-                val savedInvoices:List<Invoice> = ksefInvoices.mapNotNull { invoiceService.saveInvoiceWithErrors(it.vatApply, it, errorList) }
+                println("savedInvoices: ${savedInvoices.map { it.invoiceNumber }}")
 
                 savedInvoices.forEach { savedInvoice ->
                     println("document send: vat apply - ${savedInvoice.vatApply}, numer - ${savedInvoice.invoiceNumber}")
@@ -220,17 +203,11 @@ fun Route.invoiceRoutes(
                     ?: throw NoSuchElementException("Could not created Invoice/Bill")
                 println("createdInvoice: $createdInvoice")
 
-                val savedInvoice: Invoice = if(createdInvoice.vatApply) {
-                    val ksefResponse: KsefSendInvoiceResponse =
-                        ksefService.sendInvoiceToKsef(createdInvoice)
-                    val ksefedInvoice: Invoice =
-                        createdInvoice.copy(ksefNumber = ksefResponse.ksefNumber)
-                    println("ksefedInvoice: $ksefedInvoice")
-
-                    invoiceService.saveInvoice(ksefedInvoice)
-                        ?: throw NoSuchElementException("Could not save Invoice/Bill")
-                } else invoiceService.saveInvoice(createdInvoice)
-                    ?: throw NoSuchElementException("Could not save Invoice/Bill")
+                val savedInvoice: Invoice = saveInvoiceWithOptionalKsef(
+                    createdInvoice,
+                    invoiceService,
+                    ksefService,
+                ) ?: throw NoSuchElementException("Could not save Invoice/Bill")
 
                 printService.sendPeriodicInvoice(savedInvoice)
 
@@ -293,4 +270,45 @@ fun Route.invoiceRoutes(
         }
     }
 
+}
+
+private suspend fun saveInvoiceWithOptionalKsef(
+    createdInvoice: Invoice,
+    invoiceService: InvoiceService,
+    ksefService: KsefService,
+    errorList: MutableList<ErrorMessage>? = null,
+): Invoice? {
+    var ksefResponse: KsefSendInvoiceResponse? = null
+    val toSave = if (createdInvoice.vatApply) {
+        try {
+            ksefService.sendInvoiceToKsef(createdInvoice).also { ksefResponse = it }
+        } catch (e: KsefException) {
+            if (errorList != null) {
+                errorList.add(
+                    InvoiceErrorMessage(
+                        "Wysyłka do Ksef",
+                        e.message,
+                        null,
+                        createdInvoice.customer?.client?.id,
+                        createdInvoice.invoiceDate,
+                    ),
+                )
+                return null
+            }
+            throw e
+        }.let { createdInvoice.copy(ksefNumber = it.ksefNumber) }
+    } else {
+        createdInvoice
+    }
+
+    val saved = if (errorList != null) {
+        invoiceService.saveInvoiceWithErrors(toSave.vatApply, toSave, errorList)
+    } else {
+        invoiceService.saveInvoice(toSave)
+    } ?: return null
+
+    ksefResponse?.sessionStatus?.let { status ->
+        saved.invoiceNumber?.let { ksefService.persistSessionStatus(it, status) }
+    }
+    return saved
 }

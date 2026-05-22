@@ -113,7 +113,6 @@ fun Application.module() {
         ksefRepository,
         invoiceService,
         ksefSessionInvoiceStatusRepo,
-        invoiceRepo,
     )
 
 
