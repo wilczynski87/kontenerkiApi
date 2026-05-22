@@ -4,6 +4,7 @@ import com.kontenery.data.invoice.Invoice
 import com.kontenery.ksef.dto.KsefInvoiceListResponse
 import com.kontenery.ksef.dto.KsefLoginResponse
 import com.kontenery.ksef.dto.KsefSendInvoiceResponse
+import com.kontenery.ksef.dto.KsefSessionInvoiceStatusResponse
 
 interface KsefService {
     suspend fun login(): KsefLoginResponse
@@ -16,4 +17,5 @@ interface KsefService {
     ): KsefInvoiceListResponse
     suspend fun sendInvoiceToKsef(invoice: Invoice): KsefSendInvoiceResponse
     suspend fun sendInvoiceToKsefByNumber(invoiceNumber: String): KsefSendInvoiceResponse
+    suspend fun persistSessionStatus(invoiceNumber: String, status: KsefSessionInvoiceStatusResponse)
 }

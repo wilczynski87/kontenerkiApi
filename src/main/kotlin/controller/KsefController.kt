@@ -62,14 +62,14 @@ fun Route.ksefRoutes(ksefService: KsefService) {
         post("/invoices/{invoiceNumber}/send") {
             try {
                 val invoiceNumber: String? = call.parameters["invoiceNumber"]
-                if(invoiceNumber.isNullOrBlank()) return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid invoiceId"))
+                if(invoiceNumber.isNullOrBlank()) return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid invoiceNumber"))
 
                 val response: KsefSendInvoiceResponse = ksefService.sendInvoiceToKsefByNumber(invoiceNumber)
                 call.respond(HttpStatusCode.Accepted, response)
             } catch (e: IllegalArgumentException) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "Invalid invoice")))
             } catch (e: KsefException) {
-                logger.error("KSeF invoice send by id failed", e)
+                logger.error("KSeF invoice send by number failed", e)
                 call.respond(
                     e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
                     mapOf("error" to (e.message ?: "KSeF invoice send failed")),
