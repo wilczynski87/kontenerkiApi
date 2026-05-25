@@ -40,8 +40,8 @@ class SubjectEntity(id: EntityID<Long>) : LongEntity(id) {
     var account by Subjects.account
     var invoiceNumber by Subjects.invoiceNumber
 
-    fun toDomain(): Subject = when (type) {
-        SubjectType.CUSTOMER.name -> Subject.Customer(
+    fun toDomain(): Subject = when (type.lowercase()) {
+        SubjectType.CUSTOMER.dbValue -> Subject.Customer(
             name = name,
             address = address?.toAddress(),
             nip = nip,
@@ -51,7 +51,7 @@ class SubjectEntity(id: EntityID<Long>) : LongEntity(id) {
             salutation = salutation ?: "Drogi Kliencie",
             client = client?.toClient(),
         )
-        SubjectType.SELLER.name -> Subject.Seller(
+        SubjectType.SELLER.dbValue -> Subject.Seller(
             name = name,
             address = address?.toAddress() ?: Address(),
             nip = nip ?: "",
@@ -71,12 +71,12 @@ class SubjectEntity(id: EntityID<Long>) : LongEntity(id) {
         invoiceNumber = subject.invoiceNumber
         when (subject) {
             is Subject.Customer -> {
-                type = "customer"
+                type = SubjectType.CUSTOMER.dbValue
                 salutation = subject.salutation
                 account = null
             }
             is Subject.Seller -> {
-                type = "seller"
+                type = SubjectType.SELLER.dbValue
                 salutation = null
                 account = subject.account
             }
@@ -84,6 +84,7 @@ class SubjectEntity(id: EntityID<Long>) : LongEntity(id) {
     }
 }
 
-enum class SubjectType {
-    SELLER, CUSTOMER
+enum class SubjectType(val dbValue: String) {
+    SELLER("seller"),
+    CUSTOMER("customer"),
 }
