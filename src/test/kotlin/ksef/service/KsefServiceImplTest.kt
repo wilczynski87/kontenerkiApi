@@ -94,6 +94,35 @@ class KsefServiceImplTest {
     }
 
     @Test
+    fun `login returns authenticated with validUntil from KSeF`() = runBlocking {
+        val repository = mockk<KsefRepository>()
+        coEvery { repository.fetchPublicKeyCertificates() } returns listOf(
+            KsefPublicKeyCertificate(
+                certificate = TEST_CERTIFICATE_BASE64,
+                publicKeyId = "key-1",
+                usage = listOf("KsefTokenEncryption"),
+            ),
+        )
+        coEvery { repository.fetchAuthChallenge() } returns Pair("challenge-123", 1_700_000_000_000L)
+        coEvery { repository.submitKsefTokenAuth(any(), any(), any(), any()) } returns KsefSignatureResponse(
+            referenceNumber = "ref-1",
+            authenticationToken = KsefTokenInfo(token = "temp-token"),
+        )
+        coEvery { repository.fetchAuthStatus(any(), any()) } returns KsefAuthStatusResponse(
+            status = KsefStatusInfo(code = 200, description = "OK"),
+        )
+        coEvery { repository.redeemAuthToken(any()) } returns KsefAuthOperationStatusResponse(
+            accessToken = KsefTokenInfo(token = "access-token", validUntil = "2099-01-01T00:00:00Z"),
+        )
+
+        val service = KsefServiceImpl(config, repository, mockk(), mockk(relaxed = true))
+        val result = service.login()
+
+        assertEquals(true, result.authenticated)
+        assertEquals("2099-01-01T00:00:00Z", result.validUntil)
+    }
+
+    @Test
     fun `login fails when token is missing`() {
         val service = KsefServiceImpl(
             config.copy(token = null),
