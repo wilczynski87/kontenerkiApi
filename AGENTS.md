@@ -62,7 +62,7 @@ DB_HOST=localhost DB_PORT=5431 ./gradlew run
 
 If startup fails on `createMissingTablesAndColumns`, either re-run `scripts/post-restore-migrations.sql` or set `DB_AUTO_MIGRATE=false` in `.env` and start again.
 
-Exposed uses mixed-case table names for invoices: `"Invoice"`, `"Bill"`, `"Subjects"`, `"Positions"`, `"PositionsBill"`, `"PaymentInvoices"` — dumps from this app must keep those quoted names.
+Invoice tables in PostgreSQL are usually lowercase (`invoice`, `bill`, `subjects`, etc.). Set `DB_PORT` in `.env` to match your Docker port mapping (often `5431` or `5432`).
 
 ### Running the application locally
 

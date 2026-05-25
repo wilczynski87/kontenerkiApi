@@ -24,8 +24,17 @@ DB_NAME="${DB_NAME:-db1}"
 
 export PGPASSWORD="$DB_PASSWORD"
 
-echo "Starting PostgreSQL (docker compose db)..."
-docker compose up -d db
+if ! pg_isready -h localhost -p "$DB_PORT" -U "$DB_USER" >/dev/null 2>&1; then
+  echo "PostgreSQL not reachable on localhost:$DB_PORT — starting docker compose db..."
+  if docker compose up -d db 2>/dev/null; then
+    :
+  elif sudo docker compose up -d db 2>/dev/null; then
+    :
+  else
+    echo "Could not start db service. Start PostgreSQL manually or fix Docker permissions." >&2
+    exit 1
+  fi
+fi
 
 echo "Waiting for PostgreSQL..."
 for _ in $(seq 1 30); do
@@ -34,6 +43,11 @@ for _ in $(seq 1 30); do
   fi
   sleep 1
 done
+
+if ! pg_isready -h localhost -p "$DB_PORT" -U "$DB_USER" >/dev/null 2>&1; then
+  echo "PostgreSQL not ready on localhost:$DB_PORT (set DB_PORT to match docker compose mapping, often 5431 or 5432)." >&2
+  exit 1
+fi
 
 echo "Recreating database $DB_NAME..."
 psql -h localhost -p "$DB_PORT" -U "$DB_USER" -d postgres -v ON_ERROR_STOP=1 <<SQL
