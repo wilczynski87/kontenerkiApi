@@ -62,6 +62,8 @@ DB_HOST=localhost DB_PORT=5431 ./gradlew run
 
 If startup fails on `createMissingTablesAndColumns`, either re-run `scripts/post-restore-migrations.sql` or set `DB_AUTO_MIGRATE=false` in `.env` and start again.
 
+If you see `fk_invoice_seller_id__id` violations, run `scripts/fix-invoice-fk-integrity.sql` (included in `restore-database.sh`) or let the API repair orphans on startup (`DB_REPAIR_FK`, default on).
+
 Invoice tables in PostgreSQL are usually lowercase (`invoice`, `bill`, `subjects`, etc.). Set `DB_PORT` in `.env` to match your Docker port mapping (often `5431` or `5432`).
 
 ### Running the application locally
