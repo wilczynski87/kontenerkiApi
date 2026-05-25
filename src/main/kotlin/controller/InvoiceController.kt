@@ -9,6 +9,7 @@ import com.kontenery.data.utils.now
 import com.kontenery.data.utils.startOfCurrentMonth
 import com.kontenery.data.utils.startOfCurrentYear
 import com.kontenery.ksef.dto.KsefSendInvoiceResponse
+import com.kontenery.ksef.exception.KsefErrorMessages
 import com.kontenery.ksef.exception.KsefException
 import com.kontenery.ksef.service.KsefService
 import com.kontenery.service.ClientService
@@ -205,6 +206,11 @@ fun Route.invoiceRoutes(
                 // Respond to front
                 call.respond(savedInvoice)
 
+            } catch (e: KsefException) {
+                call.respond(
+                    e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
+                    ApiErrorResponse(KsefErrorMessages.userMessage(e)),
+                )
             } catch (e: NoSuchElementException) {
                 println("post invoice error: $e")
                 call.respond(
@@ -272,8 +278,8 @@ private suspend fun saveInvoiceWithOptionalKsef(
             if (errorList != null) {
                 errorList.add(
                     InvoiceErrorMessage(
-                        title = "Wysyłka do Ksef",
-                        message = "Nie udało się wysłać faktury do KSeF",
+                        title = "Wysyłka do KSeF",
+                        message = "Nie udało się wysłać faktury do KSeF: ${KsefErrorMessages.userMessage(e)}",
                         clientId = createdInvoice.customer?.client?.id,
                         period = createdInvoice.invoiceDate,
                     ),

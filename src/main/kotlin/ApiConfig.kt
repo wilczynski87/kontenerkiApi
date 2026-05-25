@@ -65,7 +65,8 @@ internal fun resolveKsefConfig(
     getenv: (String) -> String? = { System.getenv(it) },
 ): KsefConfig {
     val isDev = apiEnv.equals("DEV", ignoreCase = true)
-    val ksefEnvironment = if (isDev) KsefEnvironment.DEV_DEFAULT else KsefEnvironment.PRODUCTION
+    val ksefEnvironment = KsefEnvironment.fromEnvValue(getenv("KSEF_ENV"))
+        ?: if (isDev) KsefEnvironment.DEV_DEFAULT else KsefEnvironment.PRODUCTION
 
     val baseUrl = getenv("KSEF_BASE_URL")?.trim()?.takeIf { it.isNotBlank() }
         ?: ksefEnvironment.baseUrl
