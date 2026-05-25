@@ -67,6 +67,6 @@ data class KsefPublicKeyCertificate(
 
 @Serializable
 data class KsefLoginResponse(
-    val accessToken: String,
+    val authenticated: Boolean = true,
     val validUntil: String? = null,
 )

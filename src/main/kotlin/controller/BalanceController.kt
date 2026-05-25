@@ -4,6 +4,7 @@ import com.kontenery.data.utils.now
 import com.kontenery.model.PrevYearBalance
 import com.kontenery.service.ClientService
 import com.kontenery.utils.startOfYear
+import com.kontenery.utils.respondInternalError
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -39,8 +40,7 @@ fun Route.balance(
                 call.respond(balance)
 
             } catch (e: Exception) {
-                println("balance, client/{id}: $e")
-                call.respond(HttpStatusCode.ExpectationFailed, e)
+                call.respondInternalError(e, "Failed to load balance")
             }
 
         }

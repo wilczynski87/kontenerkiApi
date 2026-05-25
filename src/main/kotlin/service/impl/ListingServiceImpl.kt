@@ -77,11 +77,6 @@ class ListingServiceImpl(
                 val billsSum = bills.await().sumOf { it.priceSum?.toBigDecimal() ?: BigDecimal.ZERO }
                 val invoiceSum = invoices.await().sumOf { it.priceWithVatSum?.toBigDecimal() ?: BigDecimal.ZERO }
 
-                if(clientId.toInt() == 1) {
-                    println("client Id: ${clientId}, from: $from, to: $to , paymentSum: $paymentSum, invoiceSum: $invoiceSum, billsSum: $billsSum")
-                    invoices.await().forEach { println("invoice: $it") }
-                    payments.await().forEach { println("payment: $it") }
-                }
                 paymentSum - invoiceSum.setScale(2, RoundingMode.UP) - billsSum.setScale(2, RoundingMode.UP)
             }
         } catch (e: Exception) {
@@ -127,8 +122,6 @@ class ListingServiceImpl(
         from: LocalDate,
         to: LocalDate,
     ): List<PaymentsListForFinanceTable> = coroutineScope {
-
-        println("page: $page, size: $size, from: $from, to: $to")
 
         val clients = withContext(Dispatchers.IO) {
             clientsRepo.getAllClients(page, size)

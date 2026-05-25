@@ -43,7 +43,7 @@ API: `http://localhost:8100`. Database from the host: `localhost:${DB_PORT}` (de
 
 `docker-compose.dev.yml` also builds `web` and `email` from sibling repos (`../kontenerkiWeb`, `../kontenerkiEmail`).
 
-When `API_ENV=DEV`, the app auto-creates database tables on startup via `SchemaUtils.createMissingTablesAndColumns`.
+When `API_ENV` is not `PROD`, the app auto-creates database tables and **missing columns** on startup via `SchemaUtils.createMissingTablesAndColumns`. For `API_ENV=PROD`, run SQL from `src/main/resources/db/migrations/` manually (e.g. `001_add_invoice_ksef_number.sql` if `invoice.ksef_number` is missing).
 
 ### Running the application locally
 
@@ -93,7 +93,7 @@ For production: `API_ENV=PROD`, `KSEF_ENV=PRODUCTION`, `KSEF_BASE_URL=https://ap
 
 JWT-protected endpoints:
 
-- `GET /ksef/login` — authenticate to KSeF and return access token metadata
+- `GET /ksef/login` — authenticate to KSeF (returns `authenticated` + `validUntil` only; access token is kept server-side)
 - `GET /ksef/invoices` — list invoice metadata (`pageOffset`, `pageSize` 10–250, optional `from`/`to` ISO dates, `subjectType` default `Subject1`)
 - `POST /ksef/invoices/send` — map `Invoice` (domain DTO) to FA(3) XML and send via KSeF online session
 - `POST /ksef/invoices/{invoiceNumber}/send` — load invoice from DB by **invoice number**, then send to KSeF (returns `sessionReferenceNumber`, `invoiceReferenceNumber`, optional `ksefNumber`)
