@@ -39,10 +39,15 @@ class KsefLoginIntegrationTest {
 
         val result = runCatching { service.login() }.getOrElse { error ->
             val message = (error as? KsefException)?.message ?: error.message.orEmpty()
-            if (message.contains("450") || message.contains("błędnego tokenu", ignoreCase = true)) {
+            if (
+                message.contains("placeholder", ignoreCase = true) ||
+                message.contains("450") ||
+                message.contains("błędnego tokenu", ignoreCase = true) ||
+                message.contains("invalid or expired", ignoreCase = true)
+            ) {
                 assumeTrue(
                     false,
-                    "KSEF_TOKEN invalid or expired for NIP ${config.nip} — generate a new token in the KSeF TEST portal",
+                    "KSEF_TOKEN not usable for live login (placeholder, invalid, or expired) — set a fresh token from KSeF TEST portal for NIP ${config.nip}",
                 )
             }
             throw error

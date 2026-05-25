@@ -28,7 +28,7 @@ fun Route.ksefRoutes(ksefService: KsefService) {
                 logger.error("KSeF login failed", e)
                 call.respond(
                     e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
-                    ApiErrorResponse("KSeF login failed"),
+                    ApiErrorResponse(e.message ?: "KSeF login failed"),
                 )
             }
         }

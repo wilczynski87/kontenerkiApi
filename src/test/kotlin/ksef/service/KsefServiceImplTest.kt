@@ -27,7 +27,7 @@ class KsefServiceImplTest {
         environment = "TEST",
         baseUrl = "https://api-test.ksef.mf.gov.pl",
         apiSuffix = "v2",
-        token = "secret-token",
+        token = "test-token|nip-1234567890|abcdef0123456789abcdef0123456789abcdef0123456789ab",
         nip = "1234567890",
     )
 
