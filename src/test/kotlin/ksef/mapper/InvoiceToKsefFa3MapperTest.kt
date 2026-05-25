@@ -25,6 +25,29 @@ class InvoiceToKsefFa3MapperTest {
     }
 
     @Test
+    fun `toFa3Xml places FaWiersz before summary and Adnotacje`() {
+        val xml = InvoiceToKsefFa3Mapper.toFa3Xml(sampleInvoice())
+        val faStart = xml.indexOf("<Fa>")
+        val faEnd = xml.indexOf("</Fa>")
+        val faSection = xml.substring(faStart, faEnd)
+        assertTrue(faSection.indexOf("<FaWiersz>") < faSection.indexOf("<P_13_1>"))
+        assertTrue(faSection.indexOf("<P_13_1>") < faSection.indexOf("<Adnotacje>"))
+        assertTrue(faSection.indexOf("<Adnotacje>") < faSection.indexOf("<RodzajFaktury>"))
+        assertTrue(faSection.indexOf("<RodzajFaktury>") < faSection.indexOf("<Platnosc>"))
+    }
+
+    @Test
+    fun `toFa3Xml fixes swapped seller postCode and city`() {
+        val invoice = sampleInvoice().copy(
+            seller = Subject.Seller.company("FV/1/2025").copy(
+                address = Address(street = "ul. Test", house = "1", city = "53-238", postCode = "Wrocław"),
+            ),
+        )
+        val xml = InvoiceToKsefFa3Mapper.toFa3Xml(invoice)
+        assertTrue(xml.contains("<AdresL2>53-238 Wrocław</AdresL2>"))
+    }
+
+    @Test
     fun `toFa3Xml requires invoice number`() {
         assertThrows<IllegalArgumentException> {
             InvoiceToKsefFa3Mapper.toFa3Xml(sampleInvoice().copy(invoiceNumber = null))

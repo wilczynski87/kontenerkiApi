@@ -67,7 +67,7 @@ sealed class Subject {
             )
             fun company(invoiceNumber: String?): Seller = Seller(
                 name = "Kontenery Magazynowe sp z o.o.",
-                address = Address(null, "ul. Aleksandra Ostrowskiego", "102", "53-238", "Wrocław"),
+                address = Address(null, "ul. Aleksandra Ostrowskiego", "102", "Wrocław", "53-238"),
                 nip = "8943278612",
                 email = "parkingostrowskiego@gmail.com",
                 phone = "+48 727 188 330",
