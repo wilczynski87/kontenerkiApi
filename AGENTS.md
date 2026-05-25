@@ -43,7 +43,26 @@ API: `http://localhost:8100`. Database from the host: `localhost:${DB_PORT}` (de
 
 `docker-compose.dev.yml` also builds `web` and `email` from sibling repos (`../kontenerkiWeb`, `../kontenerkiEmail`).
 
-When `API_ENV=DEV`, the app auto-creates database tables on startup via `SchemaUtils.createMissingTablesAndColumns`.
+When `API_ENV=DEV`, the app auto-creates database tables on startup via `SchemaUtils.createMissingTablesAndColumns`. Set `DB_AUTO_MIGRATE=false` to skip this after importing a SQL dump (see below).
+
+### Restoring a PostgreSQL dump
+
+Import into a **fresh** `db1` (avoids duplicate tables / broken migrations):
+
+```sh
+chmod +x scripts/restore-database.sh
+./scripts/restore-database.sh /path/to/kontenerki-db1-YYYYMMDD.sql
+```
+
+Then copy `.env.example` → `.env` (must include `JWT_SECRET`) and run:
+
+```sh
+DB_HOST=localhost DB_PORT=5431 ./gradlew run
+```
+
+If startup fails on `createMissingTablesAndColumns`, either re-run `scripts/post-restore-migrations.sql` or set `DB_AUTO_MIGRATE=false` in `.env` and start again.
+
+Exposed uses mixed-case table names for invoices: `"Invoice"`, `"Bill"`, `"Subjects"`, `"Positions"`, `"PositionsBill"`, `"PaymentInvoices"` — dumps from this app must keep those quoted names.
 
 ### Running the application locally
 
