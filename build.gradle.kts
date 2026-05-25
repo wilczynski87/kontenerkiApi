@@ -63,6 +63,17 @@ dependencies {
 
 }
 
+private fun String.trimEnvQuotes(): String {
+    val trimmed = trim()
+    if (trimmed.length >= 2) {
+        val quote = trimmed.first()
+        if ((quote == '"' || quote == '\'') && trimmed.last() == quote) {
+            return trimmed.substring(1, trimmed.length - 1)
+        }
+    }
+    return trimmed
+}
+
 tasks.named<JavaExec>("run") {
     val envFilePath = System.getenv("ENV_FILE")
     val envFile = when {
@@ -79,7 +90,7 @@ tasks.named<JavaExec>("run") {
                 else null
             }
             .forEach { (key, value) ->
-                environment(key, value)
+                environment(key, value.trimEnvQuotes())
             }
         println("Loaded env from: ${envFile.absolutePath}")
     }

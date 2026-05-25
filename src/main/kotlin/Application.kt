@@ -45,6 +45,7 @@ import com.kontenery.service.impl.PaymentServiceImpl
 import com.kontenery.service.impl.PrintServiceImpl
 import com.kontenery.service.impl.ProductServiceImp
 import com.kontenery.service.impl.UtilitiesServiceImpl
+import com.kontenery.ksef.KsefTokenDiagnostics
 import com.kontenery.ksef.client.KsefApiClient
 import com.kontenery.ksef.repository.KsefRepository
 import com.kontenery.ksef.repository.impl.KsefRepositoryImpl
@@ -76,7 +77,20 @@ fun Application.module() {
         ksef.baseUrl,
         ksef.apiSuffix,
         ksef.nip ?: "(not set)",
-        if (ksef.token.isNullOrBlank()) "MISSING — set KSEF_TOKEN in .env (token from KSeF TEST portal)" else "configured",
+        if (ksef.token.isNullOrBlank()) {
+            "MISSING — set KSEF_TOKEN in .env (token from KSeF TEST portal)"
+        } else {
+            val token = ksef.token
+            val tokenNip = KsefTokenDiagnostics.nipFromToken(token)
+            val segments = KsefTokenDiagnostics.segmentCount(token)
+            buildString {
+                append("configured (len=${token.length}, segments=$segments")
+                if (tokenNip != null) append(", tokenNip=$tokenNip")
+                if (KsefTokenDiagnostics.isPlaceholderExampleToken(token)) append(", PLACEHOLDER — replace with real TEST token")
+                if (tokenNip != null && ksef.nip != null && tokenNip != ksef.nip) append(", WARN nip mismatch vs KSEF_NIP")
+                append(')')
+            }
+        },
     )
     val paymentRepo:PaymentRepo = PaymentRepoImpl()
     val invoiceRepo: InvoiceRepo = InvoiceRepoImpl()

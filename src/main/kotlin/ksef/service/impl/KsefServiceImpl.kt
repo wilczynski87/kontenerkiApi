@@ -1,6 +1,7 @@
 package com.kontenery.ksef.service.impl
 
 import com.kontenery.KsefConfig
+import com.kontenery.ksef.KsefTokenDiagnostics
 import com.kontenery.data.invoice.Invoice
 import com.kontenery.ksef.crypto.KsefTokenEncryptor
 import com.kontenery.ksef.dto.KsefInvoiceListResponse
@@ -189,6 +190,7 @@ class KsefServiceImpl(
                     "Generate a system token in the KSeF ${config.environment} portal for NIP ${config.nip ?: "?"} " +
                     "and add it to .env or KSEF_TOKEN_FILE.",
             )
+        KsefTokenDiagnostics.validateForAuthentication(ksefToken, config.nip)
         val nip = config.nip?.trim()?.takeIf { it.isNotEmpty() }
             ?: throw KsefException(
                 "KSEF_NIP is not set (environment=${config.environment}). " +
