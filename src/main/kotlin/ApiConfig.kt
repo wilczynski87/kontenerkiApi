@@ -65,12 +65,11 @@ internal fun resolveKsefConfig(
     getenv: (String) -> String? = { System.getenv(it) },
 ): KsefConfig {
     val isDev = apiEnv.equals("DEV", ignoreCase = true)
-    val ksefEnvironment = KsefEnvironment.fromEnvValue(getenv("API_ENV"))
-        ?: if (isDev) KsefEnvironment.DEV_DEFAULT else KsefEnvironment.PRODUCTION
+    val ksefEnvironment = if (isDev) KsefEnvironment.DEV_DEFAULT else KsefEnvironment.PRODUCTION
 
-    val baseUrl = getenv("KSEF_BASE_URL")?.trim()?.takeIf { it.isNotEmpty() }
+    val baseUrl = getenv("KSEF_BASE_URL")?.trim()?.takeIf { it.isNotBlank() }
         ?: ksefEnvironment.baseUrl
-    val apiSuffix = getenv("KSEF_API_SUFFIX")?.trim()?.takeIf { it.isNotEmpty() }
+    val apiSuffix = getenv("KSEF_API_SUFFIX")?.trim()?.takeIf { it.isNotBlank() }
         ?: ksefEnvironment.apiSuffix
 
     if (isDev && baseUrl.contains("api.ksef.mf.gov.pl") && !baseUrl.contains("-test") && !baseUrl.contains("-demo")) {
