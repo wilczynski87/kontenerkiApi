@@ -44,7 +44,7 @@ class BillRepoImpl: BillRepo {
             email = bill.seller?.email ?: ""
             phone = bill.seller?.phone ?: ""
             invoiceNumber = bill.seller?.invoiceNumber ?: ""
-            type = SubjectType.SELLER.name ?: ""
+            type = SubjectType.SELLER.dbValue
             account = bill.seller?.account ?: ""
         }
 //        println("sellerEntity: $sellerEntity")
@@ -57,7 +57,7 @@ class BillRepoImpl: BillRepo {
             email = bill.customer?.email ?: ""
             phone = bill.customer?.phone
             invoiceNumber = bill.invoiceNumber ?: throw IllegalStateException("Can nato save bill with Customer - missing BillNumber")
-            type = SubjectType.CUSTOMER.name
+            type = SubjectType.CUSTOMER.dbValue
             salutation = bill.customer?.salutation
             client = bill.customer?.client?.id?.let { ClientEntity.findById(it) }
         }

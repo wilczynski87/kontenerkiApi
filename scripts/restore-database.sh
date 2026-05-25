@@ -59,6 +59,9 @@ SQL
 echo "Importing dump..."
 psql -h localhost -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -f "$DUMP"
 
+echo "Repairing broken invoice/bill foreign keys (orphan seller_id/customer_id)..."
+psql -h localhost -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -f "$ROOT/scripts/fix-invoice-fk-integrity.sql"
+
 echo "Applying optional post-restore migrations..."
 psql -h localhost -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -f "$ROOT/scripts/post-restore-migrations.sql"
 

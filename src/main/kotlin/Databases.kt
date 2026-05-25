@@ -49,6 +49,8 @@ fun configureDatabases(apiConfig: ApiConfig) {
     val url = "jdbc:postgresql://$dbHost:$dbPort/$dbName"
     println("Connecting to: $url")
 
+    repairInvoiceForeignKeysIfNeeded(apiConfig)
+
     val connection = {
         DriverManager.getConnection(url, dbUser, dbPassword)
     }
