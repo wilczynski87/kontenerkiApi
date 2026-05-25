@@ -26,15 +26,15 @@ class InvoiceToKsefFa3MapperTest {
     }
 
     @Test
-    fun `toFa3Xml places FaWiersz before summary and Adnotacje`() {
+    fun `toFa3Xml follows FA3 XSD element order inside Fa`() {
         val xml = InvoiceToKsefFa3Mapper.toFa3Xml(sampleInvoice())
         val faStart = xml.indexOf("<Fa>")
         val faEnd = xml.indexOf("</Fa>")
         val faSection = xml.substring(faStart, faEnd)
-        assertTrue(faSection.indexOf("<FaWiersz>") < faSection.indexOf("<P_13_1>"))
         assertTrue(faSection.indexOf("<P_13_1>") < faSection.indexOf("<Adnotacje>"))
         assertTrue(faSection.indexOf("<Adnotacje>") < faSection.indexOf("<RodzajFaktury>"))
-        assertTrue(faSection.indexOf("<RodzajFaktury>") < faSection.indexOf("<Platnosc>"))
+        assertTrue(faSection.indexOf("<RodzajFaktury>") < faSection.indexOf("<FaWiersz>"))
+        assertTrue(faSection.indexOf("<FaWiersz>") < faSection.indexOf("<Platnosc>"))
     }
 
     @Test
