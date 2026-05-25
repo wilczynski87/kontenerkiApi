@@ -36,7 +36,7 @@ object InvoiceToKsefFa3Mapper {
             appendLine("    <Naglowek>")
             appendLine("""        <KodFormularza kodSystemowy="FA (3)" wersjaSchemy="1-0E">FA</KodFormularza>""")
             appendLine("        <WariantFormularza>3</WariantFormularza>")
-            appendLine("        <DataWytworzeniaFa>${issueDate}T00:00:00Z</DataWytworzeniaFa>")
+            appendLine("        <DataWytworzeniaFa>${formatDate(issueDate)}T00:00:00Z</DataWytworzeniaFa>")
             appendLine("        <SystemInfo>Kontenerki</SystemInfo>")
             appendLine("    </Naglowek>")
             appendPodmiot1(seller)
@@ -46,14 +46,14 @@ object InvoiceToKsefFa3Mapper {
             appendLine("        <P_1>${formatDate(issueDate)}</P_1>")
             appendLine("        <P_2>${escapeXml(invoiceNumber)}</P_2>")
             appendLine("        <P_6>${formatDate(saleDate)}</P_6>")
+            invoice.products.forEachIndexed { index, position ->
+                appendFaWiersz(index + 1, position)
+            }
             appendLine("        <P_13_1>${formatAmount(netTotal)}</P_13_1>")
             appendLine("        <P_14_1>${formatAmount(vatTotal)}</P_14_1>")
             appendLine("        <P_15>${formatAmount(grossTotal)}</P_15>")
             appendStandardAnnotations()
             appendLine("        <RodzajFaktury>VAT</RodzajFaktury>")
-            invoice.products.forEachIndexed { index, position ->
-                appendFaWiersz(index + 1, position)
-            }
             appendPayment(invoice)
             appendLine("    </Fa>")
             appendLine("</Faktura>")
@@ -98,15 +98,19 @@ object InvoiceToKsefFa3Mapper {
     }
 
     private fun StringBuilder.appendAddress(address: Address?) {
-        val addr = address ?: Address()
+        val addr = normalizeAddress(address ?: Address())
         val line1 = listOfNotNull(addr.street?.trim(), addr.house?.trim())
             .filter { it.isNotEmpty() }
             .joinToString(" ")
             .ifBlank { "brak" }
-        val line2 = listOfNotNull(addr.postCode?.trim(), addr.city?.trim())
-            .filter { it.isNotEmpty() }
-            .joinToString(" ")
-            .ifBlank { "brak" }
+        val postCode = addr.postCode?.trim().orEmpty()
+        val city = addr.city?.trim().orEmpty()
+        val line2 = when {
+            postCode.isNotEmpty() && city.isNotEmpty() -> "$postCode $city"
+            postCode.isNotEmpty() -> postCode
+            city.isNotEmpty() -> city
+            else -> "brak"
+        }
         appendLine("        <Adres>")
         appendLine("            <KodKraju>${escapeXml(addr.country.ifBlank { "PL" })}</KodKraju>")
         appendLine("            <AdresL1>${escapeXml(line1)}</AdresL1>")
@@ -116,8 +120,8 @@ object InvoiceToKsefFa3Mapper {
 
     private fun StringBuilder.appendContact(email: String, phone: String?) {
         appendLine("        <DaneKontaktowe>")
-        appendLine("            <Email>${escapeXml(email)}</Email>")
-        phone?.takeIf { it.isNotBlank() }?.let {
+        appendLine("            <Email>${escapeXml(email.trim())}</Email>")
+        phone?.trim()?.takeIf { it.isNotEmpty() }?.take(16)?.let {
             appendLine("            <Telefon>${escapeXml(it)}</Telefon>")
         }
         appendLine("        </DaneKontaktowe>")
@@ -140,7 +144,7 @@ object InvoiceToKsefFa3Mapper {
         val quantity = parseDecimal(position.quantity, "quantity")
         val unitPrice = parseDecimal(position.unitPrice, "unitPrice")
         val netAmount = parseDecimal(position.price, "price")
-        val vatRate = position.vatRate?.trim()?.removeSuffix("%") ?: "23"
+        val vatRate = normalizeVatRate(position.vatRate)
         appendLine("        <FaWiersz>")
         appendLine("            <NrWierszaFa>$rowNumber</NrWierszaFa>")
         appendLine("            <UU_ID>${UUID.randomUUID()}</UU_ID>")
@@ -168,6 +172,26 @@ object InvoiceToKsefFa3Mapper {
             }
         }
         appendLine("        </Platnosc>")
+    }
+
+    private fun normalizeAddress(address: Address): Address {
+        val city = address.city?.trim().orEmpty()
+        val postCode = address.postCode?.trim().orEmpty()
+        val postalPattern = Regex("^\\d{2}-\\d{3}$")
+        return if (city.matches(postalPattern) && postCode.isNotEmpty() && !postCode.matches(postalPattern)) {
+            address.copy(city = postCode, postCode = city)
+        } else {
+            address
+        }
+    }
+
+    private fun normalizeVatRate(vatRate: String?): String {
+        val raw = vatRate?.trim()?.removeSuffix("%")?.trim() ?: "23"
+        return when (raw.lowercase()) {
+            "0", "0.0" -> "0 KR"
+            "zw" -> "zw"
+            else -> raw
+        }
     }
 
     private fun sumPositions(products: List<Position>, selector: (Position) -> String?): BigDecimal =
