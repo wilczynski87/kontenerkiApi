@@ -4,6 +4,7 @@ import com.kontenery.data.invoice.Invoice
 import com.kontenery.ksef.dto.KsefInvoiceListResponse
 import com.kontenery.ksef.dto.KsefLoginResponse
 import com.kontenery.ksef.dto.KsefSendInvoiceResponse
+import com.kontenery.ksef.exception.KsefErrorMessages
 import com.kontenery.ksef.exception.KsefException
 import com.kontenery.ksef.service.KsefService
 import com.kontenery.utils.ApiErrorResponse
@@ -28,7 +29,7 @@ fun Route.ksefRoutes(ksefService: KsefService) {
                 logger.error("KSeF login failed", e)
                 call.respond(
                     e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
-                    ApiErrorResponse(e.message ?: "KSeF login failed"),
+                    ApiErrorResponse(KsefErrorMessages.userMessage(e)),
                 )
             }
         }
@@ -55,7 +56,7 @@ fun Route.ksefRoutes(ksefService: KsefService) {
                 logger.error("KSeF invoice list failed", e)
                 call.respond(
                     e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
-                    ApiErrorResponse("KSeF invoice list failed"),
+                    ApiErrorResponse(KsefErrorMessages.userMessage(e)),
                 )
             }
         }
@@ -73,7 +74,7 @@ fun Route.ksefRoutes(ksefService: KsefService) {
                 logger.error("KSeF invoice send by number failed", e)
                 call.respond(
                     e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
-                    ApiErrorResponse("KSeF invoice send failed"),
+                    ApiErrorResponse(KsefErrorMessages.userMessage(e)),
                 )
             }
         }
@@ -89,7 +90,7 @@ fun Route.ksefRoutes(ksefService: KsefService) {
                 logger.error("KSeF invoice send failed", e)
                 call.respond(
                     e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
-                    ApiErrorResponse("KSeF invoice send failed"),
+                    ApiErrorResponse(KsefErrorMessages.userMessage(e)),
                 )
             }
         }

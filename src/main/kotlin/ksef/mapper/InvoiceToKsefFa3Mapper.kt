@@ -12,6 +12,9 @@ import java.util.UUID
 
 object InvoiceToKsefFa3Mapper {
 
+    private val VAT_RATES_WITH_TAX = setOf("23", "22", "8", "7", "5", "4", "3")
+    private val MAX_VAT_SUMMARY_SLOTS = 5
+
     fun toFa3Xml(invoice: Invoice): String {
         validate(invoice)
         val seller = invoice.seller!!
@@ -19,11 +22,8 @@ object InvoiceToKsefFa3Mapper {
         val invoiceNumber = invoice.invoiceNumber!!.trim()
         val issueDate = invoice.invoiceDate!!
         val saleDate = invoice.paymentDay ?: issueDate
-        val netTotal = sumPositions(invoice.products) { it.price }
-        val vatTotal = sumPositions(invoice.products) { it.vatAmount }
-        val grossTotal = sumPositions(invoice.products) { it.priceWithVat }
-            .takeIf { it > BigDecimal.ZERO }
-            ?: netTotal.add(vatTotal)
+        val lines = invoice.products.map { lineAmounts(it) }
+        val vatBuckets = groupVatBuckets(lines)
 
         return buildString {
             appendLine("""<?xml version="1.0" encoding="utf-8"?>""")
@@ -46,12 +46,10 @@ object InvoiceToKsefFa3Mapper {
             appendLine("        <P_1>${formatDate(issueDate)}</P_1>")
             appendLine("        <P_2>${escapeXml(invoiceNumber)}</P_2>")
             appendLine("        <P_6>${formatDate(saleDate)}</P_6>")
-            invoice.products.forEachIndexed { index, position ->
-                appendFaWiersz(index + 1, position)
+            lines.forEachIndexed { index, line ->
+                appendFaWiersz(index + 1, line)
             }
-            appendLine("        <P_13_1>${formatAmount(netTotal)}</P_13_1>")
-            appendLine("        <P_14_1>${formatAmount(vatTotal)}</P_14_1>")
-            appendLine("        <P_15>${formatAmount(grossTotal)}</P_15>")
+            appendVatSummaries(vatBuckets)
             appendStandardAnnotations()
             appendLine("        <RodzajFaktury>VAT</RodzajFaktury>")
             appendPayment(invoice)
@@ -66,8 +64,13 @@ object InvoiceToKsefFa3Mapper {
         require(invoice.seller != null) { "seller is required for KSeF" }
         require(invoice.customer != null) { "customer is required for KSeF" }
         require(invoice.products.isNotEmpty()) { "invoice must have at least one position for KSeF" }
-        require(!invoice.seller!!.nip.isNullOrBlank()) { "seller NIP is required for KSeF" }
-        require(!invoice.customer!!.nip.isNullOrBlank()) { "customer NIP is required for KSeF" }
+        requireNip(invoice.seller!!.nip, "seller")
+        requireNip(invoice.customer!!.nip, "customer")
+    }
+
+    private fun requireNip(nip: String?, party: String) {
+        val digits = digitsOnly(nip)
+        require(digits.length == 10) { "$party NIP must have exactly 10 digits for KSeF" }
     }
 
     private fun StringBuilder.appendPodmiot1(seller: Subject.Seller) {
@@ -121,7 +124,7 @@ object InvoiceToKsefFa3Mapper {
     private fun StringBuilder.appendContact(email: String, phone: String?) {
         appendLine("        <DaneKontaktowe>")
         appendLine("            <Email>${escapeXml(email.trim())}</Email>")
-        phone?.trim()?.takeIf { it.isNotEmpty() }?.take(16)?.let {
+        phone?.filter { it.isDigit() }?.takeIf { it.isNotEmpty() }?.take(16)?.let {
             appendLine("            <Telefon>${escapeXml(it)}</Telefon>")
         }
         appendLine("        </DaneKontaktowe>")
@@ -140,21 +143,33 @@ object InvoiceToKsefFa3Mapper {
         appendLine("        </Adnotacje>")
     }
 
-    private fun StringBuilder.appendFaWiersz(rowNumber: Int, position: Position) {
-        val quantity = parseDecimal(position.quantity, "quantity")
-        val unitPrice = parseDecimal(position.unitPrice, "unitPrice")
-        val netAmount = parseDecimal(position.price, "price")
-        val vatRate = normalizeVatRate(position.vatRate)
+    private fun StringBuilder.appendFaWiersz(rowNumber: Int, line: LineAmounts) {
         appendLine("        <FaWiersz>")
         appendLine("            <NrWierszaFa>$rowNumber</NrWierszaFa>")
         appendLine("            <UU_ID>${UUID.randomUUID()}</UU_ID>")
-        appendLine("            <P_7>${escapeXml(position.productName ?: "Pozycja $rowNumber")}</P_7>")
+        appendLine("            <P_7>${escapeXml(line.productName)}</P_7>")
         appendLine("            <P_8A>szt.</P_8A>")
-        appendLine("            <P_8B>${formatAmount(quantity)}</P_8B>")
-        appendLine("            <P_9A>${formatAmount(unitPrice)}</P_9A>")
-        appendLine("            <P_11>${formatAmount(netAmount)}</P_11>")
-        appendLine("            <P_12>${escapeXml(vatRate)}</P_12>")
+        appendLine("            <P_8B>${formatAmount(line.quantity)}</P_8B>")
+        appendLine("            <P_9A>${formatAmount(line.unitPrice)}</P_9A>")
+        appendLine("            <P_11>${formatAmount(line.net)}</P_11>")
+        appendLine("            <P_12>${escapeXml(line.vatRate)}</P_12>")
         appendLine("        </FaWiersz>")
+    }
+
+    private fun StringBuilder.appendVatSummaries(buckets: List<VatBucket>) {
+        if (buckets.size > MAX_VAT_SUMMARY_SLOTS) {
+            throw KsefException("Too many VAT rates on invoice for KSeF (max $MAX_VAT_SUMMARY_SLOTS)")
+        }
+        var gross = BigDecimal.ZERO
+        buckets.forEachIndexed { index, bucket ->
+            val slot = index + 1
+            appendLine("        <P_13_$slot>${formatAmount(bucket.net)}</P_13_$slot>")
+            if (bucket.rate in VAT_RATES_WITH_TAX) {
+                appendLine("        <P_14_$slot>${formatAmount(bucket.vat)}</P_14_$slot>")
+            }
+            gross = gross.add(bucket.net).add(bucket.vat)
+        }
+        appendLine("        <P_15>${formatAmount(gross)}</P_15>")
     }
 
     private fun StringBuilder.appendPayment(invoice: Invoice) {
@@ -174,6 +189,67 @@ object InvoiceToKsefFa3Mapper {
         appendLine("        </Platnosc>")
     }
 
+    private fun lineAmounts(position: Position): LineAmounts {
+        val quantity = parseDecimal(position.quantity, "quantity")
+        val unitPrice = parseDecimal(position.unitPrice, "unitPrice")
+        val declaredNet = parseDecimal(position.price, "price")
+        val computedNet = quantity.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP)
+        val net = if (declaredNet.subtract(computedNet).abs() <= BigDecimal("0.01")) {
+            declaredNet.setScale(2, RoundingMode.HALF_UP)
+        } else {
+            computedNet
+        }
+        val vatRate = normalizeVatRate(position.vatRate)
+        val computedVat = vatFromNet(net, vatRate)
+        val declaredVat = position.vatAmount?.let { parseDecimal(it, "vatAmount") }
+        val vat = declaredVat?.let { declared ->
+            if (declared.subtract(computedVat).abs() <= BigDecimal("0.01")) {
+                declared.setScale(2, RoundingMode.HALF_UP)
+            } else {
+                computedVat
+            }
+        } ?: computedVat
+
+        return LineAmounts(
+            productName = position.productName ?: "Pozycja",
+            quantity = quantity,
+            unitPrice = unitPrice,
+            net = net,
+            vatRate = vatRate,
+            vat = vat,
+        )
+    }
+
+    private fun groupVatBuckets(lines: List<LineAmounts>): List<VatBucket> =
+        lines.groupBy { it.vatRate }
+            .map { (rate, items) ->
+                VatBucket(
+                    rate = rate,
+                    net = items.fold(BigDecimal.ZERO) { acc, line -> acc.add(line.net) },
+                    vat = items.fold(BigDecimal.ZERO) { acc, line -> acc.add(line.vat) },
+                )
+            }
+            .sortedBy { rateSortOrder(it.rate) }
+
+    private fun rateSortOrder(rate: String): Int = when (rate) {
+        "23" -> 1
+        "22" -> 2
+        "8" -> 3
+        "7" -> 4
+        "5" -> 5
+        "4" -> 6
+        "3" -> 7
+        "0 KR", "0 WDT", "0 EX" -> 8
+        "zw", "oo", "np I", "np II" -> 9
+        else -> 99
+    }
+
+    private fun vatFromNet(net: BigDecimal, rateKey: String): BigDecimal {
+        if (rateKey !in VAT_RATES_WITH_TAX) return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
+        val percent = BigDecimal(rateKey)
+        return net.multiply(percent).divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
+    }
+
     private fun normalizeAddress(address: Address): Address {
         val city = address.city?.trim().orEmpty()
         val postCode = address.postCode?.trim().orEmpty()
@@ -185,19 +261,36 @@ object InvoiceToKsefFa3Mapper {
         }
     }
 
-    private fun normalizeVatRate(vatRate: String?): String {
+    internal fun normalizeVatRate(vatRate: String?): String {
         val raw = vatRate?.trim()?.removeSuffix("%")?.trim() ?: "23"
-        return when (raw.lowercase()) {
-            "0", "0.0" -> "0 KR"
-            "zw" -> "zw"
-            else -> raw
+        val lowered = raw.lowercase()
+        when (lowered) {
+            "0", "0.0" -> return "0 KR"
+            "zw" -> return "zw"
+            "oo" -> return "oo"
+            "np i", "np 1" -> return "np I"
+            "np ii", "np 2" -> return "np II"
+        }
+
+        val numeric = raw.replace(",", ".").toBigDecimalOrNull()
+        if (numeric != null) {
+            val percent = if (numeric < BigDecimal.ONE) {
+                numeric.multiply(BigDecimal(100))
+            } else {
+                numeric
+            }
+            val plain = percent.stripTrailingZeros().toPlainString()
+            return when (plain) {
+                "0" -> "0 KR"
+                else -> plain
+            }
+        }
+
+        return when (raw) {
+            "0 KR", "0 WDT", "0 EX", "np I", "np II" -> raw
+            else -> throw KsefException("Unsupported VAT rate for KSeF P_12: $vatRate")
         }
     }
-
-    private fun sumPositions(products: List<Position>, selector: (Position) -> String?): BigDecimal =
-        products.fold(BigDecimal.ZERO) { acc, position ->
-            acc.add(parseDecimal(selector(position), "position amount"))
-        }
 
     private fun parseDecimal(value: String?, field: String): BigDecimal =
         value?.replace(",", ".")?.trim()?.toBigDecimalOrNull()
@@ -218,4 +311,19 @@ object InvoiceToKsefFa3Mapper {
         .replace(">", "&gt;")
         .replace("\"", "&quot;")
         .replace("'", "&apos;")
+
+    private data class LineAmounts(
+        val productName: String,
+        val quantity: BigDecimal,
+        val unitPrice: BigDecimal,
+        val net: BigDecimal,
+        val vatRate: String,
+        val vat: BigDecimal,
+    )
+
+    private data class VatBucket(
+        val rate: String,
+        val net: BigDecimal,
+        val vat: BigDecimal,
+    )
 }

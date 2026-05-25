@@ -118,8 +118,19 @@ class KsefServiceImpl(
                 invoiceNumber = invoiceStatus.invoiceNumber ?: invoice.invoiceNumber,
                 sessionStatus = deferredSessionStatus,
             )
+        } catch (e: KsefException) {
+            throw e
+        } catch (e: IllegalArgumentException) {
+            throw KsefException(
+                message = e.message ?: "Invalid invoice for KSeF",
+                statusCode = 400,
+                cause = e,
+            )
         } catch (e: Exception) {
-            throw KsefException("Problem to sendInvoiceToKsef:\n error: $e \ninvoice:${invoice},")
+            throw KsefException(
+                message = "KSeF invoice send failed: ${e.message ?: e.javaClass.simpleName}",
+                cause = e,
+            )
         } finally {
             runCatching { repository.closeOnlineSession(accessToken, session.referenceNumber) }
         }

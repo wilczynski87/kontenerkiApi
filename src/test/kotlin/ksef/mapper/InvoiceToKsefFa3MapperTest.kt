@@ -5,6 +5,7 @@ import com.kontenery.data.invoice.Invoice
 import com.kontenery.data.invoice.Position
 import com.kontenery.data.invoice.Subject
 import kotlinx.datetime.LocalDate
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -52,6 +53,67 @@ class InvoiceToKsefFa3MapperTest {
         assertThrows<IllegalArgumentException> {
             InvoiceToKsefFa3Mapper.toFa3Xml(sampleInvoice().copy(invoiceNumber = null))
         }
+    }
+
+    @Test
+    fun `normalizeVatRate converts decimal fraction to catalog percent`() {
+        assertEquals("23", InvoiceToKsefFa3Mapper.normalizeVatRate("0.23"))
+        assertEquals("8", InvoiceToKsefFa3Mapper.normalizeVatRate("0.08"))
+        assertEquals("23", InvoiceToKsefFa3Mapper.normalizeVatRate("23.00"))
+    }
+
+    @Test
+    fun `toFa3Xml uses catalog P_12 and consistent P_13 P_14 P_15`() {
+        val invoice = sampleInvoice().copy(
+            products = listOf(
+                Position(
+                    productName = "Energia",
+                    unitPrice = "100.00",
+                    quantity = "1",
+                    price = "100.00",
+                    vatRate = "0.23",
+                    vatAmount = "23.00",
+                    priceWithVat = "123.00",
+                ),
+            ),
+        )
+        val xml = InvoiceToKsefFa3Mapper.toFa3Xml(invoice)
+        assertTrue(xml.contains("<P_12>23</P_12>"))
+        assertTrue(xml.contains("<P_13_1>100.00</P_13_1>"))
+        assertTrue(xml.contains("<P_14_1>23.00</P_14_1>"))
+        assertTrue(xml.contains("<P_15>123.00</P_15>"))
+    }
+
+    @Test
+    fun `toFa3Xml splits summary by VAT rate`() {
+        val invoice = sampleInvoice().copy(
+            products = listOf(
+                Position(
+                    productName = "Kontener",
+                    unitPrice = "100.00",
+                    quantity = "1",
+                    price = "100.00",
+                    vatRate = "23",
+                    vatAmount = "23.00",
+                    priceWithVat = "123.00",
+                ),
+                Position(
+                    productName = "Woda",
+                    unitPrice = "50.00",
+                    quantity = "1",
+                    price = "50.00",
+                    vatRate = "8",
+                    vatAmount = "4.00",
+                    priceWithVat = "54.00",
+                ),
+            ),
+        )
+        val xml = InvoiceToKsefFa3Mapper.toFa3Xml(invoice)
+        assertTrue(xml.contains("<P_13_1>100.00</P_13_1>"))
+        assertTrue(xml.contains("<P_14_1>23.00</P_14_1>"))
+        assertTrue(xml.contains("<P_13_2>50.00</P_13_2>"))
+        assertTrue(xml.contains("<P_14_2>4.00</P_14_2>"))
+        assertTrue(xml.contains("<P_15>177.00</P_15>"))
     }
 
     private fun sampleInvoice(): Invoice = Invoice(
