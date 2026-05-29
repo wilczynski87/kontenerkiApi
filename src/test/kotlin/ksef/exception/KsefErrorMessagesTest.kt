@@ -30,4 +30,20 @@ class KsefErrorMessagesTest {
         )
         assertEquals("Invoice not found: FV/1", message)
     }
+
+    @Test
+    fun `userMessage passes through mapper validation errors`() {
+        val message = KsefErrorMessages.userMessage(
+            KsefException("Unsupported VAT rate for KSeF P_12: 0.23"),
+        )
+        assertEquals("Unsupported VAT rate for KSeF P_12: 0.23", message)
+    }
+
+    @Test
+    fun `userMessage passes through token configuration hints`() {
+        val message = KsefErrorMessages.userMessage(
+            KsefException("KSEF_TOKEN is the placeholder from .env.example"),
+        )
+        assertEquals("KSEF_TOKEN is the placeholder from .env.example", message)
+    }
 }
