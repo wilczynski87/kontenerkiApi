@@ -20,7 +20,7 @@ class KsefErrorMessagesTest {
             KsefException("Problem to sendInvoiceToKsef:\n error: timeout invoice:{seller=...}"),
         )
         assertFalse(message.contains("seller="))
-        assertEquals("KSeF operation failed", message)
+        assertEquals("KSeF invoice send failed: error: timeout", message)
     }
 
     @Test

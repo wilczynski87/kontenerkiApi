@@ -20,6 +20,8 @@ object KsefErrorMessages {
             sanitized.contains("Invalid decimal", ignoreCase = true) -> sanitized
             sanitized.contains("is required for KSeF", ignoreCase = true) -> sanitized
             sanitized.contains("invoice send failed", ignoreCase = true) -> sanitized
+            sanitized.startsWith("KSeF API error:", ignoreCase = true) -> sanitized
+            sanitized.startsWith("KSeF", ignoreCase = true) -> sanitized
             else -> defaultMessage(exception)
         }
     }
@@ -33,7 +35,8 @@ object KsefErrorMessages {
         if (text.isNullOrBlank()) return ""
         return text
             .replace(Regex("""Bearer\s+[A-Za-z0-9._-]+""", RegexOption.IGNORE_CASE), "Bearer [redacted]")
-            .replace(Regex("""Problem to sendInvoiceToKsef:[\s\S]*""", RegexOption.IGNORE_CASE), "")
+            // Legacy message format used to include a full invoice dump - keep the error but drop the payload.
+            .replace(Regex("""Problem to sendInvoiceToKsef:\s*""", RegexOption.IGNORE_CASE), "KSeF invoice send failed: ")
             .replace(Regex("""invoice:\s*\{[\s\S]*""", RegexOption.IGNORE_CASE), "")
             .replace(Regex("""\s+"""), " ")
             .trim()
