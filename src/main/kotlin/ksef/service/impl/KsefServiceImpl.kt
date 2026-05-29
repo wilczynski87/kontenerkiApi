@@ -159,8 +159,9 @@ class KsefServiceImpl(
             }
             val code = status.status?.code
             if (code != null && code !in INVOICE_PENDING_CODES) {
+                val details = status.status.details?.takeIf { it.isNotBlank() }?.let { " ($it)" }.orEmpty()
                 throw KsefException(
-                    "KSeF invoice processing failed: $code ${status.status.description}",
+                    "KSeF invoice processing failed: $code ${status.status.description}$details",
                 )
             }
             if (attempt < INVOICE_POLL_MAX_ATTEMPTS - 1) {
