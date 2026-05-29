@@ -71,8 +71,9 @@ data class Fa3Line(
 )
 
 data class Fa3Payment(
-    val paid: String,
+    val isPaid: Boolean,
     val dueDate: LocalDate,
+    val paymentDate: LocalDate?,
     val paymentForm: String,
     val bankAccountDigits: String?,
 )

@@ -85,6 +85,14 @@ class InvoiceToKsefFa3MapperTest {
     }
 
     @Test
+    fun `toFa3Xml omits Zaplacono for unpaid invoices and nests payment due date`() {
+        val xml = InvoiceToKsefFa3Mapper.toFa3Xml(sampleInvoice())
+        assertTrue(!xml.contains("<Zaplacono>"))
+        assertTrue(xml.contains("<TerminPlatnosci>"))
+        assertTrue(xml.contains("<Termin>2025-05-29</Termin>"))
+    }
+
+    @Test
     fun `toFa3Xml splits summary by VAT rate`() {
         val invoice = sampleInvoice().copy(
             products = listOf(

@@ -125,8 +125,15 @@ object Fa3InvoiceXmlWriter {
 
     private fun StringBuilder.appendPayment(payment: Fa3Payment) {
         appendLine("        <Platnosc>")
-        appendLine("            <Zaplacono>${payment.paid}</Zaplacono>")
-        appendLine("            <TerminPlatnosci>${formatDate(payment.dueDate)}</TerminPlatnosci>")
+        if (payment.isPaid) {
+            appendLine("            <Zaplacono>${Fa3Constants.PAYMENT_PAID}</Zaplacono>")
+            val paidOn = payment.paymentDate ?: payment.dueDate
+            appendLine("            <DataZaplaty>${formatDate(paidOn)}</DataZaplaty>")
+        } else {
+            appendLine("            <TerminPlatnosci>")
+            appendLine("                <Termin>${formatDate(payment.dueDate)}</Termin>")
+            appendLine("            </TerminPlatnosci>")
+        }
         appendLine("            <FormaPlatnosci>${payment.paymentForm}</FormaPlatnosci>")
         payment.bankAccountDigits?.let { digits ->
             appendLine("            <RachunekBankowy>")
