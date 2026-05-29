@@ -1,6 +1,8 @@
 package com.kontenery.controller
 
 import com.kontenery.data.invoice.Invoice
+import com.kontenery.ksef.dto.KsefDownloadInvoiceResponse
+import com.kontenery.ksef.dto.KsefDownloadInvoicesMonthResponse
 import com.kontenery.ksef.dto.KsefInvoiceListResponse
 import com.kontenery.ksef.dto.KsefLoginResponse
 import com.kontenery.ksef.dto.KsefSendInvoiceResponse
@@ -54,6 +56,50 @@ fun Route.ksefRoutes(ksefService: KsefService) {
                 call.respond(HttpStatusCode.BadRequest, ApiErrorResponse("Invalid request"))
             } catch (e: KsefException) {
                 logger.error("KSeF invoice list failed", e)
+                call.respond(
+                    e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
+                    ApiErrorResponse(KsefErrorMessages.userMessage(e)),
+                )
+            }
+        }
+
+        get("/invoices/download") {
+            try {
+                val year = call.request.queryParameters["year"]?.toIntOrNull()
+                val month = call.request.queryParameters["month"]?.toIntOrNull()
+                val subjectType = call.request.queryParameters["subjectType"] ?: "Subject1"
+
+                if (year != null || month != null) {
+                    if (year == null || month == null) {
+                        return@get call.respond(
+                            HttpStatusCode.BadRequest,
+                            ApiErrorResponse("Both year and month are required for monthly download"),
+                        )
+                    }
+                    val response: KsefDownloadInvoicesMonthResponse =
+                        ksefService.downloadInvoicesForMonthFromKsef(year, month, subjectType)
+                    return@get call.respond(HttpStatusCode.OK, response)
+                }
+
+                val ksefNumber = call.request.queryParameters["ksefNumber"]
+                val invoiceNumber = call.request.queryParameters["invoiceNumber"]
+                if (ksefNumber.isNullOrBlank() && invoiceNumber.isNullOrBlank()) {
+                    return@get call.respond(
+                        HttpStatusCode.BadRequest,
+                        ApiErrorResponse("Provide ksefNumber, invoiceNumber, or year+month"),
+                    )
+                }
+
+                val response: KsefDownloadInvoiceResponse = ksefService.downloadInvoiceFromKsef(
+                    ksefNumber = ksefNumber,
+                    invoiceNumber = invoiceNumber,
+                    subjectType = subjectType,
+                )
+                call.respond(HttpStatusCode.OK, response)
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, ApiErrorResponse(e.message ?: "Invalid request"))
+            } catch (e: KsefException) {
+                logger.error("KSeF invoice download failed", e)
                 call.respond(
                     e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
                     ApiErrorResponse(KsefErrorMessages.userMessage(e)),

@@ -13,6 +13,8 @@ data class KsefInvoiceQueryDateRange(
 data class KsefInvoiceQueryFilters(
     val subjectType: String,
     val dateRange: KsefInvoiceQueryDateRange,
+    val ksefNumber: String? = null,
+    val invoiceNumber: String? = null,
 )
 
 @Serializable
@@ -58,4 +60,27 @@ data class KsefInvoiceListResponse(
     val hasMore: Boolean,
     val pageOffset: Int,
     val pageSize: Int,
+)
+
+@Serializable
+data class KsefDownloadedInvoice(
+    val ksefNumber: String,
+    val invoiceNumber: String? = null,
+    val xml: String,
+)
+
+@Serializable
+data class KsefDownloadInvoiceResponse(
+    val ksefNumber: String,
+    val invoiceNumber: String? = null,
+    val xml: String,
+)
+
+@Serializable
+data class KsefDownloadInvoicesMonthResponse(
+    val year: Int,
+    val month: Int,
+    val downloadedCount: Int,
+    val invoices: List<KsefDownloadedInvoice>,
+    val skippedWithoutKsefNumber: Int = 0,
 )

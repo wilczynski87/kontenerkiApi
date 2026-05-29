@@ -130,4 +130,7 @@ class KsefRepositoryImpl(
         invoiceReferenceNumber: String,
     ): KsefSessionInvoiceStatusResponse =
         apiClient.getSessionInvoiceStatus(sessionReferenceNumber, invoiceReferenceNumber, accessToken)
+
+    override suspend fun downloadInvoiceByKsefNumber(accessToken: String, ksefNumber: String): ByteArray =
+        apiClient.downloadInvoiceByKsefNumber(ksefNumber, accessToken)
 }
