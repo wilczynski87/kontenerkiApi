@@ -49,8 +49,9 @@ object InvoiceToFa3DocumentMapper {
                 grossTotal = formatAmount(gross),
                 lines = lines.mapIndexed { index, line -> toLine(index, line) },
                 payment = Fa3Payment(
-                    paid = Fa3Constants.PAYMENT_NOT_PAID,
+                    isPaid = false,
                     dueDate = invoice.paymentDay ?: issueDate,
+                    paymentDate = null,
                     paymentForm = Fa3Constants.PAYMENT_FORM_TRANSFER,
                     bankAccountDigits = invoice.mainAccount
                         .takeIf { it.isNotBlank() }

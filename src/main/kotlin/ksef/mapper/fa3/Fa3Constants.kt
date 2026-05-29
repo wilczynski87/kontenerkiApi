@@ -22,8 +22,8 @@ object Fa3Constants {
     const val JST_NOT_APPLICABLE = "2"
     const val GV_NOT_APPLICABLE = "2"
 
-    /** Not paid — payment due on [TerminPlatnosci] (see demo template Platnosc section). */
-    const val PAYMENT_NOT_PAID = "2"
+    /** FA(3) [Zaplacono] — etd:TWybor1 (only "1" = paid in full). Omit when unpaid. */
+    const val PAYMENT_PAID = "1"
     const val PAYMENT_FORM_TRANSFER = "6"
 
     val VAT_RATES_WITH_TAX = setOf("23", "22", "8", "7", "5", "4", "3")
