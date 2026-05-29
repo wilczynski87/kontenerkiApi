@@ -61,7 +61,10 @@ fun KsefSessionInvoiceStatusEntity.applyFromResponse(response: KsefSessionInvoic
     invoiceNumber = response.invoiceNumber
     ksefNumber = response.ksefNumber
     statusCode = response.status?.code
-    statusDescription = response.status?.description
+    statusDescription = listOfNotNull(response.status?.description, response.status?.details)
+        .joinToString(" — ")
+        .take(500)
+        .ifBlank { null }
     permanentStorageDate = response.permanentStorageDate
 }
 

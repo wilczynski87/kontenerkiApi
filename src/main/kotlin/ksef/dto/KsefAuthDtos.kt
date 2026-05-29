@@ -43,9 +43,9 @@ data class KsefStatusInfo(
     val code: Int,
     val description: String? = null,
     /**
-     * Additional status details returned by KSeF (often contains the exact semantic rule violation).
-     * Kept as raw text because the shape varies between endpoints/versions.
+     * Additional status details returned by KSeF (string or JSON array of validation messages).
      */
+    @Serializable(with = KsefStatusDetailsSerializer::class)
     val details: String? = null,
 )
 
