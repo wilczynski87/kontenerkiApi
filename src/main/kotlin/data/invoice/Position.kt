@@ -18,10 +18,14 @@ data class Position(
 ) {
     companion object {
         fun toPosition(contract: Contract): Position {
+            fun vatPercent(): BigDecimal {
+                val rate = contract.vatRate.setScale(2, RoundingMode.HALF_UP)
+                return if (rate < BigDecimal.ONE) rate.multiply(BigDecimal(100)) else rate
+            }
+
             fun vatCalculate(): BigDecimal {
                 val netPrice: BigDecimal = contract.netPrice?.setScale(2, RoundingMode.HALF_UP) ?: return BigDecimal.ZERO
-                val vatRate: BigDecimal = contract.vatRate.setScale(2, RoundingMode.HALF_UP)
-                val vatProcent = vatRate.divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
+                val vatProcent = vatPercent().divide(BigDecimal(100), 4, RoundingMode.HALF_UP)
                 return netPrice.multiply(vatProcent).setScale(2, RoundingMode.HALF_UP)
             }
 
@@ -43,7 +47,7 @@ data class Position(
                 unitPrice = (unitPriceCalculate() ?: "Błąd w cenie").toString() ,
                 quantity = getQuantity().toString(),
                 price = contract.netPrice.toString(),
-                vatRate = contract.vatRate.toString(),
+                vatRate = vatPercent().stripTrailingZeros().toPlainString(),
                 vatAmount = vatCalculate().toString(),
                 priceWithVat = (contract.netPrice?.plus(vatCalculate()) ?: "Błąd w obliczeniach").toString()
             )

@@ -52,9 +52,12 @@ class ContractServiceImpl(
             startDate = contractDto.startDate,
             endDate = contractDto.endDate,
             netPrice = if(contractDto.netPrice == null) null else BigDecimal.valueOf(contractDto.netPrice!!),
-            vatRate = if(contractDto.vatRate == null) BigDecimal.valueOf(0.23) else BigDecimal.valueOf(
-                contractDto.vatRate
-            ),
+            vatRate = if (contractDto.vatRate == null) {
+                BigDecimal(23)
+            } else {
+                val raw = BigDecimal.valueOf(contractDto.vatRate)
+                if (raw < BigDecimal.ONE) raw.multiply(BigDecimal(100)) else raw
+            },
             needInvoice = contractDto.needInvoice,
             deposit = contractDto.deposit
         )

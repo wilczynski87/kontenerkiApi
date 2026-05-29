@@ -21,7 +21,7 @@ object InvoiceToKsefFa3Mapper {
         val customer = invoice.customer!!
         val invoiceNumber = invoice.invoiceNumber!!.trim()
         val issueDate = invoice.invoiceDate!!
-        val saleDate = invoice.paymentDay ?: issueDate
+        val saleDate = invoice.invoiceDate!!
         val lines = invoice.products.map { lineAmounts(it) }
         val vatBuckets = groupVatBuckets(lines)
 
@@ -46,12 +46,12 @@ object InvoiceToKsefFa3Mapper {
             appendLine("        <P_1>${formatDate(issueDate)}</P_1>")
             appendLine("        <P_2>${escapeXml(invoiceNumber)}</P_2>")
             appendLine("        <P_6>${formatDate(saleDate)}</P_6>")
-            lines.forEachIndexed { index, line ->
-                appendFaWiersz(index + 1, line)
-            }
             appendVatSummaries(vatBuckets)
             appendStandardAnnotations()
             appendLine("        <RodzajFaktury>VAT</RodzajFaktury>")
+            lines.forEachIndexed { index, line ->
+                appendFaWiersz(index + 1, line)
+            }
             appendPayment(invoice)
             appendLine("    </Fa>")
             appendLine("</Faktura>")
