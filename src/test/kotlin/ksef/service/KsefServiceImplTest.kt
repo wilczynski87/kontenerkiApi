@@ -140,6 +140,45 @@ class KsefServiceImplTest {
     }
 
     @Test
+    fun `isInvoiceRegisteredInKsef returns true when ksef number present`() = runBlocking {
+        val repository = mockk<KsefRepository>()
+        stubAuthenticatedRepository(repository)
+        coEvery { repository.queryInvoices(any(), any(), any(), any(), any()) } returns
+            KsefQueryInvoiceMetadataResponse(
+                invoices = listOf(
+                    KsefInvoiceMetadata(
+                        ksefNumber = "KSeF-1",
+                        invoiceNumber = "FV/1",
+                        invoicingDate = "2025-05-15T10:00:00Z",
+                        permanentStorageDate = "2025-05-15T10:01:00Z",
+                    ),
+                ),
+                hasMore = false,
+            )
+
+        val service = KsefServiceImpl(config, repository, mockk(), mockk(relaxed = true))
+        val result = service.isInvoiceRegisteredInKsef("FV/1")
+
+        assertEquals(true, result.registered)
+        assertEquals("KSeF-1", result.ksefNumber)
+        assertEquals("FV/1", result.invoiceNumber)
+    }
+
+    @Test
+    fun `isInvoiceRegisteredInKsef returns false when not in ksef`() = runBlocking {
+        val repository = mockk<KsefRepository>()
+        stubAuthenticatedRepository(repository)
+        coEvery { repository.queryInvoices(any(), any(), any(), any(), any()) } returns
+            KsefQueryInvoiceMetadataResponse(invoices = emptyList(), hasMore = false)
+
+        val service = KsefServiceImpl(config, repository, mockk(), mockk(relaxed = true))
+        val result = service.isInvoiceRegisteredInKsef("FV/404")
+
+        assertEquals(false, result.registered)
+        assertEquals(null, result.ksefNumber)
+    }
+
+    @Test
     fun `downloadInvoiceFromKsef requires identifier`() {
         val service = KsefServiceImpl(config, mockk(), mockk(), mockk(relaxed = true))
         assertThrows(IllegalArgumentException::class.java) {

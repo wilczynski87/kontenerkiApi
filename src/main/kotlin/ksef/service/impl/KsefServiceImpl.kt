@@ -9,6 +9,7 @@ import com.kontenery.ksef.dto.KsefDownloadInvoicesMonthResponse
 import com.kontenery.ksef.dto.KsefDownloadedInvoice
 import com.kontenery.ksef.dto.KsefInvoiceListResponse
 import com.kontenery.ksef.dto.KsefInvoiceMetadata
+import com.kontenery.ksef.dto.KsefInvoiceRegisteredResponse
 import com.kontenery.ksef.dto.KsefInvoiceQueryDateRange
 import com.kontenery.ksef.dto.KsefInvoiceQueryFilters
 import com.kontenery.ksef.dto.KsefLoginResponse
@@ -151,6 +152,26 @@ class KsefServiceImpl(
             downloadedCount = downloaded.size,
             invoices = downloaded,
             skippedWithoutKsefNumber = skipped,
+        )
+    }
+
+    override suspend fun isInvoiceRegisteredInKsef(
+        invoiceNumber: String,
+        subjectType: String,
+    ): KsefInvoiceRegisteredResponse {
+        val number = invoiceNumber.trim()
+        require(number.isNotEmpty()) { "invoiceNumber is required" }
+
+        val accessToken = obtainAccessToken()
+        val metadata = findInvoiceMetadataByInvoiceNumber(accessToken, number, subjectType)
+        val ksefNumber = metadata?.ksefNumber?.trim()?.takeIf { it.isNotEmpty() }
+
+        return KsefInvoiceRegisteredResponse(
+            invoiceNumber = number,
+            registered = ksefNumber != null,
+            ksefNumber = ksefNumber,
+            invoicingDate = metadata?.invoicingDate,
+            permanentStorageDate = metadata?.permanentStorageDate,
         )
     }
 
@@ -346,11 +367,11 @@ class KsefServiceImpl(
         )
     }
 
-    private suspend fun resolveKsefNumberByInvoiceNumber(
+    private suspend fun findInvoiceMetadataByInvoiceNumber(
         accessToken: String,
         invoiceNumber: String,
         subjectType: String,
-    ): String {
+    ): KsefInvoiceMetadata? {
         val matches = fetchAllInvoiceMetadata(
             accessToken = accessToken,
             filters = KsefInvoiceQueryFilters(
@@ -359,10 +380,20 @@ class KsefServiceImpl(
                 invoiceNumber = invoiceNumber,
             ),
         )
-        val ksef = matches.firstOrNull { it.invoiceNumber == invoiceNumber }?.ksefNumber
-            ?: matches.firstOrNull()?.ksefNumber
-        return ksef?.trim()?.takeIf { it.isNotEmpty() }
-            ?: throw KsefException("Invoice not found in KSeF: $invoiceNumber", statusCode = 404)
+        return matches.firstOrNull { it.invoiceNumber == invoiceNumber }
+            ?: matches.firstOrNull()
+    }
+
+    private suspend fun resolveKsefNumberByInvoiceNumber(
+        accessToken: String,
+        invoiceNumber: String,
+        subjectType: String,
+    ): String {
+        val ksef = findInvoiceMetadataByInvoiceNumber(accessToken, invoiceNumber, subjectType)
+            ?.ksefNumber
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+        return ksef ?: throw KsefException("Invoice not found in KSeF: $invoiceNumber", statusCode = 404)
     }
 
     private suspend fun findInvoiceMetadata(
