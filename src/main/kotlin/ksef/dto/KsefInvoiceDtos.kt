@@ -84,3 +84,13 @@ data class KsefDownloadInvoicesMonthResponse(
     val invoices: List<KsefDownloadedInvoice>,
     val skippedWithoutKsefNumber: Int = 0,
 )
+
+@Serializable
+data class KsefInvoiceRegisteredResponse(
+    val invoiceNumber: String,
+    /** `true` when KSeF returned metadata with a non-empty [ksefNumber]. */
+    val registered: Boolean,
+    val ksefNumber: String? = null,
+    val invoicingDate: String? = null,
+    val permanentStorageDate: String? = null,
+)

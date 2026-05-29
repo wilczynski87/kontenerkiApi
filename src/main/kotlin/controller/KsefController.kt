@@ -4,6 +4,7 @@ import com.kontenery.data.invoice.Invoice
 import com.kontenery.ksef.dto.KsefDownloadInvoiceResponse
 import com.kontenery.ksef.dto.KsefDownloadInvoicesMonthResponse
 import com.kontenery.ksef.dto.KsefInvoiceListResponse
+import com.kontenery.ksef.dto.KsefInvoiceRegisteredResponse
 import com.kontenery.ksef.dto.KsefLoginResponse
 import com.kontenery.ksef.dto.KsefSendInvoiceResponse
 import com.kontenery.ksef.exception.KsefErrorMessages
@@ -56,6 +57,30 @@ fun Route.ksefRoutes(ksefService: KsefService) {
                 call.respond(HttpStatusCode.BadRequest, ApiErrorResponse("Invalid request"))
             } catch (e: KsefException) {
                 logger.error("KSeF invoice list failed", e)
+                call.respond(
+                    e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
+                    ApiErrorResponse(KsefErrorMessages.userMessage(e)),
+                )
+            }
+        }
+
+        get("/invoices/registered") {
+            try {
+                val invoiceNumber = call.request.queryParameters["invoiceNumber"]
+                if (invoiceNumber.isNullOrBlank()) {
+                    return@get call.respond(
+                        HttpStatusCode.BadRequest,
+                        ApiErrorResponse("invoiceNumber query parameter is required"),
+                    )
+                }
+                val subjectType = call.request.queryParameters["subjectType"] ?: "Subject1"
+                val response: KsefInvoiceRegisteredResponse =
+                    ksefService.isInvoiceRegisteredInKsef(invoiceNumber, subjectType)
+                call.respond(HttpStatusCode.OK, response)
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, ApiErrorResponse(e.message ?: "Invalid request"))
+            } catch (e: KsefException) {
+                logger.error("KSeF invoice registration check failed", e)
                 call.respond(
                     e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
                     ApiErrorResponse(KsefErrorMessages.userMessage(e)),
