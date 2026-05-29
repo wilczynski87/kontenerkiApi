@@ -19,6 +19,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class KsefServiceImplTest {
@@ -79,6 +80,74 @@ class KsefServiceImplTest {
     }
 
     @Test
+    fun `downloadInvoiceFromKsef returns xml by ksef number`() = runBlocking {
+        val repository = mockk<KsefRepository>()
+        stubAuthenticatedRepository(repository)
+        coEvery { repository.downloadInvoiceByKsefNumber("access-token", "KSeF-99") } returns
+            "<Faktura/>".toByteArray()
+        coEvery { repository.queryInvoices(any(), any(), any(), any(), any()) } returns
+            KsefQueryInvoiceMetadataResponse(
+                invoices = listOf(KsefInvoiceMetadata(ksefNumber = "KSeF-99", invoiceNumber = "FV/9")),
+                hasMore = false,
+            )
+
+        val service = KsefServiceImpl(config, repository, mockk(), mockk(relaxed = true))
+        val result = service.downloadInvoiceFromKsef(ksefNumber = "KSeF-99")
+
+        assertEquals("KSeF-99", result.ksefNumber)
+        assertEquals("<Faktura/>", result.xml)
+        assertEquals("FV/9", result.invoiceNumber)
+    }
+
+    @Test
+    fun `downloadInvoiceFromKsef resolves ksef number by invoice number`() = runBlocking {
+        val repository = mockk<KsefRepository>()
+        stubAuthenticatedRepository(repository)
+        val metadata = KsefInvoiceMetadata(ksefNumber = "KSeF-1", invoiceNumber = "FV/1")
+        coEvery { repository.queryInvoices(any(), any(), any(), any(), any()) } returns
+            KsefQueryInvoiceMetadataResponse(invoices = listOf(metadata), hasMore = false)
+        coEvery { repository.downloadInvoiceByKsefNumber("access-token", "KSeF-1") } returns
+            "<Faktura id=\"1\"/>".toByteArray()
+
+        val service = KsefServiceImpl(config, repository, mockk(), mockk(relaxed = true))
+        val result = service.downloadInvoiceFromKsef(invoiceNumber = "FV/1")
+
+        assertEquals("KSeF-1", result.ksefNumber)
+        assertTrue(result.xml.contains("Faktura"))
+    }
+
+    @Test
+    fun `downloadInvoicesForMonthFromKsef downloads all with ksef numbers`() = runBlocking {
+        val repository = mockk<KsefRepository>()
+        stubAuthenticatedRepository(repository)
+        coEvery { repository.queryInvoices(any(), any(), any(), any(), any()) } returns
+            KsefQueryInvoiceMetadataResponse(
+                invoices = listOf(
+                    KsefInvoiceMetadata(ksefNumber = "KSeF-A", invoiceNumber = "FV/A"),
+                    KsefInvoiceMetadata(ksefNumber = null, invoiceNumber = "FV/B"),
+                ),
+                hasMore = false,
+            )
+        coEvery { repository.downloadInvoiceByKsefNumber("access-token", "KSeF-A") } returns
+            "<A/>".toByteArray()
+
+        val service = KsefServiceImpl(config, repository, mockk(), mockk(relaxed = true))
+        val result = service.downloadInvoicesForMonthFromKsef(2025, 5)
+
+        assertEquals(1, result.downloadedCount)
+        assertEquals(1, result.skippedWithoutKsefNumber)
+        assertEquals("KSeF-A", result.invoices.single().ksefNumber)
+    }
+
+    @Test
+    fun `downloadInvoiceFromKsef requires identifier`() {
+        val service = KsefServiceImpl(config, mockk(), mockk(), mockk(relaxed = true))
+        assertThrows(IllegalArgumentException::class.java) {
+            runBlocking { service.downloadInvoiceFromKsef() }
+        }
+    }
+
+    @Test
     fun `sendInvoiceToKsefByNumber fails when invoice not found`() {
         val repository = mockk<KsefRepository>()
         val invoiceService = mockk<InvoiceService>()
@@ -134,6 +203,27 @@ class KsefServiceImplTest {
         assertThrows(KsefException::class.java) {
             runBlocking { service.login() }
         }
+    }
+
+    private fun stubAuthenticatedRepository(repository: KsefRepository) {
+        coEvery { repository.fetchPublicKeyCertificates() } returns listOf(
+            KsefPublicKeyCertificate(
+                certificate = TEST_CERTIFICATE_BASE64,
+                publicKeyId = "key-1",
+                usage = listOf("KsefTokenEncryption"),
+            ),
+        )
+        coEvery { repository.fetchAuthChallenge() } returns Pair("challenge-123", 1_700_000_000_000L)
+        coEvery { repository.submitKsefTokenAuth(any(), any(), any(), any()) } returns KsefSignatureResponse(
+            referenceNumber = "ref-1",
+            authenticationToken = KsefTokenInfo(token = "temp-token"),
+        )
+        coEvery { repository.fetchAuthStatus(any(), any()) } returns KsefAuthStatusResponse(
+            status = KsefStatusInfo(code = 200, description = "OK"),
+        )
+        coEvery { repository.redeemAuthToken(any()) } returns KsefAuthOperationStatusResponse(
+            accessToken = KsefTokenInfo(token = "access-token", validUntil = "2099-01-01T00:00:00Z"),
+        )
     }
 
     companion object {

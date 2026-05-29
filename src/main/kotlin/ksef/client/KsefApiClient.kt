@@ -17,6 +17,7 @@ import com.kontenery.ksef.dto.KsefSessionStatusResponse
 import com.kontenery.ksef.dto.KsefSignatureResponse
 import com.kontenery.ksef.exception.KsefException
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.request.accept
 import io.ktor.client.request.get
@@ -30,6 +31,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import java.nio.charset.StandardCharsets
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -123,6 +125,25 @@ class KsefApiClient(
         accessToken: String,
     ): KsefSessionInvoiceStatusResponse =
         get("sessions/$sessionReferenceNumber/invoices/$invoiceReferenceNumber", accessToken)
+
+    suspend fun downloadInvoiceByKsefNumber(ksefNumber: String, accessToken: String): ByteArray {
+        val response = httpClient.get("${baseUrl}invoices/ksef/${encodeKsefNumber(ksefNumber)}") {
+            header("Authorization", "Bearer $accessToken")
+            accept(ContentType.Application.Xml)
+        }
+        if (!response.status.isSuccess()) {
+            val body = runCatching { response.bodyAsText() }.getOrDefault("")
+            throw KsefException(
+                "KSeF API error: ${response.status} - $body",
+                statusCode = response.status.value,
+            )
+        }
+        return response.body()
+    }
+
+    private fun encodeKsefNumber(ksefNumber: String): String =
+        java.net.URLEncoder.encode(ksefNumber.trim(), StandardCharsets.UTF_8)
+            .replace("+", "%20")
 
     private suspend inline fun <reified T> get(path: String, bearerToken: String? = null): T {
         val response = httpClient.get(baseUrl + path) {

@@ -4,7 +4,11 @@ import com.kontenery.KsefConfig
 import com.kontenery.ksef.KsefTokenDiagnostics
 import com.kontenery.data.invoice.Invoice
 import com.kontenery.ksef.crypto.KsefTokenEncryptor
+import com.kontenery.ksef.dto.KsefDownloadInvoiceResponse
+import com.kontenery.ksef.dto.KsefDownloadInvoicesMonthResponse
+import com.kontenery.ksef.dto.KsefDownloadedInvoice
 import com.kontenery.ksef.dto.KsefInvoiceListResponse
+import com.kontenery.ksef.dto.KsefInvoiceMetadata
 import com.kontenery.ksef.dto.KsefInvoiceQueryDateRange
 import com.kontenery.ksef.dto.KsefInvoiceQueryFilters
 import com.kontenery.ksef.dto.KsefLoginResponse
@@ -22,8 +26,10 @@ import kotlinx.coroutines.delay
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 
 class KsefServiceImpl(
     private val config: KsefConfig,
@@ -77,6 +83,74 @@ class KsefServiceImpl(
             hasMore = response.hasMore ?: false,
             pageOffset = pageOffset,
             pageSize = pageSize,
+        )
+    }
+
+    override suspend fun downloadInvoiceFromKsef(
+        ksefNumber: String?,
+        invoiceNumber: String?,
+        subjectType: String,
+    ): KsefDownloadInvoiceResponse {
+        val ksef = ksefNumber?.trim()?.takeIf { it.isNotEmpty() }
+        val invoiceNo = invoiceNumber?.trim()?.takeIf { it.isNotEmpty() }
+        require(ksef != null || invoiceNo != null) {
+            "Provide ksefNumber or invoiceNumber"
+        }
+
+        val accessToken = obtainAccessToken()
+        val resolvedKsef = ksef ?: resolveKsefNumberByInvoiceNumber(accessToken, invoiceNo!!, subjectType)
+        val xml = downloadInvoiceXml(accessToken, resolvedKsef)
+        val metadata = findInvoiceMetadata(accessToken, resolvedKsef, invoiceNo, subjectType)
+
+        return KsefDownloadInvoiceResponse(
+            ksefNumber = resolvedKsef,
+            invoiceNumber = metadata?.invoiceNumber ?: invoiceNo,
+            xml = xml,
+        )
+    }
+
+    override suspend fun downloadInvoicesForMonthFromKsef(
+        year: Int,
+        month: Int,
+        subjectType: String,
+    ): KsefDownloadInvoicesMonthResponse {
+        require(month in 1..12) { "month must be between 1 and 12" }
+        require(year in 2000..2100) { "year out of supported range" }
+
+        val accessToken = obtainAccessToken()
+        val dateRange = monthInvoicingDateRange(year, month)
+        val metadataList = fetchAllInvoiceMetadata(
+            accessToken = accessToken,
+            filters = KsefInvoiceQueryFilters(
+                subjectType = subjectType,
+                dateRange = dateRange,
+            ),
+        )
+
+        val downloaded = mutableListOf<KsefDownloadedInvoice>()
+        var skipped = 0
+        for (metadata in metadataList) {
+            val ksef = metadata.ksefNumber?.trim()?.takeIf { it.isNotEmpty() }
+            if (ksef == null) {
+                skipped++
+                continue
+            }
+            val xml = downloadInvoiceXml(accessToken, ksef)
+            downloaded.add(
+                KsefDownloadedInvoice(
+                    ksefNumber = ksef,
+                    invoiceNumber = metadata.invoiceNumber,
+                    xml = xml,
+                ),
+            )
+        }
+
+        return KsefDownloadInvoicesMonthResponse(
+            year = year,
+            month = month,
+            downloadedCount = downloaded.size,
+            invoices = downloaded,
+            skippedWithoutKsefNumber = skipped,
         )
     }
 
@@ -272,7 +346,95 @@ class KsefServiceImpl(
         )
     }
 
+    private suspend fun resolveKsefNumberByInvoiceNumber(
+        accessToken: String,
+        invoiceNumber: String,
+        subjectType: String,
+    ): String {
+        val matches = fetchAllInvoiceMetadata(
+            accessToken = accessToken,
+            filters = KsefInvoiceQueryFilters(
+                subjectType = subjectType,
+                dateRange = buildDateRange(from = null, to = null),
+                invoiceNumber = invoiceNumber,
+            ),
+        )
+        val ksef = matches.firstOrNull { it.invoiceNumber == invoiceNumber }?.ksefNumber
+            ?: matches.firstOrNull()?.ksefNumber
+        return ksef?.trim()?.takeIf { it.isNotEmpty() }
+            ?: throw KsefException("Invoice not found in KSeF: $invoiceNumber", statusCode = 404)
+    }
+
+    private suspend fun findInvoiceMetadata(
+        accessToken: String,
+        ksefNumber: String,
+        invoiceNumber: String?,
+        subjectType: String,
+    ): KsefInvoiceMetadata? {
+        val byKsef = fetchAllInvoiceMetadata(
+            accessToken = accessToken,
+            filters = KsefInvoiceQueryFilters(
+                subjectType = subjectType,
+                dateRange = buildDateRange(from = null, to = null),
+                ksefNumber = ksefNumber,
+            ),
+        )
+        return byKsef.firstOrNull { it.ksefNumber == ksefNumber }
+            ?: invoiceNumber?.let { number ->
+                fetchAllInvoiceMetadata(
+                    accessToken = accessToken,
+                    filters = KsefInvoiceQueryFilters(
+                        subjectType = subjectType,
+                        dateRange = buildDateRange(from = null, to = null),
+                        invoiceNumber = number,
+                    ),
+                ).firstOrNull { it.ksefNumber == ksefNumber }
+            }
+    }
+
+    private suspend fun fetchAllInvoiceMetadata(
+        accessToken: String,
+        filters: KsefInvoiceQueryFilters,
+    ): List<KsefInvoiceMetadata> {
+        val result = mutableListOf<KsefInvoiceMetadata>()
+        var pageOffset = 0
+        do {
+            val page = repository.queryInvoices(
+                accessToken = accessToken,
+                pageOffset = pageOffset,
+                pageSize = METADATA_PAGE_SIZE,
+                sortOrder = "Asc",
+                filters = filters,
+            )
+            result.addAll(page.invoices)
+            if (page.hasMore != true) {
+                break
+            }
+            pageOffset += METADATA_PAGE_SIZE
+        } while (true)
+        return result
+    }
+
+    private suspend fun downloadInvoiceXml(accessToken: String, ksefNumber: String): String {
+        val bytes = repository.downloadInvoiceByKsefNumber(accessToken, ksefNumber)
+        return bytes.toString(StandardCharsets.UTF_8)
+    }
+
+    private fun monthInvoicingDateRange(year: Int, month: Int): KsefInvoiceQueryDateRange {
+        val firstDay = LocalDate(year, month, 1)
+        val lastDay = firstDay.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
+        return KsefInvoiceQueryDateRange(
+            dateType = "Invoicing",
+            from = "${formatDate(firstDay)}T00:00:00Z",
+            to = "${formatDate(lastDay)}T23:59:59Z",
+        )
+    }
+
+    private fun formatDate(date: LocalDate): String =
+        "${date.year}-${date.monthNumber.toString().padStart(2, '0')}-${date.dayOfMonth.toString().padStart(2, '0')}"
+
     companion object {
+        private const val METADATA_PAGE_SIZE = 250
         private const val AUTH_SUCCESS_CODE = 200
         private val AUTH_PENDING_CODES = setOf(100, 150)
         private const val AUTH_POLL_MAX_ATTEMPTS = 30

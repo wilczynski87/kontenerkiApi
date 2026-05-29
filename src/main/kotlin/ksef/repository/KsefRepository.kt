@@ -45,4 +45,5 @@ interface KsefRepository {
         sessionReferenceNumber: String,
         invoiceReferenceNumber: String,
     ): KsefSessionInvoiceStatusResponse
+    suspend fun downloadInvoiceByKsefNumber(accessToken: String, ksefNumber: String): ByteArray
 }
