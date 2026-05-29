@@ -42,6 +42,11 @@ data class KsefSignatureResponse(
 data class KsefStatusInfo(
     val code: Int,
     val description: String? = null,
+    /**
+     * Additional status details returned by KSeF (often contains the exact semantic rule violation).
+     * Kept as raw text because the shape varies between endpoints/versions.
+     */
+    val details: String? = null,
 )
 
 @Serializable
