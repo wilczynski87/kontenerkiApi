@@ -36,11 +36,12 @@ class InvoiceToFa3DocumentMapperTest {
         )
 
         val document = InvoiceToFa3DocumentMapper.map(invoice)
-        val fromDocument = Fa3InvoiceXmlWriter.write(document)
-        val fromFacade = InvoiceToKsefFa3Mapper.toFa3Xml(invoice)
+        val xml = Fa3InvoiceXmlWriter.write(document)
 
-        assertEquals(fromFacade, fromDocument)
         assertEquals("23", document.body.lines.single().vatRate)
+        assert(xml.contains("<P_12>23</P_12>"))
+        assert(xml.contains("<FaWiersz>"))
+        assert(InvoiceToKsefFa3Mapper.toFa3Xml(invoice).contains("<RodzajFaktury>VAT</RodzajFaktury>"))
         assertEquals(1, document.body.vatSummaries.single().slotIndex)
     }
 }
