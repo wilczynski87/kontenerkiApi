@@ -2,6 +2,7 @@ package com.kontenery.controller
 
 import com.kontenery.data.Client
 import com.kontenery.data.invoice.Invoice
+import com.kontenery.data.invoice.InvoiceSend
 import com.kontenery.data.utils.endOfCurrentMonth
 import com.kontenery.data.utils.errors.ErrorMessage
 import com.kontenery.data.utils.errors.InvoiceErrorMessage
@@ -23,7 +24,6 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.datetime.LocalDate
-import kotlinx.serialization.json.Json
 
 fun Route.invoiceRoutes(
     invoiceService: InvoiceService,
@@ -149,9 +149,10 @@ fun Route.invoiceRoutes(
                     saveInvoiceWithOptionalKsef(invoice, invoiceService, ksefService, errorList)
                 }
 
-                savedInvoices.forEach { savedInvoice ->
-                    printService.sendPeriodicInvoice(savedInvoice)
-                }
+                savedInvoices.filter { it.vatApply.not() }
+                    .forEach { savedInvoice ->
+                        printService.sendPeriodicInvoice(savedInvoice)
+                    }
 
                 call.respond(errorList)
             } catch (e:Exception) {
@@ -181,7 +182,7 @@ fun Route.invoiceRoutes(
                 } catch (e: Exception) {
                     return@post call.respond(
                         HttpStatusCode.BadRequest,
-                        ApiErrorResponse("Invalid invoice body"),
+                        ApiErrorResponse("Invalid invoice body, $e"),
                     )
                 }
 
@@ -258,11 +259,19 @@ fun Route.invoiceRoutes(
                     ?: throw IllegalStateException("Can not find Invoice with given ID: $invoiceNumber")
 //                println("sendInvoiceAgain: $invoice")
 
-                val invoiceSend = printService.sendInvoiceAgain(invoice)
+                val sendInvoice = saveInvoiceWithOptionalKsef(invoice, invoiceService, ksefService, mutableListOf<ErrorMessage>())
+
+                val invoiceSend = if(sendInvoice?.vatApply ?: false) printService.sendInvoiceAgain(invoice)
+                else InvoiceSend(
+                    sendInvoice?.invoiceNumber,
+                    sendInvoice?.customer?.name,
+                    invoice.invoiceDate,
+                    LocalDate.now()
+                )
 
                 call.respond(invoiceSend)
             } catch (e: Exception) {
-                call.respond(HttpStatusCode.Conflict, ApiErrorResponse("Failed to resend invoice"))
+                call.respond(HttpStatusCode.Conflict, ApiErrorResponse("Failed to resend invoice: $e"))
             }
         }
     }
@@ -278,7 +287,9 @@ private suspend fun saveInvoiceWithOptionalKsef(
     var ksefResponse: KsefSendInvoiceResponse? = null
     val toSave = if (createdInvoice.vatApply) {
         try {
-            ksefService.sendInvoiceToKsef(createdInvoice).also { ksefResponse = it }
+            val response = ksefService.sendInvoiceToKsef(createdInvoice).also { ksefResponse = it }
+            println("ksefResponse initila send: $response")
+            response
         } catch (e: KsefException) {
             if (errorList != null) {
                 errorList.add(
@@ -306,5 +317,7 @@ private suspend fun saveInvoiceWithOptionalKsef(
     ksefResponse?.sessionStatus?.let { status ->
         saved.invoiceNumber?.let { ksefService.persistSessionStatus(it, status) }
     }
+    println("ksefResponse: $ksefResponse")
+    println("saved: $saved")
     return saved
 }
