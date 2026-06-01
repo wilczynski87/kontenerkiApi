@@ -53,10 +53,10 @@ fun Application.configureRouting(
             bankAccountController(bankAccountService, bankAccountValidator)
             listingRoute(listingService)
             utilitiesController(utilitiesService, clientService)
-            ksefRoutes(ksefService)
         }
         mailSendConfirmation(invoiceService)
         authController(authService)
         bramaController()
+        ksefRoutes(ksefService)
     }
 }

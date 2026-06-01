@@ -71,6 +71,7 @@ jobs:
           VALIDITY_REFRESH_MS=${{ vars.VALIDITY_REFRESH_MS }}
           KSEF_API_SUFFIX=${{ vars.KSEF_API_SUFFIX }}
           KSEF_BASE_URL=${{ vars.KSEF_BASE_URL }}
+          KSEF_ENV=${{ vars.KSEF_ENV }}
           EOF"
 
       - name: Build and deploy

@@ -1,9 +1,10 @@
-package com.kontenery
-
+import com.kontenery.KSEF_DEV_DEFAULT_NIP
+import com.kontenery.resolveKsefConfig
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.nio.file.Files
 
 class KsefConfigResolutionTest {
 
@@ -56,7 +57,7 @@ class KsefConfigResolutionTest {
 
     @Test
     fun `KSEF_TOKEN_FILE is read when KSEF_TOKEN unset`() {
-        val tokenFile = java.nio.file.Files.createTempFile("ksef-token", ".txt").toFile()
+        val tokenFile = Files.createTempFile("ksef-token", ".txt").toFile()
         tokenFile.writeText("  token-from-file  ")
         try {
             val config = resolveKsefConfig(
