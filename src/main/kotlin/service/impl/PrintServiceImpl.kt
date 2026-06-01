@@ -15,9 +15,11 @@ import java.rmi.ServerException
 
 private val logger = LoggerFactory.getLogger("PrintServiceImpl")
 
-class PrintServiceImpl(emailName: String, emailPort: String): PrintService {
-
-    val client = HttpClient()
+class PrintServiceImpl(
+    emailName: String,
+    emailPort: String,
+    private val client: HttpClient = HttpClient(),
+) : PrintService {
     private val emailContainerAddress = "http://$emailName:$emailPort/sendMailWithAttachment/withVat"
     private val printInvoicesAddress = "http://$emailName:$emailPort/printInvoices"
     private val sendInvoiceAgain = "http://$emailName:$emailPort/sendMailWithAttachment/sendInvoiceAgain"

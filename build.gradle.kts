@@ -60,6 +60,7 @@ dependencies {
     //Test
     implementation(libs.io.mockk)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.ktor.client.mock)
 
 }
 

@@ -1,11 +1,16 @@
 package com.kontenery.ksef.service
 
 import com.kontenery.KsefConfig
+import com.kontenery.ksef.crypto.KsefEncryptionData
 import com.kontenery.ksef.dto.KsefAuthOperationStatusResponse
 import com.kontenery.ksef.dto.KsefAuthStatusResponse
+import com.kontenery.ksef.dto.KsefEncryptionInfo
 import com.kontenery.ksef.dto.KsefInvoiceMetadata
+import com.kontenery.ksef.dto.KsefOpenOnlineSessionResponse
 import com.kontenery.ksef.dto.KsefPublicKeyCertificate
 import com.kontenery.ksef.dto.KsefQueryInvoiceMetadataResponse
+import com.kontenery.ksef.dto.KsefSendInvoiceOnlineResponse
+import com.kontenery.ksef.dto.KsefSessionInvoiceStatusResponse
 import com.kontenery.ksef.dto.KsefSignatureResponse
 import com.kontenery.ksef.dto.KsefStatusInfo
 import com.kontenery.ksef.dto.KsefTokenInfo
@@ -14,7 +19,9 @@ import com.kontenery.ksef.repository.KsefRepository
 import com.kontenery.ksef.service.impl.KsefServiceImpl
 import com.kontenery.repository.KsefSessionInvoiceStatusRepo
 import com.kontenery.service.InvoiceService
+import com.kontenery.testfixtures.sampleVatInvoice
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -231,6 +238,80 @@ class KsefServiceImplTest {
     }
 
     @Test
+    fun `sendInvoiceToKsef completes session and returns ksef number`() = runBlocking {
+        val repository = mockk<KsefRepository>()
+        stubSendInvoiceSession(repository, ksefNumber = "KSeF-123")
+        val ksefSessionInvoiceStatusRepo = mockk<KsefSessionInvoiceStatusRepo>(relaxed = true)
+        val service = KsefServiceImpl(config, repository, mockk(), ksefSessionInvoiceStatusRepo)
+        val invoice = sampleVatInvoice()
+
+        val result = service.sendInvoiceToKsef(invoice)
+
+        assertEquals("sess-ref-1", result.sessionReferenceNumber)
+        assertEquals("inv-ref-1", result.invoiceReferenceNumber)
+        assertEquals("KSeF-123", result.ksefNumber)
+        assertEquals(invoice.invoiceNumber, result.invoiceNumber)
+        coVerify { repository.closeOnlineSession("access-token", "sess-ref-1") }
+        coVerify { ksefSessionInvoiceStatusRepo.save(invoice.invoiceNumber!!, any()) }
+    }
+
+    @Test
+    fun `sendInvoiceToKsefByNumber loads invoice and sends`() = runBlocking {
+        val repository = mockk<KsefRepository>()
+        stubSendInvoiceSession(repository)
+        val invoice = sampleVatInvoice()
+        val invoiceService = mockk<InvoiceService>()
+        coEvery { invoiceService.getInvoiceByNumber("FV/1/2025") } returns invoice
+        val service = KsefServiceImpl(config, repository, invoiceService, mockk(relaxed = true))
+
+        val result = service.sendInvoiceToKsefByNumber("FV/1/2025")
+
+        assertEquals("KSeF-123", result.ksefNumber)
+    }
+
+    @Test
+    fun `sendInvoiceToKsef fails when KSeF returns processing error`() {
+        val repository = mockk<KsefRepository>()
+        stubAuthenticatedRepository(repository)
+        stubSendInvoiceSession(repository, processingStatusCode = 450, processingDescription = "Invalid FA")
+        val service = KsefServiceImpl(config, repository, mockk(), mockk(relaxed = true))
+
+        val ex = assertThrows(KsefException::class.java) {
+            runBlocking { service.sendInvoiceToKsef(sampleVatInvoice()) }
+        }
+        assertTrue(ex.message!!.contains("450"))
+    }
+
+    @Test
+    fun `sendInvoiceToKsef rejects invoice without invoice number`() {
+        val repository = mockk<KsefRepository>()
+        val service = KsefServiceImpl(config, repository, mockk(), mockk(relaxed = true))
+
+        assertThrows(IllegalArgumentException::class.java) {
+            runBlocking { service.sendInvoiceToKsef(sampleVatInvoice().copy(invoiceNumber = null)) }
+        }
+    }
+
+    @Test
+    fun `sendInvoiceToKsef returns deferred session status when persistence fails`() = runBlocking {
+        val repository = mockk<KsefRepository>()
+        val sessionStatus = KsefSessionInvoiceStatusResponse(
+            ksefNumber = "KSeF-456",
+            invoiceNumber = "FV/1/2025",
+            status = KsefStatusInfo(code = 200, description = "OK"),
+        )
+        stubSendInvoiceSession(repository, ksefNumber = "KSeF-456", sessionStatus = sessionStatus)
+        val ksefSessionInvoiceStatusRepo = mockk<KsefSessionInvoiceStatusRepo>()
+        coEvery { ksefSessionInvoiceStatusRepo.save(any(), any()) } throws RuntimeException("db unavailable")
+        val service = KsefServiceImpl(config, repository, mockk(), ksefSessionInvoiceStatusRepo)
+
+        val result = service.sendInvoiceToKsef(sampleVatInvoice())
+
+        assertEquals("KSeF-456", result.ksefNumber)
+        assertEquals(sessionStatus, result.sessionStatus)
+    }
+
+    @Test
     fun `login fails when token is missing`() {
         val service = KsefServiceImpl(
             config.copy(token = null),
@@ -242,6 +323,47 @@ class KsefServiceImplTest {
         assertThrows(KsefException::class.java) {
             runBlocking { service.login() }
         }
+    }
+
+    private fun stubSendInvoiceSession(
+        repository: KsefRepository,
+        ksefNumber: String = "KSeF-123",
+        invoiceRef: String = "inv-ref-1",
+        sessionRef: String = "sess-ref-1",
+        processingStatusCode: Int? = null,
+        processingDescription: String = "OK",
+        sessionStatus: KsefSessionInvoiceStatusResponse? = null,
+    ) {
+        stubAuthenticatedRepository(repository)
+        val encryptionData = KsefEncryptionData(
+            cipherKey = ByteArray(32),
+            cipherIv = ByteArray(16),
+            encryptionInfo = KsefEncryptionInfo(
+                encryptedSymmetricKey = "encrypted-key",
+                initializationVector = "iv",
+            ),
+        )
+        coEvery { repository.createEncryptionData() } returns encryptionData
+        coEvery { repository.openOnlineSession(any(), any()) } returns KsefOpenOnlineSessionResponse(
+            referenceNumber = sessionRef,
+        )
+        coEvery { repository.sendInvoiceToSession(any(), any(), any(), any()) } returns KsefSendInvoiceOnlineResponse(
+            referenceNumber = invoiceRef,
+        )
+        val resolvedStatus = sessionStatus ?: KsefSessionInvoiceStatusResponse(
+            referenceNumber = invoiceRef,
+            invoiceNumber = "FV/1/2025",
+            ksefNumber = if (processingStatusCode == null) ksefNumber else null,
+            status = KsefStatusInfo(
+                code = processingStatusCode ?: 200,
+                description = processingDescription,
+            ),
+            permanentStorageDate = if (processingStatusCode == null) "2025-05-15T10:00:00Z" else null,
+        )
+        coEvery {
+            repository.fetchSessionInvoiceStatus("access-token", sessionRef, invoiceRef)
+        } returns resolvedStatus
+        coEvery { repository.closeOnlineSession(any(), any()) } returns Unit
     }
 
     private fun stubAuthenticatedRepository(repository: KsefRepository) {
