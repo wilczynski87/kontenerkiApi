@@ -7,17 +7,21 @@ import com.kontenery.ksef.dto.KsefStatusInfo
 import com.kontenery.ksef.exception.KsefException
 import com.kontenery.ksef.service.KsefService
 import com.kontenery.service.InvoiceService
+import com.kontenery.data.utils.now
 import com.kontenery.testfixtures.sampleNonVatInvoice
 import com.kontenery.testfixtures.sampleVatInvoice
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.LocalDate
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 
 class InvoiceSendSupportTest {
 
@@ -35,13 +39,18 @@ class InvoiceSendSupportTest {
     }
 
     @Test
-    fun `VAT invoice sends to KSeF then saves with ksef number`() = runBlocking {
+    fun `VAT invoice sends to KSeF then saves with ksef number and send date from permanent storage`() = runBlocking {
         val invoice = sampleVatInvoice()
-        val invoiceWithKsef = invoice.copy(ksefNumber = "KSeF-99")
+        val expectedSendDate = LocalDate(2025, 5, 15)
+        val invoiceWithKsef = invoice.copy(
+            ksefNumber = "KSeF-99",
+            invoiceSendToClient = expectedSendDate,
+        )
         val sessionStatus = KsefSessionInvoiceStatusResponse(
             ksefNumber = "KSeF-99",
             invoiceNumber = invoice.invoiceNumber,
             status = KsefStatusInfo(code = 200, description = "OK"),
+            permanentStorageDate = "2025-05-15T10:01:00Z",
         )
         val invoiceService = mockk<InvoiceService>()
         val ksefService = mockk<KsefService>()
@@ -60,7 +69,53 @@ class InvoiceSendSupportTest {
         val saved = saveInvoiceWithOptionalKsef(invoice, invoiceService, ksefService, mutableListOf())
 
         assertEquals("KSeF-99", saved?.ksefNumber)
+        assertEquals(expectedSendDate, saved?.invoiceSendToClient)
         coVerify { ksefService.persistSessionStatus(invoice.invoiceNumber!!, sessionStatus) }
+    }
+
+    @Test
+    fun `VAT invoice uses today as send date when KSeF has no permanent storage date`() = runBlocking {
+        val invoice = sampleVatInvoice()
+        val today = LocalDate.now()
+        val invoiceWithKsef = invoice.copy(
+            ksefNumber = "KSeF-99",
+            invoiceSendToClient = today,
+        )
+        val sessionStatus = KsefSessionInvoiceStatusResponse(
+            ksefNumber = "KSeF-99",
+            invoiceNumber = invoice.invoiceNumber,
+            status = KsefStatusInfo(code = 200, description = "OK"),
+            permanentStorageDate = null,
+        )
+        val invoiceService = mockk<InvoiceService>()
+        val ksefService = mockk<KsefService>()
+        coEvery { ksefService.persistSessionStatus(any(), any()) } returns Unit
+        coEvery { ksefService.sendInvoiceToKsef(invoice) } returns KsefSendInvoiceResponse(
+            sessionReferenceNumber = "sess-1",
+            invoiceReferenceNumber = "inv-ref-1",
+            ksefNumber = "KSeF-99",
+            invoiceNumber = invoice.invoiceNumber,
+            sessionStatus = sessionStatus,
+        )
+        coEvery {
+            invoiceService.saveInvoiceWithErrors(true, invoiceWithKsef, any())
+        } returns invoiceWithKsef
+
+        val saved = saveInvoiceWithOptionalKsef(invoice, invoiceService, ksefService, mutableListOf())
+
+        assertEquals(today, saved?.invoiceSendToClient)
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "2025-05-15T10:01:00Z, 2025-05-15",
+        "2025-12-31, 2025-12-31",
+    )
+    fun `parseKsefPermanentStorageDate extracts local date from KSeF timestamp`(
+        ksefDate: String,
+        expected: String,
+    ) {
+        assertEquals(LocalDate.parse(expected), parseKsefPermanentStorageDate(ksefDate))
     }
 
     @Test
