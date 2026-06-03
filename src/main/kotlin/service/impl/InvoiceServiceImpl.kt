@@ -211,7 +211,7 @@ class InvoiceServiceImpl(
         return contracts
             .filter { it.product != null && it.netPrice != null }
             .map { it.netPrice!!.multiply(it.vatRate.divide(BigDecimal(100),2, RoundingMode.HALF_UP)) }
-            .reduce {sum, price -> sum!!.plus(price!!) }
+            .reduce {sum, price -> sum!!.plus(price) }
             .setScale(2, RoundingMode.HALF_UP)
             .toPlainString()
     }
@@ -219,7 +219,7 @@ class InvoiceServiceImpl(
         return constracts
             .filter { it.product != null && it.netPrice != null }
             .map { it.netPrice!!.multiply((it.vatRate.plus(BigDecimal(100))).divide(BigDecimal(100),2, RoundingMode.HALF_UP)) }
-            .reduce {sum, price -> sum!!.plus(price!!) }
+            .reduce {sum, price -> sum!!.plus(price) }
             .setScale(2, RoundingMode.HALF_UP)
             .toPlainString()
     }
@@ -228,7 +228,7 @@ class InvoiceServiceImpl(
         val period = period ?: LocalDate.now()
         val validator = ObjectValidators(errorList)
 
-        println("createPeriodicInvoiceForClient: ${client.getName()}")
+        println("createPeriodicInvoiceForClient (but not save yet): ${client.getName()}")
 
         if(validator.validateClient(client)) return null
         val clientId: Long = client.id!!

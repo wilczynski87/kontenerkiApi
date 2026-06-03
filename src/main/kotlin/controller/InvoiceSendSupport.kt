@@ -7,7 +7,9 @@ import com.kontenery.ksef.dto.KsefSendInvoiceResponse
 import com.kontenery.ksef.exception.KsefErrorMessages
 import com.kontenery.ksef.exception.KsefException
 import com.kontenery.ksef.service.KsefService
+import com.kontenery.library.utils.now
 import com.kontenery.service.InvoiceService
+import kotlinx.datetime.LocalDate
 
 internal suspend fun saveInvoiceWithOptionalKsef(
     createdInvoice: Invoice,
@@ -18,7 +20,7 @@ internal suspend fun saveInvoiceWithOptionalKsef(
     var ksefResponse: KsefSendInvoiceResponse? = null
     val toSave = if (createdInvoice.vatApply) {
         try {
-            val response = ksefService.sendInvoiceToKsef(createdInvoice).also { ksefResponse = it }
+            val response:KsefSendInvoiceResponse = ksefService.sendInvoiceToKsef(createdInvoice).also { ksefResponse = it }
             println("ksefResponse initila send: $response")
             response
         } catch (e: KsefException) {
@@ -34,7 +36,11 @@ internal suspend fun saveInvoiceWithOptionalKsef(
                 return null
             }
             throw e
-        }.let { createdInvoice.copy(ksefNumber = it.ksefNumber) }
+        }.let { createdInvoice.copy(
+                ksefNumber = it.ksefNumber,
+                invoiceSendToClient = LocalDate.parse(it.sessionStatus?.permanentStorageDate ?: LocalDate.now().toString())
+            )
+        }
     } else {
         createdInvoice
     }
