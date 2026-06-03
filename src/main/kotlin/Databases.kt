@@ -49,6 +49,7 @@ fun configureDatabases(apiConfig: ApiConfig) {
     val url = "jdbc:postgresql://$dbHost:$dbPort/$dbName"
     println("Connecting to: $url")
 
+    ensureKsefSchemaIfNeeded(apiConfig)
     repairInvoiceForeignKeysIfNeeded(apiConfig)
 
     val connection = {

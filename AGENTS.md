@@ -45,6 +45,8 @@ API: `http://localhost:8100`. Database from the host: `localhost:${DB_PORT}` (de
 
 When `API_ENV=DEV`, the app auto-creates database tables on startup via `SchemaUtils.createMissingTablesAndColumns`. Set `DB_AUTO_MIGRATE=false` to skip this after importing a SQL dump (see below).
 
+On every startup (including PROD), the API ensures KSeF schema objects exist: `invoice.ksef_number` and table `ksef_session_invoice_status` (see `KsefSchemaMigration.kt`). Disable with `DB_KSEF_SCHEMA_MIGRATE=false`.
+
 ### Restoring a PostgreSQL dump
 
 Import into a **fresh** `db1` (avoids duplicate tables / broken migrations):
