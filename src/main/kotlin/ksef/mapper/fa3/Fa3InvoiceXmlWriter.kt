@@ -18,6 +18,7 @@ object Fa3InvoiceXmlWriter {
         appendParty("Podmiot1", document.seller)
         appendBuyer(document.buyer)
         appendFa(document.body)
+        appendStopaka()
         appendLine("</Faktura>")
     }
 
@@ -138,6 +139,8 @@ object Fa3InvoiceXmlWriter {
         payment.bankAccountDigits?.let { digits ->
             appendLine("            <RachunekBankowy>")
             appendLine("                <NrRB>$digits</NrRB>")
+            appendLine("                <NazwaBanku>${payment.bankName}</NazwaBanku>")
+            appendLine("                <OpisRachunku>${payment.currency}</OpisRachunku>")
             appendLine("            </RachunekBankowy>")
         }
         appendLine("        </Platnosc>")
@@ -145,6 +148,18 @@ object Fa3InvoiceXmlWriter {
 
     private fun formatDate(date: kotlinx.datetime.LocalDate): String =
         "${date.year}-${date.monthNumber.toString().padStart(2, '0')}-${date.dayOfMonth.toString().padStart(2, '0')}"
+
+    private fun StringBuilder.appendStopaka() {
+        appendLine("<Stopka>")
+            appendLine("<Informacje>")
+                appendLine("<StopkaFaktury>Kapiał zakładowy 250 000</StopkaFaktury>")
+            appendLine("</Informacje>")
+            appendLine("<Rejestry>")
+                appendLine("<KRS>0001220381</KRS>")
+                appendLine("<REGON>54386761000000</REGON>")
+            appendLine("</Rejestry>")
+        appendLine("</Stopka>")
+    }
 
     private fun escapeXml(value: String): String = value
         .replace("&", "&amp;")

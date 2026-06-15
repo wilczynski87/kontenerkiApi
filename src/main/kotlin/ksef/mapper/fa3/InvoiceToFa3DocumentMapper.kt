@@ -57,6 +57,9 @@ object InvoiceToFa3DocumentMapper {
                         .takeIf { it.isNotBlank() }
                         ?.filter { it.isDigit() }
                         ?.takeIf { it.isNotEmpty() },
+                    bankName = seller.bankName,
+                    swiftCode = null,
+                    currency = Fa3Constants.CURRENCY_PLN,
                 ),
             ),
         )

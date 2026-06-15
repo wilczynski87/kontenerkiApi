@@ -99,101 +99,6 @@ class InvoiceServiceImpl(
         }
     }
 
-    /*
-    TO DO:
-    - funkcja licząca invoice nie tylko za bierzący okres
-     */
-//    override suspend fun createPeriodicInvoiceForClient(clientId: Long, period: LocalDate, invoiceTitle: String?): Invoice {
-////         println("in createPeriodicInvoiceForClient: clientId: $clientId, period: $period, invoiceTitle: $invoiceTitle")
-//        // find client
-//        val client: Client = clientService.findClientById(clientId)
-//            ?: throw NullPointerException("There is no client, with given Id: $clientId")
-//        // check if client is active - else throw exception
-//        if(client.isActive == false) {
-//            log.error("Client is no longer ACTIVE, id: $clientId")
-//            throw NullPointerException("Client is no longer ACTIVE, id: $clientId")
-//        }
-//
-//        // find active contract, for given period
-//        val contracts: List<Contract> =
-//            contractService.getByClientId(clientId, LocalDate.startOfCurrentMonth(period), LocalDate.endOfCurrentMonth(period))
-//
-//        // Do not create invoice if no Contract
-//        if(contracts.isEmpty()) {
-//            log.info("No contracts for given client, id: $clientId")
-//            throw NullPointerException("No contracts for given client, id: $clientId")
-//        }
-//
-//        // set Invoice date
-//        val invoiceDate: LocalDate = LocalDate.now()
-//        // set Account
-//        val addTax: Boolean = client.needInvoice()
-//
-//        // create list of positions for invoice, from contracts
-//        val positions:List<Position> = contracts
-//            .map { Position.toPosition(it) }
-//
-//        // Create Invoice or Bill
-////        println("before creating bill:")
-//        val savedBill: Invoice = if(addTax) {
-//            val currentInvoiceNumber: String = createInvoiceNumber()
-//            // create invoice
-//            val inv = Invoice(
-//                invoiceNumber = currentInvoiceNumber,
-//                invoiceTitle = setInvoiceTitle(invoiceTitle, client.invoiceTitle),
-//                invoiceDate = invoiceDate,
-//                seller = Subject.Seller.company(currentInvoiceNumber),
-//                customer = Subject.Customer.toCustomer(client, currentInvoiceNumber),
-//                products = positions,
-//                vatAmountSum = vatAmountSumCalculate(contracts),
-//                priceSum = priceSumCalculate(contracts),
-//                priceWithVatSum = grossPrice(contracts),
-//                paymentDay = invoiceDate.plus(14, DateTimeUnit.DAY),
-//                mainAccount = "50 1950 0001 2006 0023 6241 0001",
-//                invoiceSendToClient = null,
-//                vatApply = true,
-//                type = InvoiceType.PERIODIC.name
-//            )
-////            println("invoice: $inv")
-//            invoiceRepo.saveInvoice(inv) ?: throw NullPointerException("Can not create invoice: $inv")
-//        } else {
-//            val currentBillNumber: String = createBillNumber()
-//            val finalPrice: String = priceSumCalculate(contracts)
-//            // create invoice
-//            val bill = Invoice(
-//                invoiceNumber = currentBillNumber,
-//                invoiceTitle = setInvoiceTitle(invoiceTitle, client.invoiceTitle),
-//                invoiceDate = invoiceDate,
-//                seller = Subject.Seller.personal(currentBillNumber),
-//                customer = Subject.Customer.toCustomer(client, currentBillNumber),
-//                products = positions,
-//                vatAmountSum = "-",
-//                priceSum = finalPrice,
-//                priceWithVatSum = finalPrice,
-//                paymentDay = invoiceDate.plus(14, DateTimeUnit.DAY),
-//                mainAccount = "11 2490 1044 0000 4200 8845 2192",
-//                invoiceSendToClient = null,
-//                vatApply = false,
-//                type = InvoiceType.PERIODIC.name
-//            )
-////            println("bill: $bill")
-//            billRepo.saveBill(bill) ?: throw NullPointerException("Can not create bill: $bill")
-//        }
-////        println("return invoice/bill: $savedInvoice")
-//        return savedBill
-//    }
-
-//    private suspend fun createInvoiceNumber():String {
-//        return if(InvoiceCurrentNumber.invoiceNumber == null) {
-//            // fetching las invoice number (or set up 0)
-//            val invoiceNumberString = invoiceRepo.getLastInvoiceNumber() ?: InvoiceNumber(0).toInvoiceNumberString()
-//            // assigning invoice number to Object
-//            InvoiceCurrentNumber.invoiceNumber = InvoiceNumber.toInvoiceNumber(invoiceNumberString)
-//            // adding 1 to number and returning String
-//            InvoiceCurrentNumber.addOne().toInvoiceNumberString()
-//        } else InvoiceCurrentNumber.addOne().toInvoiceNumberString()
-//    }
-
     private fun setInvoiceTitle(invoiceTitle:String? = null, clientInvoiceTitle:String? = null): String? {
         return if(invoiceTitle.isNullOrBlank() || invoiceTitle.trim().toLowerCasePreservingASCIIRules() == "null") {
             clientInvoiceTitle
@@ -321,7 +226,7 @@ class InvoiceServiceImpl(
             priceSum = priceSumCalculate(contracts),
             priceWithVatSum = grossPrice(contracts),
             paymentDay = invoiceDate!!.plus(14, DateTimeUnit.DAY),
-            mainAccount = "50 1950 0001 2006 0023 6241 0001",
+            mainAccount = Subject.Seller.company(currentInvoiceNumber).account,
             invoiceSendToClient = null,
             vatApply = true,
             type = InvoiceType.PERIODIC.name
@@ -349,7 +254,7 @@ class InvoiceServiceImpl(
             priceSum = finalPrice,
             priceWithVatSum = finalPrice,
             paymentDay = invoiceDate!!.plus(14, DateTimeUnit.DAY),
-            mainAccount = "11 2490 1044 0000 4200 8845 2192",
+            mainAccount = Subject.Seller.personal(currentBillNumber).account,
             invoiceSendToClient = null,
             vatApply = false,
             type = InvoiceType.PERIODIC.name

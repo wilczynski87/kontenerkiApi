@@ -76,4 +76,7 @@ data class Fa3Payment(
     val paymentDate: LocalDate?,
     val paymentForm: String,
     val bankAccountDigits: String?,
+    val bankName: String?,
+    val swiftCode: String?,
+    val currency: String?,
 )
