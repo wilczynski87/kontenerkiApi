@@ -258,15 +258,17 @@ fun Route.invoiceRoutes(
                     ?: throw IllegalStateException("Can not find Invoice with given ID: $invoiceNumber")
 //                println("sendInvoiceAgain: $invoice")
 
-                val sendInvoice = saveInvoiceWithOptionalKsef(invoice, invoiceService, ksefService, mutableListOf<ErrorMessage>())
-
-                val invoiceSend = if(sendInvoice?.vatApply ?: false) printService.sendInvoiceAgain(invoice)
-                else InvoiceSend(
-                    sendInvoice?.invoiceNumber,
-                    sendInvoice?.customer?.name,
-                    invoice.invoiceDate,
-                    LocalDate.now()
-                )
+                val invoiceSend: InvoiceSend = if(invoice.vatApply.not()) printService.sendInvoiceAgain(invoice)
+                    else {
+                        saveInvoiceWithOptionalKsef(invoice, invoiceService, ksefService, mutableListOf<ErrorMessage>())
+                            ?: throw IllegalStateException("Could not save Invoice/Bill")
+                         InvoiceSend(
+                             invoice.invoiceNumber,
+                            invoice.customer?.name,
+                            invoice.invoiceDate,
+                            LocalDate.now()
+                        )
+                    }
 
                 call.respond(invoiceSend)
             } catch (e: Exception) {
