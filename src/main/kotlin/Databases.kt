@@ -50,7 +50,7 @@ fun configureDatabases(apiConfig: ApiConfig) {
     println("Connecting to: $url")
 
     ensureKsefSchemaIfNeeded(apiConfig)
-    repairInvoiceForeignKeysIfNeeded(apiConfig)
+//    repairInvoiceForeignKeysIfNeeded(apiConfig)
 
     val connection = {
         DriverManager.getConnection(url, dbUser, dbPassword)
