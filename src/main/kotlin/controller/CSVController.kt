@@ -53,6 +53,7 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService, 
             }
         }
 
+        // TODO przenieść tworzenie obiektów do serwisu
         post("/Alior") {
             try {
                 println("POST CSV Alior")
@@ -98,7 +99,7 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService, 
                     errors.forEach { error ->
                         logger.info("payment error: ${error.title} - ${error.message}, client: ${error.payment?.fromClient?.getName()} ${error.payment?.date} ${error.payment?.amount}")
                     }
-
+                    paymentsRecogniseList.errors?.addAll(errors)
                 }
                 call.respond(paymentsRecogniseList)
             } catch (e: Exception) {

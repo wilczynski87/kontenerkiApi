@@ -104,6 +104,24 @@ class CSVServiceImplTest {
     }
 
     @Test
+    fun `should parse Alior CSV and return payments`() = runTest {
+        val csv = """
+            Historia operacji
+            Data transakcji;Data księgowania;Kontrahent;Adres;Tytuł;Kwota;Pole;Pole;Waluta;Rachunek źródłowy;Rachunek docelowy
+            15-04-2026;15-04-2026;KRUSZWIL MAREK;UL.SIENNA 9;18/4/2026;984,00;x;x;PLN;72114020040000320278657853;51187010452078108959440001
+        """.trimIndent()
+
+        val result = service.readCSVAlior(csv)
+
+        assertEquals(1, result.size)
+        val payment = result.single()
+        assertEquals(BigDecimal("984.00"), payment.amount)
+        assertEquals("72114020040000320278657853", payment.fromAccount)
+        assertEquals("18/4/2026", payment.title)
+        assertNull(payment.fromClient)
+    }
+
+    @Test
     fun `should return empty list when no data`() = runTest {
         val csv = """
             Numer rachunku: 51187010452078108959440001
