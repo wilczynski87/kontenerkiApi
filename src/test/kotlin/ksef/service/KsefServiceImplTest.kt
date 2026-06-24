@@ -6,6 +6,7 @@ import com.kontenery.ksef.dto.KsefAuthOperationStatusResponse
 import com.kontenery.ksef.dto.KsefAuthStatusResponse
 import com.kontenery.ksef.dto.KsefEncryptionInfo
 import com.kontenery.ksef.dto.KsefInvoiceMetadata
+import com.kontenery.ksef.dto.KsefInvoiceQueryFilters
 import com.kontenery.ksef.dto.KsefOpenOnlineSessionResponse
 import com.kontenery.ksef.dto.KsefPublicKeyCertificate
 import com.kontenery.ksef.dto.KsefQueryInvoiceMetadataResponse
@@ -23,6 +24,7 @@ import com.kontenery.testfixtures.sampleVatInvoice
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -183,6 +185,33 @@ class KsefServiceImplTest {
 
         assertEquals(false, result.registered)
         assertEquals(null, result.ksefNumber)
+    }
+
+    @Test
+    fun `isInvoiceRegisteredInKsef normalizes lowercase subjectType and uses invoice month date range`() = runBlocking {
+        val repository = mockk<KsefRepository>()
+        val filtersSlot = slot<KsefInvoiceQueryFilters>()
+        stubAuthenticatedRepository(repository)
+        coEvery {
+            repository.queryInvoices(any(), any(), any(), any(), capture(filtersSlot))
+        } returns KsefQueryInvoiceMetadataResponse(
+            invoices = listOf(
+                KsefInvoiceMetadata(
+                    ksefNumber = "KSeF-29",
+                    invoiceNumber = "29/6/2026",
+                ),
+            ),
+            hasMore = false,
+        )
+
+        val service = KsefServiceImpl(config, repository, mockk(), mockk(relaxed = true))
+        val result = service.isInvoiceRegisteredInKsef("29/6/2026", "subject1")
+
+        assertEquals(true, result.registered)
+        assertEquals("Subject1", filtersSlot.captured.subjectType)
+        assertEquals("29/6/2026", filtersSlot.captured.invoiceNumber)
+        assertEquals("2026-06-01T00:00:00Z", filtersSlot.captured.dateRange.from)
+        assertEquals("2026-06-30T23:59:59Z", filtersSlot.captured.dateRange.to)
     }
 
     @Test

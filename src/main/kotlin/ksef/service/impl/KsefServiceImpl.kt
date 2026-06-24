@@ -31,6 +31,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
+import kotlin.time.Duration.Companion.milliseconds
 
 class KsefServiceImpl(
     private val config: KsefConfig,
@@ -67,7 +68,7 @@ class KsefServiceImpl(
         val accessToken = obtainAccessToken()
         val dateRange = buildDateRange(from, to)
         val filters = KsefInvoiceQueryFilters(
-            subjectType = subjectType,
+            subjectType = normalizeSubjectType(subjectType),
             dateRange = dateRange,
         )
 
@@ -98,10 +99,11 @@ class KsefServiceImpl(
             "Provide ksefNumber or invoiceNumber"
         }
 
+        val normalizedSubjectType = normalizeSubjectType(subjectType)
         val accessToken = obtainAccessToken()
-        val resolvedKsef = ksef ?: resolveKsefNumberByInvoiceNumber(accessToken, invoiceNo!!, subjectType)
+        val resolvedKsef = ksef ?: resolveKsefNumberByInvoiceNumber(accessToken, invoiceNo!!, normalizedSubjectType)
         val xml = downloadInvoiceXml(accessToken, resolvedKsef)
-        val metadata = findInvoiceMetadata(accessToken, resolvedKsef, invoiceNo, subjectType)
+        val metadata = findInvoiceMetadata(accessToken, resolvedKsef, invoiceNo, normalizedSubjectType)
 
         return KsefDownloadInvoiceResponse(
             ksefNumber = resolvedKsef,
@@ -123,7 +125,7 @@ class KsefServiceImpl(
         val metadataList = fetchAllInvoiceMetadata(
             accessToken = accessToken,
             filters = KsefInvoiceQueryFilters(
-                subjectType = subjectType,
+                subjectType = normalizeSubjectType(subjectType),
                 dateRange = dateRange,
             ),
         )
@@ -163,7 +165,7 @@ class KsefServiceImpl(
         require(number.isNotEmpty()) { "invoiceNumber is required" }
 
         val accessToken = obtainAccessToken()
-        val metadata = findInvoiceMetadataByInvoiceNumber(accessToken, number, subjectType)
+        val metadata = findInvoiceMetadataByInvoiceNumber(accessToken, number, normalizeSubjectType(subjectType))
         val ksefNumber = metadata?.ksefNumber?.trim()?.takeIf { it.isNotEmpty() }
 
         return KsefInvoiceRegisteredResponse(
@@ -260,7 +262,7 @@ class KsefServiceImpl(
                 )
             }
             if (attempt < INVOICE_POLL_MAX_ATTEMPTS - 1) {
-                delay(INVOICE_POLL_INTERVAL_MS)
+                delay(INVOICE_POLL_INTERVAL_MS.milliseconds)
             }
         }
         throw KsefException("KSeF invoice processing timed out")
@@ -324,7 +326,7 @@ class KsefServiceImpl(
                 AUTH_SUCCESS_CODE -> return
                 in AUTH_PENDING_CODES -> {
                     if (attempt < AUTH_POLL_MAX_ATTEMPTS - 1) {
-                        delay(AUTH_POLL_INTERVAL_MS)
+                        delay(AUTH_POLL_INTERVAL_MS.milliseconds)
                     }
                 }
                 else -> throw KsefException(
@@ -358,7 +360,7 @@ class KsefServiceImpl(
     private fun buildDateRange(from: String?, to: String?): KsefInvoiceQueryDateRange {
         val now = Clock.System.now()
         val defaultTo = now.toString()
-        val defaultFrom = now.minus(365, DateTimeUnit.DAY, TimeZone.UTC).toString()
+        val defaultFrom = now.minus(MAX_QUERY_MONTHS, DateTimeUnit.MONTH, TimeZone.UTC).toString()
 
         return KsefInvoiceQueryDateRange(
             dateType = "Invoicing",
@@ -366,6 +368,27 @@ class KsefServiceImpl(
             to = to ?: defaultTo,
         )
     }
+
+    private fun dateRangeForInvoiceNumberLookup(invoiceNumber: String): KsefInvoiceQueryDateRange {
+        val parts = invoiceNumber.trim().split("/")
+        if (parts.size >= 3) {
+            val month = parts[parts.size - 2].toIntOrNull()
+            val year = parts.last().toIntOrNull()
+            if (month != null && year != null && month in 1..12) {
+                return monthInvoicingDateRange(year, month)
+            }
+        }
+        return buildDateRange(from = null, to = null)
+    }
+
+    private fun normalizeSubjectType(subjectType: String): String =
+        when (subjectType.trim().lowercase()) {
+            "subject1" -> "Subject1"
+            "subject2" -> "Subject2"
+            "subject3" -> "Subject3"
+            "subjectauthorized" -> "SubjectAuthorized"
+            else -> subjectType.trim()
+        }
 
     private suspend fun findInvoiceMetadataByInvoiceNumber(
         accessToken: String,
@@ -376,7 +399,7 @@ class KsefServiceImpl(
             accessToken = accessToken,
             filters = KsefInvoiceQueryFilters(
                 subjectType = subjectType,
-                dateRange = buildDateRange(from = null, to = null),
+                dateRange = dateRangeForInvoiceNumberLookup(invoiceNumber),
                 invoiceNumber = invoiceNumber,
             ),
         )
@@ -416,7 +439,7 @@ class KsefServiceImpl(
                     accessToken = accessToken,
                     filters = KsefInvoiceQueryFilters(
                         subjectType = subjectType,
-                        dateRange = buildDateRange(from = null, to = null),
+                        dateRange = dateRangeForInvoiceNumberLookup(number),
                         invoiceNumber = number,
                     ),
                 ).firstOrNull { it.ksefNumber == ksefNumber }
@@ -465,6 +488,7 @@ class KsefServiceImpl(
         "${date.year}-${date.monthNumber.toString().padStart(2, '0')}-${date.dayOfMonth.toString().padStart(2, '0')}"
 
     companion object {
+        private const val MAX_QUERY_MONTHS = 3
         private const val METADATA_PAGE_SIZE = 250
         private const val AUTH_SUCCESS_CODE = 200
         private val AUTH_PENDING_CODES = setOf(100, 150)

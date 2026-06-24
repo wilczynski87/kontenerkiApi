@@ -2,10 +2,8 @@ package com.kontenery.controller
 
 import com.kontenery.data.Client
 import com.kontenery.data.invoice.Invoice
-import com.kontenery.data.invoice.InvoiceSend
 import com.kontenery.data.utils.endOfCurrentMonth
 import com.kontenery.data.utils.errors.ErrorMessage
-import com.kontenery.data.utils.errors.InvoiceErrorMessage
 import com.kontenery.data.utils.now
 import com.kontenery.data.utils.startOfCurrentMonth
 import com.kontenery.data.utils.startOfCurrentYear
@@ -18,10 +16,14 @@ import com.kontenery.service.PrintService
 import com.kontenery.utils.ApiErrorResponse
 import com.kontenery.utils.cookRawPeriod
 import com.kontenery.utils.respondInternalError
-import io.ktor.http.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondNullable
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.route
 import kotlinx.datetime.LocalDate
 
 fun Route.invoiceRoutes(
@@ -148,7 +150,8 @@ fun Route.invoiceRoutes(
                     saveInvoiceWithOptionalKsef(invoice, invoiceService, ksefService, errorList)
                 }
 
-                savedInvoices.filter { it.vatApply.not() }
+                savedInvoices
+//                    .filter { it.vatApply.not() }
                     .forEach { savedInvoice ->
                         printService.sendPeriodicInvoice(savedInvoice)
                     }
@@ -258,17 +261,16 @@ fun Route.invoiceRoutes(
                     ?: throw IllegalStateException("Can not find Invoice with given ID: $invoiceNumber")
 //                println("sendInvoiceAgain: $invoice")
 
-                val invoiceSend: InvoiceSend = if(invoice.vatApply.not()) printService.sendInvoiceAgain(invoice)
-                    else {
-                        saveInvoiceWithOptionalKsef(invoice, invoiceService, ksefService, mutableListOf<ErrorMessage>())
-                            ?: throw IllegalStateException("Could not save Invoice/Bill")
-                         InvoiceSend(
-                             invoice.invoiceNumber,
-                            invoice.customer?.name,
-                            invoice.invoiceDate,
-                            LocalDate.now()
-                        )
-                    }
+                if(invoice.invoiceNumber.isNullOrBlank()) throw NullPointerException("Brak invoice number")
+
+                val isInvoiceInKsef = ksefService.isInvoiceRegisteredInKsef(invoice.invoiceNumber)
+
+                // Wysłanie faktury do KSeF jeśli nie ma jeszcze
+                if(isInvoiceInKsef.registered.not()) saveInvoiceWithOptionalKsef(invoice, invoiceService, ksefService, mutableListOf<ErrorMessage>())
+                    ?: throw IllegalStateException("Could not save Invoice/Bill")
+
+                // Wysłanie faktury emailem
+                val invoiceSend = printService.sendInvoiceAgain(invoice)
 
                 call.respond(invoiceSend)
             } catch (e: Exception) {
