@@ -1,6 +1,7 @@
 package com.kontenery.controller
 
 import com.kontenery.data.Payment
+import com.kontenery.data.payment.PaymentsRecogniseList
 import io.ktor.http.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -12,6 +13,7 @@ import com.kontenery.service.PaymentService
 import com.kontenery.validator.PaymentValidator
 import kotlinx.coroutines.coroutineScope
 import org.slf4j.LoggerFactory
+import java.math.BigDecimal
 
 fun Route.CSVController(csvService: CSVService, paymentService: PaymentService, paymentValidator: PaymentValidator) {
     val logger = LoggerFactory.getLogger("CSVController")
@@ -55,14 +57,50 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService, 
             try {
                 println("POST CSV Alior")
                 val rawCSV: MessageRequest = call.receive<MessageRequest>()
-//                println("rawCSV: $rawCSV")
+                println("rawCSV: $rawCSV")
                 val errors: MutableList<PaymentError> = mutableListOf()
+                val paymentsRecogniseList = PaymentsRecogniseList()
+
                 coroutineScope {
                     val newPayments: List<Payment> = csvService.readCSVAlior(rawCSV.message)
                         .filter { paymentValidator.validatePaymentByParams(it) }
                     newPayments.forEach { println("payment: $it") }
+
+                    // adding unrecognised transactions
+                    newPayments.filter { it.fromClient == null }
+                        .filter { it.amount > BigDecimal.ZERO }
+                        // dodać filter clientów z 'czarnej listy'
+                        .forEach { paymentsRecogniseList.unrecognizedPayments?.add(it.toDto()) }
+
+                    // adding duplicated transactions
+                    newPayments.filterNot { it.fromClient == null }
+                        .filter { it.amount > BigDecimal.ZERO }
+                        // dodać filter clientów z 'czarnej listy'
+                        .filter { paymentService.isDuplicated(it) }
+                        .forEach { paymentsRecogniseList.oldPayments?.add(it.toDto()) }
+
+                    // saving payments in DB
+                    newPayments.filterNot { it.fromClient == null }
+                        .filter { paymentValidator.validatePayment(it, errors) }
+                        .map { it.toDto() }
+                        .forEach {
+                            try {
+                                paymentService.createPayment(it)
+                                logger.info("payment created: ${it.paymentId}")
+
+                                // adding new transactions
+                                paymentsRecogniseList.newPayments?.add(it)
+                            } catch (e: Exception) {
+                                logger.error("createPayment error: id:${it.paymentId} - ${e.message}")
+                            }
+                        }
+
+                    errors.forEach { error ->
+                        logger.info("payment error: ${error.title} - ${error.message}, client: ${error.payment?.fromClient?.getName()} ${error.payment?.date} ${error.payment?.amount}")
+                    }
+
                 }
-                call.respond(MessageRequest("OK"))
+                call.respond(paymentsRecogniseList)
             } catch (e: Exception) {
                 println(e)
                 call.respond(HttpStatusCode.BadRequest, "Invalid request: ${e.message}")

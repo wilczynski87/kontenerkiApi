@@ -46,6 +46,12 @@ class PaymentServiceImpl(
     override suspend fun clientOverdue(clientId: Long, from: LocalDate, to: LocalDate): Double {
         TODO("Not yet implemented")
     }
+    override suspend fun isDuplicated(newPayment: Payment): Boolean {
+        return if(newPayment.referenceNumber.isNullOrBlank()) {
+            paymentRepo.isDuplicate(newPayment)
+        } else paymentRepo.isPaymentWithReferenceNr(newPayment.referenceNumber)
+    }
+
     private suspend fun dtoToPayment(dto: PaymentDto): Payment {
         val client: Client? = dto.fromClientId?.let { clientService.findClientById(it) }
         println("client for payment: $client")
@@ -55,7 +61,7 @@ class PaymentServiceImpl(
             || dto.date != null
         )
 
-        val toAccount: SellerAccount? = if(dto.toAccount != null) SellerAccount.fromAccountNumber(dto.toAccount!!)
+        val toAccount: SellerAccount? = if(dto.toAccount != null) SellerAccount.fromAccountNumber(dto.toAccount)
             else SellerAccount.PRIVATE
 
         return Payment(

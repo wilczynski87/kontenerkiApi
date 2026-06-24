@@ -11,4 +11,5 @@ interface PaymentService {
     suspend fun deletePayment(paymentId: Long):Boolean
     suspend fun readPaymentsFromStatement(): List<Payment>
     suspend fun clientOverdue(clientId: Long, from: LocalDate, to: LocalDate): Double
+    suspend fun isDuplicated(newPayment: Payment): Boolean
 }
