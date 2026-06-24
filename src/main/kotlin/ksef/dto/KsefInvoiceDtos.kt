@@ -24,8 +24,14 @@ data class KsefInvoiceMetadataSeller(
 )
 
 @Serializable
+data class KsefInvoiceMetadataBuyerIdentifier(
+    val type: String? = null,
+    val value: String? = null,
+)
+
+@Serializable
 data class KsefInvoiceMetadataBuyer(
-    val identifier: String? = null,
+    val identifier: KsefInvoiceMetadataBuyerIdentifier? = null,
     val name: String? = null,
 )
 
