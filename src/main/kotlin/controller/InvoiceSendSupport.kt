@@ -43,6 +43,8 @@ internal suspend fun saveInvoiceWithOptionalKsef(
             val sendDate = response.sessionStatus?.permanentStorageDate
                 ?.let(::parseKsefPermanentStorageDate)
                 ?: LocalDate.now()
+
+            // zapisujemy w fakturze datę wysłania do ksef + ksef number
             createdInvoice.copy(
                 ksefNumber = response.ksefNumber,
                 invoiceSendToClient = sendDate,

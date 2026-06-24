@@ -204,12 +204,11 @@ fun Route.invoiceRoutes(
                     ksefService,
                 ) ?: throw NoSuchElementException("Could not save Invoice/Bill")
 
-                if(savedInvoice.vatApply.not()) printService.sendPeriodicInvoice(savedInvoice)
-                else {
-                    if(savedInvoice.invoiceNumber.isNullOrBlank()) throw NullPointerException("Brak invoice number")
-                    val isInvoiceInKsef = ksefService.isInvoiceRegisteredInKsef(savedInvoice.invoiceNumber)
-                    println("isInvoiceInKsef: $isInvoiceInKsef")
-                }
+
+                if(savedInvoice.invoiceNumber.isNullOrBlank()) throw NullPointerException("Brak invoice number")
+                val isInvoiceInKsef = ksefService.isInvoiceRegisteredInKsef(savedInvoice.invoiceNumber)
+                println("isInvoiceInKsef: $isInvoiceInKsef")
+                printService.sendPeriodicInvoice(savedInvoice)
 
                 // Respond to front
                 call.respond(savedInvoice)
