@@ -24,12 +24,27 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService, 
                 println("POST CSV PeKaOSA")
                 val rawCSV: MessageRequest = call.receive<MessageRequest>()
 //                println("rawCSV: ${rawCSV.message}")
+                val errors: MutableList<PaymentError> = mutableListOf()
+                val paymentsRecogniseList = PaymentsRecogniseList()
 
                 coroutineScope {
                     val newPayments: List<Payment> = csvService.readCSV(rawCSV.message)
-//                    newPayments.forEach { println("payment: $it") }
+                    newPayments.forEach { println("payment: $it") }
 
-                    val errors: MutableList<PaymentError> = mutableListOf()
+                    // adding unrecognised transactions
+                    newPayments.filter { it.fromClient == null }
+                        .filter { it.amount > BigDecimal.ZERO }
+                        // dodać filter clientów z 'czarnej listy'
+                        .forEach { paymentsRecogniseList.unrecognizedPayments?.add(it.toDto()) }
+
+                    // adding duplicated transactions
+                    newPayments.filterNot { it.fromClient == null }
+                        .filter { it.amount > BigDecimal.ZERO }
+                        // dodać filter clientów z 'czarnej listy'
+                        .filter { paymentService.isDuplicated(it) }
+                        .forEach { paymentsRecogniseList.oldPayments?.add(it.toDto()) }
+
+                    // saving payments in DB
                     newPayments.filterNot { it.fromClient == null }
                         .filter { paymentValidator.validatePayment(it, errors) }
                         .map { it.toDto() }
@@ -37,16 +52,21 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService, 
                             try {
                                 paymentService.createPayment(it)
                                 logger.info("payment created: ${it.paymentId}")
+
+                                // adding new transactions
+                                paymentsRecogniseList.newPayments?.add(it)
                             } catch (e: Exception) {
                                 logger.error("createPayment error: id:${it.paymentId} - ${e.message}")
                             }
                         }
+
                     errors.forEach { error ->
                         logger.info("payment error: ${error.title} - ${error.message}, client: ${error.payment?.fromClient?.getName()} ${error.payment?.date} ${error.payment?.amount}")
                     }
+                    paymentsRecogniseList.errors?.addAll(errors)
                 }
-
-                call.respond(MessageRequest("OK"))
+                println("paymentsRecogniseList: $paymentsRecogniseList")
+                call.respond(paymentsRecogniseList)
             } catch(e:Exception) {
                 println(e)
                 call.respond(HttpStatusCode.BadRequest, "Invalid request: ${e.message}")
@@ -101,6 +121,7 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService, 
                     }
                     paymentsRecogniseList.errors?.addAll(errors)
                 }
+                println("paymentsRecogniseList: $paymentsRecogniseList")
                 call.respond(paymentsRecogniseList)
             } catch (e: Exception) {
                 println(e)
@@ -113,12 +134,27 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService, 
                 println("POST CSV Nest")
                 val rawCSV: MessageRequest = call.receive<MessageRequest>()
 //                println("rawCSV: ${rawCSV.message}")
+                val errors: MutableList<PaymentError> = mutableListOf()
+                val paymentsRecogniseList = PaymentsRecogniseList()
 
                 coroutineScope {
                     val newPayments: List<Payment> = csvService.readCSVNest(rawCSV.message)
 //                    newPayments.forEach { println("payment: $it") }
 
-                    val errors: MutableList<PaymentError> = mutableListOf()
+                    // adding unrecognised transactions
+                    newPayments.filter { it.fromClient == null }
+                        .filter { it.amount > BigDecimal.ZERO }
+                        // dodać filter clientów z 'czarnej listy'
+                        .forEach { paymentsRecogniseList.unrecognizedPayments?.add(it.toDto()) }
+
+                    // adding duplicated transactions
+                    newPayments.filterNot { it.fromClient == null }
+                        .filter { it.amount > BigDecimal.ZERO }
+                        // dodać filter clientów z 'czarnej listy'
+                        .filter { paymentService.isDuplicated(it) }
+                        .forEach { paymentsRecogniseList.oldPayments?.add(it.toDto()) }
+
+                    // saving payments in DB
                     newPayments.filterNot { it.fromClient == null }
                         .filter { paymentValidator.validatePayment(it, errors) }
                         .map { it.toDto() }
@@ -126,16 +162,21 @@ fun Route.CSVController(csvService: CSVService, paymentService: PaymentService, 
                             try {
                                 paymentService.createPayment(it)
                                 logger.info("payment created: ${it.paymentId}")
+
+                                // adding new transactions
+                                paymentsRecogniseList.newPayments?.add(it)
                             } catch (e: Exception) {
                                 logger.error("createPayment error: id:${it.paymentId} - ${e.message}")
                             }
                         }
+
                     errors.forEach { error ->
                         logger.info("payment error: ${error.title} - ${error.message}, client: ${error.payment?.fromClient?.getName()} ${error.payment?.date} ${error.payment?.amount}")
                     }
+                    paymentsRecogniseList.errors?.addAll(errors)
                 }
-
-                call.respond(MessageRequest("OK"))
+                println("paymentsRecogniseList: $paymentsRecogniseList")
+                call.respond(paymentsRecogniseList)
             } catch(e:Exception) {
                 println(e)
                 call.respond(HttpStatusCode.BadRequest, "Invalid request: ${e.message}")
