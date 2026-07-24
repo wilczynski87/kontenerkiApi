@@ -39,12 +39,30 @@ data class KsefConfig(
 )
 
 @Serializable
+data class GateConfig(
+    val openUrl: String,
+    val method: String = "PATCH",
+    /** Stały access token (PAT) lub początkowy OAuth access token. */
+    val accessToken: String? = null,
+    /** OAuth refresh token – jednorazowy refresh przy 401. */
+    val refreshToken: String? = null,
+    val clientId: String? = null,
+    val clientSecret: String? = null,
+    val tokenUrl: String = "https://svr111.supla.org/oauth/v2/token",
+    /** Opcjonalny JSON body, np. {"action":"OPEN_CLOSE"} dla SUPLA. */
+    val requestBody: String? = null,
+    val mockMode: Boolean = false,
+    val cooldownSeconds: Long = 60,
+)
+
+@Serializable
 data class ApiConfig(
     val env: String,
     val email: EmailConfig,
     val db: DbConfig,
     val auth: AuthConfig,
     val ksef: KsefConfig,
+    val gate: GateConfig,
 )
 
 private fun env(name: String, default: String): String =
@@ -130,5 +148,39 @@ fun Application.loadApiConfig(): ApiConfig {
         ),
 
         ksef = resolveKsefConfig(apiEnv),
+        gate = resolveGateConfig(apiEnv),
+    )
+}
+
+internal fun resolveGateConfig(
+    apiEnv: String,
+    getenv: (String) -> String? = { System.getenv(it) },
+): GateConfig {
+    val isDev = apiEnv.equals("DEV", ignoreCase = true)
+    val openUrl = getenv("GATE_OPEN_URL")?.trim().orEmpty()
+    val mockMode = getenv("GATE_MOCK")?.toBooleanStrictOrNull()
+        ?: (isDev || openUrl.isBlank())
+
+    val accessToken = getenv("GATE_ACCESS_TOKEN")?.trim()?.takeIf { it.isNotEmpty() }
+        ?: getenv("GATE_API_KEY")?.trim()?.takeIf { it.isNotEmpty() }
+
+    val clientId = getenv("SUPLA_CLIENT_ID")?.trim()?.takeIf { it.isNotEmpty() }
+        ?: getenv("SUPLA_ID")?.trim()?.takeIf { it.isNotEmpty() }
+    val clientSecret = getenv("SUPLA_CLIENT_SECRET")?.trim()?.takeIf { it.isNotEmpty() }
+        ?: getenv("SUPLA_SECRET")?.trim()?.takeIf { it.isNotEmpty() }
+
+    return GateConfig(
+        openUrl = openUrl,
+        method = getenv("GATE_OPEN_METHOD")?.trim()?.takeIf { it.isNotEmpty() } ?: "PATCH",
+        accessToken = accessToken,
+        refreshToken = getenv("SUPLA_REFRESH_TOKEN")?.trim()?.takeIf { it.isNotEmpty() },
+        clientId = clientId,
+        clientSecret = clientSecret,
+        tokenUrl = getenv("SUPLA_TOKEN_URL")?.trim()?.takeIf { it.isNotEmpty() }
+            ?: "https://svr111.supla.org/oauth/v2/token",
+        requestBody = getenv("GATE_REQUEST_BODY")?.trim()?.takeIf { it.isNotEmpty() }
+            ?: """{"action":"OPEN_CLOSE"}""",
+        mockMode = mockMode,
+        cooldownSeconds = getenv("GATE_COOLDOWN_SECONDS")?.toLongOrNull() ?: 60,
     )
 }

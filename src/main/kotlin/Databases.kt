@@ -22,6 +22,7 @@ private val applicationTables: Array<Table> = arrayOf(
     ClientBankAccountTable,
     SubmeterTable, ReadingTable,
     KsefSessionInvoiceStatusTable,
+    GateEventTable,
 )
 
 private fun resolveDbEnv(apiConfig: ApiConfig): Env = when (apiConfig.env.uppercase()) {

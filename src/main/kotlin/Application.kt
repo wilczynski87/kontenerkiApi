@@ -5,6 +5,7 @@ import com.kontenery.repository.BillRepo
 import com.kontenery.repository.ClientBankAccountRepository
 import com.kontenery.repository.ClientRepo
 import com.kontenery.repository.ContractRepo
+import com.kontenery.repository.GateEventRepo
 import com.kontenery.repository.InvoiceRepo
 import com.kontenery.repository.KsefSessionInvoiceStatusRepo
 import com.kontenery.repository.PaymentRepo
@@ -15,6 +16,7 @@ import com.kontenery.repository.impl.BillRepoImpl
 import com.kontenery.repository.impl.ClientBankAccountRepositoryImpl
 import com.kontenery.repository.impl.ClientRepoImpl
 import com.kontenery.repository.impl.ContractRepoImpl
+import com.kontenery.repository.impl.GateEventRepoImpl
 import com.kontenery.repository.impl.InvoiceRepoImpl
 import com.kontenery.repository.impl.KsefSessionInvoiceStatusRepoImpl
 import com.kontenery.repository.impl.PaymentRepoImpl
@@ -26,6 +28,7 @@ import com.kontenery.service.BankAccountService
 import com.kontenery.service.CSVService
 import com.kontenery.service.ClientService
 import com.kontenery.service.ContractService
+import com.kontenery.service.GateService
 import com.kontenery.service.InvoiceService
 import com.kontenery.service.JwtConfig
 import com.kontenery.service.ListingService
@@ -39,6 +42,7 @@ import com.kontenery.service.impl.BankAccountServiceImpl
 import com.kontenery.service.impl.CSVServiceImpl
 import com.kontenery.service.impl.ClientServiceImpl
 import com.kontenery.service.impl.ContractServiceImpl
+import com.kontenery.service.impl.GateServiceImpl
 import com.kontenery.service.impl.InvoiceServiceImpl
 import com.kontenery.service.impl.ListingServiceImpl
 import com.kontenery.service.impl.PaymentServiceImpl
@@ -138,6 +142,13 @@ fun Application.module() {
         ksefSessionInvoiceStatusRepo,
     )
 
+    val gateEventRepo: GateEventRepo = GateEventRepoImpl()
+    val gateService: GateService = GateServiceImpl(
+        gateConfig = apiConfig.gate,
+        contractService = contractService,
+        listingService = listingService,
+        gateEventRepo = gateEventRepo,
+    )
 
     logger()
     configureFrameworks()
@@ -149,5 +160,22 @@ fun Application.module() {
     configureStatusPages()
     configureSecurity(jwtConfig)
     configureHTTP()
-    configureRouting(addressService, clientService, productService, contractService, invoiceService, printService, paymentService, csvService, bankAccountService, listingService, utilitiesService, authService, ksefService, paymentValidator, bankAccountValidator)
+    configureRouting(
+        addressService,
+        clientService,
+        productService,
+        contractService,
+        invoiceService,
+        printService,
+        paymentService,
+        csvService,
+        bankAccountService,
+        listingService,
+        utilitiesService,
+        authService,
+        ksefService,
+        paymentValidator,
+        bankAccountValidator,
+        gateService,
+    )
 }

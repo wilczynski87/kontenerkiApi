@@ -28,6 +28,7 @@ fun Application.configureRouting(
     ksefService: com.kontenery.ksef.service.KsefService,
     paymentValidator: PaymentValidator,
     bankAccountValidator: BankAccountValidator,
+    gateService: GateService,
 ) {
     routing {
 
@@ -53,6 +54,7 @@ fun Application.configureRouting(
             bankAccountController(bankAccountService, bankAccountValidator)
             listingRoute(listingService)
             utilitiesController(utilitiesService, clientService)
+            gate(gateService)
         }
         mailSendConfirmation(invoiceService)
         authController(authService)
