@@ -18,7 +18,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.Parameters
-import io.ktor.http.contentType
+import io.ktor.http.content.TextContent
 import io.ktor.http.isSuccess
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
@@ -27,6 +27,7 @@ import kotlinx.datetime.minus
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import java.math.BigDecimal
 import kotlin.time.Duration.Companion.seconds
 
@@ -177,12 +178,27 @@ class GateServiceImpl(
         httpClient.request(gateConfig.openUrl) {
             this.method = method
             header(HttpHeaders.Authorization, "Bearer $token")
+            header(HttpHeaders.Accept, ContentType.Application.Json.toString())
             val body = gateConfig.requestBody
             if (!body.isNullOrBlank() && method != HttpMethod.Get) {
-                contentType(ContentType.Application.Json)
-                setBody(body)
+                requireValidJsonObject(body)
+                setBody(TextContent(body, ContentType.Application.Json))
             }
         }
+
+    private fun requireValidJsonObject(body: String) {
+        val parsed = runCatching { json.parseToJsonElement(body) }.getOrElse { error ->
+            throw IllegalStateException(
+                "GATE_REQUEST_BODY is not valid JSON (got: $body). " +
+                    "If deployed via GitHub Actions, ensure .env quotes are not stripped. Cause: ${error.message}",
+            )
+        }
+        if (parsed !is JsonObject) {
+            throw IllegalStateException(
+                "GATE_REQUEST_BODY must be a JSON object, e.g. {\"action\":\"OPEN_CLOSE\"} (got: $body)",
+            )
+        }
+    }
 
     @Serializable
     private data class SuplaTokenResponse(

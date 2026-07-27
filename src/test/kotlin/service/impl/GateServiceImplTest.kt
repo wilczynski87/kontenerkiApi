@@ -66,11 +66,9 @@ class GateServiceImplTest {
         }
 
         @Test
-        fun `throws when userId is zero (admin placeholder)`() {
-            val ex = assertThrows<GateAccessDeniedException> {
-                service.checkUserAuthenticated("0")
-            }
-            assertTrue(ex.message!!.contains("zalogowany", ignoreCase = true))
+        fun `accepts zero userId as numeric client id`() {
+            // Admin/dev login (ppp) currently issues userId=0; gate auth only checks format.
+            assertEquals(0L, service.checkUserAuthenticated("0"))
         }
     }
 
@@ -145,6 +143,27 @@ class GateServiceImplTest {
             val response = service.openGate()
             assertTrue(response.success)
             assertEquals("Brama została otwarta", response.message)
+        }
+
+        @Test
+        fun `openGate rejects mangled GATE_REQUEST_BODY before calling SUPLA`() = runTest {
+            val broken = GateServiceImpl(
+                gateConfig = GateConfig(
+                    openUrl = "https://svr111.supla.org/api/channels/8656",
+                    method = "PATCH",
+                    accessToken = "token",
+                    requestBody = "{action:OPEN_CLOSE}",
+                    mockMode = false,
+                ),
+                contractService = contractService,
+                listingService = listingService,
+                gateEventRepo = gateEventRepo,
+            )
+            val ex = assertThrows<IllegalStateException> {
+                broken.openGate()
+            }
+            assertTrue(ex.message!!.contains("GATE_REQUEST_BODY", ignoreCase = true))
+            assertTrue(ex.message!!.contains("valid JSON", ignoreCase = true))
         }
 
         @Test

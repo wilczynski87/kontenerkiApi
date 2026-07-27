@@ -39,9 +39,12 @@ jobs:
             exit 1
           }
 
+      # Heredoc is local (piped to ssh stdin). Do NOT wrap the remote command in double
+      # quotes — that strips JSON quotes from GATE_REQUEST_BODY (SUPLA then returns
+      # "Invalid json message received").
       - name: Create .env on VPS
         run: |
-          ssh vps "cat <<EOF > /opt/app/.env
+          cat > /tmp/kontenerki.env <<EOF
           # === SECRETS ===
           DB_PASSWORD=${{ secrets.DB_PASSWORD }}
           GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
@@ -58,7 +61,7 @@ jobs:
           SUPLA_ID=${{ secrets.SUPLA_ID }}
           SUPLA_SECRET=${{ secrets.SUPLA_SECRET }}
           SUPLA_REFRESH_TOKEN=${{ secrets.SUPLA_REFRESH_TOKEN }}
-          
+
           # === VARIABLES ===
           API_ENV=${{ vars.API_ENV }}
           API_NAME=${{ vars.API_NAME }}
@@ -85,7 +88,10 @@ jobs:
           SUPLA_TOKEN_URL=${{ vars.SUPLA_TOKEN_URL }}
           SUPLA_OAUTH_HELPER=${{ vars.SUPLA_OAUTH_HELPER }}
           SUPLA_REDIRECT_URI=${{ vars.SUPLA_REDIRECT_URI }}
-          EOF"
+          EOF
+          sed -i 's/^[[:space:]]*//' /tmp/kontenerki.env
+          scp /tmp/kontenerki.env vps:/opt/app/.env
+          rm -f /tmp/kontenerki.env
 
       - name: Build and deploy
         run: |

@@ -43,4 +43,16 @@ class GateConfigResolutionTest {
         assertEquals(120, config.cooldownSeconds)
         assertFalse(config.mockMode)
     }
+
+    @Test
+    fun `defaults request body to OPEN_CLOSE JSON object`() {
+        val config = resolveGateConfig("PROD") { key ->
+            when (key) {
+                "GATE_OPEN_URL" -> "https://svr111.supla.org/api/v3/channels/1"
+                "GATE_MOCK" -> "false"
+                else -> null
+            }
+        }
+        assertEquals("""{"action":"OPEN_CLOSE"}""", config.requestBody)
+    }
 }
