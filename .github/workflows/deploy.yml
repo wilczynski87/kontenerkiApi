@@ -54,6 +54,10 @@ jobs:
           APP_SECRET=${{ secrets.APP_SECRET }}
           APP_LOGIN=${{ secrets.APP_LOGIN }}
           KSEF_TOKEN=${{ secrets.KSEF_TOKEN }}
+          KSEF_NIP=${{ secrets.KSEF_NIP }}
+          SUPLA_ID=${{ secrets.SUPLA_ID }}
+          SUPLA_SECRET=${{ secrets.SUPLA_SECRET }}
+          SUPLA_REFRESH_TOKEN=${{ secrets.SUPLA_REFRESH_TOKEN }}
           
           # === VARIABLES ===
           API_ENV=${{ vars.API_ENV }}
@@ -72,6 +76,15 @@ jobs:
           KSEF_API_SUFFIX=${{ vars.KSEF_API_SUFFIX }}
           KSEF_BASE_URL=${{ vars.KSEF_BASE_URL }}
           KSEF_ENV=${{ vars.KSEF_ENV }}
+          PRINT_RECIPIENT=${{ vars.PRINT_RECIPIENT }}
+          GATE_MOCK=${{ vars.GATE_MOCK }}
+          GATE_OPEN_URL=${{ vars.GATE_OPEN_URL }}
+          GATE_OPEN_METHOD=${{ vars.GATE_OPEN_METHOD }}
+          GATE_REQUEST_BODY=${{ vars.GATE_REQUEST_BODY }}
+          GATE_COOLDOWN_SECONDS=${{ vars.GATE_COOLDOWN_SECONDS }}
+          SUPLA_TOKEN_URL=${{ vars.SUPLA_TOKEN_URL }}
+          SUPLA_OAUTH_HELPER=${{ vars.SUPLA_OAUTH_HELPER }}
+          SUPLA_REDIRECT_URI=${{ vars.SUPLA_REDIRECT_URI }}
           EOF"
 
       - name: Build and deploy
