@@ -47,6 +47,8 @@ When `API_ENV=DEV`, the app auto-creates database tables on startup via `SchemaU
 
 On every startup (including PROD), the API ensures KSeF schema objects exist: `invoice.ksef_number` and table `ksef_session_invoice_status` (see `KsefSchemaMigration.kt`). Disable with `DB_KSEF_SCHEMA_MIGRATE=false`.
 
+On every startup (including PROD), the API ensures the `gate_event` table exists (see `GateEventSchemaMigration.kt`). Disable with `DB_GATE_EVENT_SCHEMA_MIGRATE=false`.
+
 ### Restoring a PostgreSQL dump
 
 Import into a **fresh** `db1` (avoids duplicate tables / broken migrations):

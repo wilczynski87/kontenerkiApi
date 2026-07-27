@@ -51,6 +51,7 @@ fun configureDatabases(apiConfig: ApiConfig) {
     println("Connecting to: $url")
 
     ensureKsefSchemaIfNeeded(apiConfig)
+    ensureGateEventSchemaIfNeeded(apiConfig)
 //    repairInvoiceForeignKeysIfNeeded(apiConfig)
 
     val connection = {

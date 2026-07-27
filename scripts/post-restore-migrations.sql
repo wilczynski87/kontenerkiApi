@@ -15,3 +15,10 @@ CREATE TABLE IF NOT EXISTS ksef_session_invoice_status (
 );
 
 ALTER TABLE submeter ADD COLUMN IF NOT EXISTS foto_url VARCHAR(100);
+
+CREATE TABLE IF NOT EXISTS gate_event (
+    id BIGSERIAL PRIMARY KEY,
+    client_id BIGINT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+    opened_at_epoch_ms BIGINT NOT NULL,
+    note VARCHAR(100)
+);
