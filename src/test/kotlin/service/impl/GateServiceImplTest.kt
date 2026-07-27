@@ -64,6 +64,14 @@ class GateServiceImplTest {
                 service.checkUserAuthenticated("abc")
             }
         }
+
+        @Test
+        fun `throws when userId is zero (admin placeholder)`() {
+            val ex = assertThrows<GateAccessDeniedException> {
+                service.checkUserAuthenticated("0")
+            }
+            assertTrue(ex.message!!.contains("zalogowany", ignoreCase = true))
+        }
     }
 
     @Nested

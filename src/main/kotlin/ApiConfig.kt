@@ -40,7 +40,7 @@ data class KsefConfig(
 
 @Serializable
 data class GateConfig(
-    val openUrl: String,
+    val openUrl: String = "https://svr111.supla.org/api/channels/8656",
     val method: String = "PATCH",
     /** Stały access token (PAT) lub początkowy OAuth access token. */
     val accessToken: String? = null,

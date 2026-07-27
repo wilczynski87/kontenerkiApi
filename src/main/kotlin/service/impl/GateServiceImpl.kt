@@ -50,8 +50,9 @@ class GateServiceImpl(
         if (userId.isNullOrBlank()) {
             throw GateAccessDeniedException("Użytkownik nie jest zalogowany")
         }
-        return userId.toLongOrNull()
-            ?: throw GateAccessDeniedException("Użytkownik nie jest zalogowany")
+        val clientId = userId.toLongOrNull()
+            ?: throw GateAccessDeniedException("Błąd userId, nieprawidłowy format")
+        return clientId
     }
 
     override suspend fun ensureActiveContract(clientId: Long) {
@@ -61,6 +62,7 @@ class GateServiceImpl(
         }
     }
 
+    // TODO do poprawy... logika zepsuta
     override suspend fun ensureNoOverdue(clientId: Long) {
         val balance = listingService.clientOverdue(
             clientId,
@@ -101,7 +103,7 @@ class GateServiceImpl(
             return
         }
 
-        require(gateConfig.openUrl.isNotBlank()) { "GATE_OPEN_URL is missing" }
+        require(gateConfig.openUrl.isNotBlank()) { "GATE_OPEN_URL is missing: ${gateConfig.openUrl}" }
 
         val method = when (gateConfig.method.uppercase()) {
             "GET" -> HttpMethod.Get
@@ -127,11 +129,16 @@ class GateServiceImpl(
         }
     }
 
-    private fun resolveAccessToken(): String =
-        accessToken?.takeIf { it.isNotBlank() }
-            ?: throw IllegalStateException(
-                "Brak GATE_ACCESS_TOKEN / GATE_API_KEY — ustaw token SUPLA lub GATE_MOCK=true"
-            )
+    private suspend fun resolveAccessToken(): String {
+        accessToken?.takeIf { it.isNotBlank() }?.let { return it }
+        // Brak PAT — spróbuj OAuth refresh (SUPLA_REFRESH_TOKEN + client id/secret).
+        if (!refreshToken.isNullOrBlank()) {
+            return refreshAccessToken()
+        }
+        throw IllegalStateException(
+            "Brak GATE_ACCESS_TOKEN / GATE_API_KEY — ustaw token SUPLA lub GATE_MOCK=true"
+        )
+    }
 
     private suspend fun refreshAccessToken(): String {
         val currentRefresh = refreshToken

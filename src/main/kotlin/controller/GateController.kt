@@ -20,19 +20,19 @@ fun Route.gate(gateService: GateService) {
                 ?.getClaim("userId")
                 ?.asString()
 
-            val request = runCatching { call.receive<OpenGateRequest>() }
-                .getOrElse { OpenGateRequest() }
+            println("jwtUserId: $jwtUserId")
+
+//            val request = runCatching { call.receive<OpenGateRequest>() }
+//                .getOrElse { OpenGateRequest() }
 
             try {
                 val clientId = gateService.checkUserAuthenticated(jwtUserId)
-                gateService.ensureActiveContract(clientId)
+//                gateService.ensureActiveContract(clientId)
                 gateService.ensureNoOverdue(clientId)
                 gateService.ensureCooldown(clientId)
 
-                val response = gateService.openGate().copy(
-                    reservationId = request.reservationId,
-                )
-                gateService.logOpenEvent(clientId)
+                val response = gateService.openGate()
+//                gateService.logOpenEvent(clientId)
 
                 call.respond(response)
             } catch (e: GateAccessDeniedException) {
@@ -43,6 +43,14 @@ fun Route.gate(gateService: GateService) {
                 }
                 call.respond(status, mapOf("error" to (e.message ?: "Brak dostępu")))
             }
+        }
+        post("/openTest") {
+            val jwtUserId = call.principal<JWTPrincipal>()
+                ?.payload
+                ?.getClaim("userId")
+                ?.asString()
+            println("jwtUserId: $jwtUserId")
+            call.respond(jwtUserId!!)
         }
     }
 }
