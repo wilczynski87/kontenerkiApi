@@ -131,7 +131,7 @@ fun Application.module() {
     val utilitiesService: UtilitiesService = UtilitiesServiceImpl(utilitiesRepo)
 
     val jwtConfig = JwtConfig(apiConfig)
-    val authService: AuthService = AuthServiceImpl(jwtConfig, apiConfig.auth)
+    val authService: AuthService = AuthServiceImpl(jwtConfig, apiConfig.auth, clientRepo)
 
     val ksefSessionInvoiceStatusRepo: KsefSessionInvoiceStatusRepo = KsefSessionInvoiceStatusRepoImpl()
     val ksefRepository: KsefRepository = KsefRepositoryImpl(KsefApiClient(apiConfig.ksef))

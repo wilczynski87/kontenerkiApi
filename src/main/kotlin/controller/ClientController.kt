@@ -21,7 +21,7 @@ fun Route.clientRoute(clientService: ClientService) {
             try {
                 val client: Client = call.receive<Client>()
                 val saveClient: Client? = clientService.save(client)
-                if (saveClient != null) call.respond(saveClient)
+                if (saveClient != null) call.respond(saveClient.toDto())
                 else call.respond(HttpStatusCode.ExpectationFailed, ApiErrorResponse("Failed to save client"))
             } catch (e: Exception) {
                 call.respondInternalError(e, "Failed to save client")
@@ -32,7 +32,7 @@ fun Route.clientRoute(clientService: ClientService) {
             val page: Int = call.request.queryParameters["page"]?.toInt() ?: 0
             val size: Int = call.request.queryParameters["size"]?.toInt() ?: 100
             val clients: List<Client> = clientService.getAllClients(page, size)
-            call.respond(clients)
+            call.respond(clients.map(Client::toDto))
         }
 
         get("/{id}/id") {
@@ -43,7 +43,7 @@ fun Route.clientRoute(clientService: ClientService) {
             if (client == null) {
                 call.respond(HttpStatusCode.NotFound, ApiErrorResponse("Client not found"))
             } else {
-                call.respond(client)
+                call.respond(client.toDto())
             }
         }
 
@@ -56,7 +56,7 @@ fun Route.clientRoute(clientService: ClientService) {
                 val updatedClient = clientService.updateClient(clientUpdate)
                     ?: throw NotFoundException("Client not found")
 
-                call.respond(updatedClient)
+                call.respond(updatedClient.toDto())
             } catch (e: Exception) {
                 when (e) {
                     is BadRequestException, is NotFoundException -> throw e

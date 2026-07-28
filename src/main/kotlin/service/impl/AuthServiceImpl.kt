@@ -1,32 +1,48 @@
 package com.kontenery.service.impl
 
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
-import com.kontenery.ApiConfig
 import com.kontenery.AuthConfig
 import com.kontenery.library.model.auth.LoginRequest
 import com.kontenery.library.model.auth.LoginResponse
 import com.kontenery.library.model.auth.TokenResponse
+import com.kontenery.repository.ClientRepo
 import com.kontenery.service.AuthService
 import com.kontenery.service.JwtConfig
 import com.kontenery.service.TokenValidationResult
 import java.util.Date
 
-class AuthServiceImpl(private val jwtConfig: JwtConfig, authConfig: AuthConfig): AuthService {
+class AuthServiceImpl(
+    private val jwtConfig: JwtConfig,
+    authConfig: AuthConfig,
+    private val clientRepo: ClientRepo,
+): AuthService {
     val appLogin = authConfig.appLogin
     val appPassword = authConfig.appSecret
 
-    override fun login(loginRequest: LoginRequest): LoginResponse? {
-//        TODO("Not yet implemented")
-        return if(loginRequest.email == appLogin && loginRequest.password == appPassword)
-            LoginResponse("0", "admin")
-        else null
+    override suspend fun login(loginRequest: LoginRequest): LoginResponse? {
+        val normalizedEmail = loginRequest.email.trim().lowercase()
+        val providedSecret = loginRequest.password.trim()
+
+        if (normalizedEmail == appLogin?.trim()?.lowercase() && providedSecret == appPassword) {
+            return LoginResponse("0", "admin")
+        }
+
+        val client = clientRepo.findClientByEmail(normalizedEmail) ?: return null
+        val personalData = client.clientPrivate ?: return null
+        val expectedSecret = client.password?.takeUnless { it.isBlank() }
+            ?: personalData.pesel?.takeUnless { it.isBlank() }
+            ?: return null
+
+        return if (providedSecret == expectedSecret) {
+            LoginResponse(client.id.toString(), "customer")
+        } else {
+            null
+        }
     }
 
     override fun generateTokenResponse(loginResponse: LoginResponse): TokenResponse {
         return TokenResponse(
             accessToken = jwtConfig.generateAccessToken(loginResponse.userId, loginResponse.role),
-            refreshToken = jwtConfig.generateRefreshToken(loginResponse.userId),
+            refreshToken = jwtConfig.generateRefreshToken(loginResponse.userId, loginResponse.role),
             expiresIn = obtainExpirationDate().toInstant().nano,
             tokenType = "Bearer"
         )

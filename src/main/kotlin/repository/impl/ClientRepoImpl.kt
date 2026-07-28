@@ -66,6 +66,7 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
             val clientEntity: ClientEntity = ClientEntity.new {
                 this.personalData = personalDataEntity
                 this.companyData = companyDataEntity
+                this.password = client.password
                 this.isActive = isActive
                 this.createdAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
             }
@@ -82,12 +83,24 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
         }
     }
 
+    override suspend fun findClientByEmail(email: String): Client? = suspendTransaction {
+        val normalizedEmail = email.trim().lowercase()
+        ClientEntity.all()
+            .with(ClientEntity::personalData, ClientEntity::companyData)
+            .firstOrNull { entity ->
+                entity.personalData?.email?.trim()?.lowercase() == normalizedEmail ||
+                    entity.companyData?.email?.trim()?.lowercase() == normalizedEmail
+            }
+            ?.toClient()
+    }
+
     suspend fun updateClient(id: Long, update: Client.() -> Unit): Client? = suspendTransaction {
         ClientEntity.findById(id)?.apply {
 
             val client = toClient().apply(update)
 
             isActive = client.isActive ?: isActive
+            password = client.password ?: password
 
             // Update personal data if exists
             client.clientPrivate?.let { personalData ->
@@ -239,6 +252,7 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
         return suspendTransaction {
             ClientEntity.findByIdAndUpdate(client.id!!) { entity ->
                 entity.isActive = client.isActive ?: entity.isActive
+                entity.password = client.password ?: entity.password
 
                 client.clientPrivate?.let { personalData ->
                     entity.personalData?.apply {

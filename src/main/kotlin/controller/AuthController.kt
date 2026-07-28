@@ -75,7 +75,9 @@ fun Route.authController(
                     return@post
                 }
 
-                val tokenResponse = authService.generateTokenResponse(LoginResponse(principal.userId, "admin"))
+                val tokenResponse = authService.generateTokenResponse(
+                    LoginResponse(principal.userId, principal.role ?: "customer")
+                )
 
                 call.response.cookies.append(
                     Cookie(
@@ -119,11 +121,17 @@ fun Route.authController(
                 try {
                     val principal = call.principal<JWTPrincipal>()
                     val tokenResponse = authService.generateTokenResponse(
-                        LoginResponse(principal?.payload?.id.toString(), "admin")
+                        LoginResponse(
+                            principal?.payload?.getClaim("userId")?.asString().orEmpty(),
+                            principal?.payload?.getClaim("role")?.asString() ?: "customer"
+                        )
                     )
 
                     val authResponse = AuthResponse(
-                        loginResponse = LoginResponse(principal?.payload?.id.toString(), "admin"),
+                        loginResponse = LoginResponse(
+                            principal?.payload?.getClaim("userId")?.asString().orEmpty(),
+                            principal?.payload?.getClaim("role")?.asString() ?: "customer"
+                        ),
                         tokenResponse = tokenResponse
                     )
 

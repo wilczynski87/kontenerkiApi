@@ -35,6 +35,7 @@ object ClientCompanyDataTable : LongIdTable("client_company_data") {
 object ClientTable : LongIdTable("clients") {
     val personalDataId = optReference("personal_data_id", ClientPersonalDataTable, onDelete = ReferenceOption.SET_NULL)
     val companyDataId = optReference("company_data_id", ClientCompanyDataTable, onDelete = ReferenceOption.SET_NULL)
+    val password = text("password").nullable()
     val isActive = bool("is_active").nullable()
     val createdAt = date("created_at").nullable()
     val updatedAt = date("updated_at").nullable()
@@ -100,6 +101,7 @@ class ClientEntity(id: EntityID<Long>) : LongEntity(id) {
 
     var personalData by ClientPersonalDataEntity optionalReferencedOn ClientTable.personalDataId
     var companyData by ClientCompanyDataEntity optionalReferencedOn ClientTable.companyDataId
+    var password by ClientTable.password
     var isActive by ClientTable.isActive
     var createdAt by ClientTable.createdAt
     var updatedAt by ClientTable.updatedAt
@@ -110,6 +112,7 @@ class ClientEntity(id: EntityID<Long>) : LongEntity(id) {
             id = id.value,
             clientPrivate = personalData?.toClientPersonalData(),
             clientCompany = companyData?.toClientCompanyData(),
+            password = password,
             isActive = isActive,
             createdAt = createdAt,
             updatedAt = updatedAt,

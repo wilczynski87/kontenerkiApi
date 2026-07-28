@@ -6,6 +6,8 @@ interface ClientRepo {
 
     suspend fun save(client: Client): Client?
 
+    suspend fun findClientByEmail(email: String): Client?
+
     suspend fun getAllClients(page:Int, size:Int): List<Client>
 
     suspend fun clientsListSize(): Long

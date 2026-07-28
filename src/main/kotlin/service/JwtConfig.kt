@@ -35,11 +35,12 @@ class JwtConfig(private val apiConfig: ApiConfig) {
             .sign(algorithm)
     }
 
-    fun generateRefreshToken(userId: String): String {
+    fun generateRefreshToken(userId: String, role: String = "admin"): String {
         return JWT.create()
             .withIssuer(apiConfig.auth.issuer)
             .withSubject(TokenType.REFRESH.name)
             .withClaim("userId", userId)
+            .withClaim("role", role)
             .withClaim("type", TokenType.REFRESH.name)
             .withIssuedAt(Date())
             .withExpiresAt(generateExpirationDate(TokenType.REFRESH)) // 30 dni
@@ -51,7 +52,8 @@ class JwtConfig(private val apiConfig: ApiConfig) {
             val decodedJWT = accessTokenVerifier.verify(token)
             TokenValidationResult(
                 isValid = true,
-                userId = decodedJWT.getClaim("userId").asString()
+                userId = decodedJWT.getClaim("userId").asString(),
+                role = decodedJWT.getClaim("role").asString(),
             )
         } catch (ex: JWTVerificationException) {
             TokenValidationResult(
@@ -73,7 +75,8 @@ class JwtConfig(private val apiConfig: ApiConfig) {
 
             TokenValidationResult(
                 isValid = true,
-                userId = decodedJWT.getClaim("userId").asString()
+                userId = decodedJWT.getClaim("userId").asString(),
+                role = decodedJWT.getClaim("role").asString(),
             )
         } catch (ex: JWTVerificationException) {
             TokenValidationResult(
@@ -105,6 +108,7 @@ class JwtConfig(private val apiConfig: ApiConfig) {
 data class TokenValidationResult(
     val isValid: Boolean,
     val userId: String? = null,
+    val role: String? = null,
     val error: String? = null
 )
 

@@ -11,6 +11,7 @@ data class Client(
     val id: Long? = null,
     val clientPrivate: ClientPersonalData? = null,
     val clientCompany: ClientCompanyData? = null,
+    val password: String? = null,
     val isActive: Boolean? = null,
     @Serializable(with = LocalDateSerializer::class)
     val createdAt: LocalDate? = null,
@@ -27,7 +28,32 @@ data class Client(
     fun needInvoice():Boolean {
         return clientCompany?.needInvoice == true
     }
+
+    fun toDto(): ClientDto = ClientDto(
+        id = id,
+        clientPrivate = clientPrivate,
+        clientCompany = clientCompany,
+        isActive = isActive,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        invoiceTitle = invoiceTitle,
+        bankAccounts = bankAccounts,
+    )
 }
+
+@Serializable
+data class ClientDto(
+    val id: Long? = null,
+    val clientPrivate: ClientPersonalData? = null,
+    val clientCompany: ClientCompanyData? = null,
+    val isActive: Boolean? = null,
+    @Serializable(with = LocalDateSerializer::class)
+    val createdAt: LocalDate? = null,
+    @Serializable(with = LocalDateSerializer::class)
+    val updatedAt: LocalDate? = null,
+    val invoiceTitle: String? = null,
+    val bankAccounts: List<String>? = null,
+)
 
 @Serializable
 data class ClientPersonalData(
