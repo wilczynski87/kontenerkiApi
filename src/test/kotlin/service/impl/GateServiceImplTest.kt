@@ -6,6 +6,7 @@ import com.kontenery.repository.GateEventRepo
 import com.kontenery.service.ContractService
 import com.kontenery.service.GateAccessDeniedException
 import com.kontenery.service.ListingService
+import com.kontenery.service.SuplaTokenProvider
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -24,6 +25,7 @@ class GateServiceImplTest {
     private lateinit var contractService: ContractService
     private lateinit var listingService: ListingService
     private lateinit var gateEventRepo: GateEventRepo
+    private lateinit var suplaTokenProvider: SuplaTokenProvider
     private lateinit var service: GateServiceImpl
 
     @BeforeEach
@@ -31,6 +33,7 @@ class GateServiceImplTest {
         contractService = mockk()
         listingService = mockk()
         gateEventRepo = mockk(relaxUnitFun = true)
+        suplaTokenProvider = mockk()
         service = GateServiceImpl(
             gateConfig = GateConfig(
                 openUrl = "",
@@ -40,6 +43,7 @@ class GateServiceImplTest {
             contractService = contractService,
             listingService = listingService,
             gateEventRepo = gateEventRepo,
+            suplaTokenProvider = suplaTokenProvider,
         )
     }
 
@@ -147,6 +151,7 @@ class GateServiceImplTest {
 
         @Test
         fun `openGate rejects mangled GATE_REQUEST_BODY before calling SUPLA`() = runTest {
+            coEvery { suplaTokenProvider.getAccessToken(any()) } returns "token"
             val broken = GateServiceImpl(
                 gateConfig = GateConfig(
                     openUrl = "https://svr111.supla.org/api/channels/8656",
@@ -158,6 +163,7 @@ class GateServiceImplTest {
                 contractService = contractService,
                 listingService = listingService,
                 gateEventRepo = gateEventRepo,
+                suplaTokenProvider = suplaTokenProvider,
             )
             val ex = assertThrows<IllegalStateException> {
                 broken.openGate()

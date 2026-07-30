@@ -10,6 +10,7 @@ import com.kontenery.repository.InvoiceRepo
 import com.kontenery.repository.KsefSessionInvoiceStatusRepo
 import com.kontenery.repository.PaymentRepo
 import com.kontenery.repository.ProductRepo
+import com.kontenery.repository.SuplaTokenRepo
 import com.kontenery.repository.UtilitiesRepo
 import com.kontenery.repository.impl.AddressRepoImpl
 import com.kontenery.repository.impl.BillRepoImpl
@@ -21,6 +22,7 @@ import com.kontenery.repository.impl.InvoiceRepoImpl
 import com.kontenery.repository.impl.KsefSessionInvoiceStatusRepoImpl
 import com.kontenery.repository.impl.PaymentRepoImpl
 import com.kontenery.repository.impl.ProductRepoImpl
+import com.kontenery.repository.impl.SuplaTokenRepoImpl
 import com.kontenery.repository.impl.UtilitiesRepoImpl
 import com.kontenery.service.AddressService
 import com.kontenery.service.AuthService
@@ -35,6 +37,7 @@ import com.kontenery.service.ListingService
 import com.kontenery.service.PaymentService
 import com.kontenery.service.PrintService
 import com.kontenery.service.ProductService
+import com.kontenery.service.SuplaTokenProvider
 import com.kontenery.service.UtilitiesService
 import com.kontenery.service.impl.AddressServiceImpl
 import com.kontenery.service.impl.AuthServiceImpl
@@ -48,6 +51,7 @@ import com.kontenery.service.impl.ListingServiceImpl
 import com.kontenery.service.impl.PaymentServiceImpl
 import com.kontenery.service.impl.PrintServiceImpl
 import com.kontenery.service.impl.ProductServiceImp
+import com.kontenery.service.impl.SuplaTokenProviderImpl
 import com.kontenery.service.impl.UtilitiesServiceImpl
 import com.kontenery.ksef.KsefTokenDiagnostics
 import com.kontenery.ksef.client.KsefApiClient
@@ -58,6 +62,7 @@ import com.kontenery.ksef.service.impl.KsefServiceImpl
 import com.kontenery.validator.BankAccountValidator
 import com.kontenery.validator.PaymentValidator
 import com.kontenery.validator.httpValidator
+import io.ktor.client.HttpClient
 import io.ktor.server.application.Application
 import io.ktor.server.application.log
 import io.ktor.server.engine.embeddedServer
@@ -143,17 +148,27 @@ fun Application.module() {
     )
 
     val gateEventRepo: GateEventRepo = GateEventRepoImpl()
+    val gateHttpClient = HttpClient()
+    val suplaTokenRepo: SuplaTokenRepo = SuplaTokenRepoImpl()
+    val suplaTokenProvider: SuplaTokenProvider = SuplaTokenProviderImpl(
+        httpClient = gateHttpClient,
+        gateConfig = apiConfig.gate,
+        tokenRepo = suplaTokenRepo,
+    )
     val gateService: GateService = GateServiceImpl(
         gateConfig = apiConfig.gate,
         contractService = contractService,
         listingService = listingService,
         gateEventRepo = gateEventRepo,
+        suplaTokenProvider = suplaTokenProvider,
+        httpClient = gateHttpClient,
     )
 
     logger()
     configureFrameworks()
     configureSerialization()
     configureDatabases(apiConfig)
+    configureSuplaTokenRefresh(suplaTokenProvider)
     val bankAccountValidator = BankAccountValidator(bankAccountService)
 
     httpValidator(contractService)
@@ -177,5 +192,8 @@ fun Application.module() {
         paymentValidator,
         bankAccountValidator,
         gateService,
+        apiConfig.gate,
+        suplaTokenProvider,
+        gateHttpClient,
     )
 }

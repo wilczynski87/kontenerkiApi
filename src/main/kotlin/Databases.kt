@@ -23,6 +23,7 @@ private val applicationTables: Array<Table> = arrayOf(
     SubmeterTable, ReadingTable,
     KsefSessionInvoiceStatusTable,
     GateEventTable,
+    SuplaTokenTable,
 )
 
 private fun resolveDbEnv(apiConfig: ApiConfig): Env = when (apiConfig.env.uppercase()) {
@@ -52,6 +53,7 @@ fun configureDatabases(apiConfig: ApiConfig) {
 
     ensureKsefSchemaIfNeeded(apiConfig)
     ensureGateEventSchemaIfNeeded(apiConfig)
+    ensureSuplaTokenSchemaIfNeeded(apiConfig)
 //    repairInvoiceForeignKeysIfNeeded(apiConfig)
 
     val connection = {

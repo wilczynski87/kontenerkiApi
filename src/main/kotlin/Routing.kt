@@ -29,6 +29,9 @@ fun Application.configureRouting(
     paymentValidator: PaymentValidator,
     bankAccountValidator: BankAccountValidator,
     gateService: GateService,
+    gateConfig: GateConfig = GateConfig(),
+    suplaTokenProvider: SuplaTokenProvider? = null,
+    gateHttpClient: io.ktor.client.HttpClient? = null,
 ) {
     routing {
 
@@ -55,6 +58,13 @@ fun Application.configureRouting(
             listingRoute(listingService)
             utilitiesController(utilitiesService, clientService)
             gate(gateService)
+        }
+        if (suplaTokenProvider != null) {
+            suplaOAuth(
+                gateConfig = gateConfig,
+                tokenProvider = suplaTokenProvider,
+                httpClient = gateHttpClient ?: io.ktor.client.HttpClient(),
+            )
         }
         mailSendConfirmation(invoiceService)
         authController(authService)

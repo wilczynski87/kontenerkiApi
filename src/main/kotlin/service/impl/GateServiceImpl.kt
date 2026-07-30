@@ -8,8 +8,8 @@ import com.kontenery.service.ContractService
 import com.kontenery.service.GateAccessDeniedException
 import com.kontenery.service.GateService
 import com.kontenery.service.ListingService
+import com.kontenery.service.SuplaTokenProvider
 import io.ktor.client.HttpClient
-import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.header
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
@@ -17,15 +17,13 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
-import io.ktor.http.Parameters
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.TextContent
 import io.ktor.http.isSuccess
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import java.math.BigDecimal
@@ -36,14 +34,9 @@ class GateServiceImpl(
     private val contractService: ContractService,
     private val listingService: ListingService,
     private val gateEventRepo: GateEventRepo,
+    private val suplaTokenProvider: SuplaTokenProvider,
     private val httpClient: HttpClient = HttpClient(),
 ) : GateService {
-
-    @Volatile
-    private var accessToken: String? = gateConfig.accessToken
-
-    @Volatile
-    private var refreshToken: String? = gateConfig.refreshToken
 
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -114,11 +107,11 @@ class GateServiceImpl(
             else -> throw IllegalArgumentException("Nieobsługiwana metoda GATE_OPEN_METHOD: ${gateConfig.method}")
         }
 
-        var token = resolveAccessToken()
+        var token = suplaTokenProvider.getAccessToken()
         var response = executeGateRequest(method, token)
 
-        if (response.status.value == 401) {
-            token = refreshAccessToken()
+        if (response.status == HttpStatusCode.Unauthorized) {
+            token = suplaTokenProvider.getAccessToken(forceRefresh = true)
             response = executeGateRequest(method, token)
         }
 
@@ -128,50 +121,6 @@ class GateServiceImpl(
                 "Gate hardware error ${response.status} from ${gateConfig.openUrl}: $errorBody".trim()
             )
         }
-    }
-
-    private suspend fun resolveAccessToken(): String {
-        accessToken?.takeIf { it.isNotBlank() }?.let { return it }
-        // Brak PAT — spróbuj OAuth refresh (SUPLA_REFRESH_TOKEN + client id/secret).
-        if (!refreshToken.isNullOrBlank()) {
-            return refreshAccessToken()
-        }
-        throw IllegalStateException(
-            "Brak GATE_ACCESS_TOKEN / GATE_API_KEY — ustaw token SUPLA lub GATE_MOCK=true"
-        )
-    }
-
-    private suspend fun refreshAccessToken(): String {
-        val currentRefresh = refreshToken
-        val clientId = gateConfig.clientId
-        val clientSecret = gateConfig.clientSecret
-
-        if (currentRefresh.isNullOrBlank() || clientId.isNullOrBlank() || clientSecret.isNullOrBlank()) {
-            throw IllegalStateException(
-                "Gate hardware returned 401 and SUPLA refresh is not configured " +
-                    "(SUPLA_REFRESH_TOKEN, SUPLA_CLIENT_ID, SUPLA_CLIENT_SECRET)"
-            )
-        }
-
-        val response = httpClient.submitForm(
-            url = gateConfig.tokenUrl,
-            formParameters = Parameters.build {
-                append("grant_type", "refresh_token")
-                append("refresh_token", currentRefresh)
-                append("client_id", clientId)
-                append("client_secret", clientSecret)
-            },
-        )
-
-        if (!response.status.isSuccess()) {
-            val body = runCatching { response.bodyAsText() }.getOrDefault("")
-            throw IllegalStateException("SUPLA token refresh failed ${response.status}: $body".trim())
-        }
-
-        val tokenResponse = json.decodeFromString<SuplaTokenResponse>(response.bodyAsText())
-        accessToken = tokenResponse.accessToken
-        tokenResponse.refreshToken?.takeIf { it.isNotBlank() }?.let { refreshToken = it }
-        return tokenResponse.accessToken
     }
 
     private suspend fun executeGateRequest(method: HttpMethod, token: String) =
@@ -199,11 +148,4 @@ class GateServiceImpl(
             )
         }
     }
-
-    @Serializable
-    private data class SuplaTokenResponse(
-        @SerialName("access_token") val accessToken: String,
-        @SerialName("refresh_token") val refreshToken: String? = null,
-        @SerialName("expires_in") val expiresIn: Long? = null,
-    )
 }

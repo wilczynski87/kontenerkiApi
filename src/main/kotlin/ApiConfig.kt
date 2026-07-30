@@ -44,11 +44,15 @@ data class GateConfig(
     val method: String = "PATCH",
     /** Stały access token (PAT) lub początkowy OAuth access token. */
     val accessToken: String? = null,
-    /** OAuth refresh token – jednorazowy refresh przy 401. */
+    /** OAuth refresh token – seed przy pustej tabeli supla_token; potem rotacja w DB. */
     val refreshToken: String? = null,
     val clientId: String? = null,
     val clientSecret: String? = null,
     val tokenUrl: String = "https://svr111.supla.org/oauth/v2/token",
+    /** Redirect URI zarejestrowany w SUPLA (wymagany przy exchange-code). */
+    val redirectUri: String? = null,
+    /** Włącza POST /gate/supla/exchange-code (jednorazowy setup OAuth). */
+    val oauthHelperEnabled: Boolean = false,
     /** Opcjonalny JSON body, np. {"action":"OPEN_CLOSE"} dla SUPLA. */
     val requestBody: String? = null,
     val mockMode: Boolean = false,
@@ -178,6 +182,8 @@ internal fun resolveGateConfig(
         clientSecret = clientSecret,
         tokenUrl = getenv("SUPLA_TOKEN_URL")?.trim()?.takeIf { it.isNotEmpty() }
             ?: "https://svr111.supla.org/oauth/v2/token",
+        redirectUri = getenv("SUPLA_REDIRECT_URI")?.trim()?.takeIf { it.isNotEmpty() },
+        oauthHelperEnabled = getenv("SUPLA_OAUTH_HELPER")?.toBooleanStrictOrNull() ?: false,
         requestBody = getenv("GATE_REQUEST_BODY")?.trim()?.takeIf { it.isNotEmpty() }
             ?: """{"action":"OPEN_CLOSE"}""",
         mockMode = mockMode,
