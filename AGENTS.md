@@ -49,6 +49,8 @@ On every startup (including PROD), the API ensures KSeF schema objects exist: `i
 
 On every startup (including PROD), the API ensures the `gate_event` table exists (see `GateEventSchemaMigration.kt`). Disable with `DB_GATE_EVENT_SCHEMA_MIGRATE=false`.
 
+On every startup (including PROD), the API ensures `clients.password` exists (see `ClientPasswordSchemaMigration.kt`). Disable with `DB_CLIENT_PASSWORD_SCHEMA_MIGRATE=false`.
+
 ### Restoring a PostgreSQL dump
 
 Import into a **fresh** `db1` (avoids duplicate tables / broken migrations):

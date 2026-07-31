@@ -54,6 +54,7 @@ fun configureDatabases(apiConfig: ApiConfig) {
     ensureKsefSchemaIfNeeded(apiConfig)
     ensureGateEventSchemaIfNeeded(apiConfig)
     ensureSuplaTokenSchemaIfNeeded(apiConfig)
+    ensureClientPasswordSchemaIfNeeded(apiConfig)
 //    repairInvoiceForeignKeysIfNeeded(apiConfig)
 
     val connection = {

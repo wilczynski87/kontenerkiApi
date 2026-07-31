@@ -22,3 +22,5 @@ CREATE TABLE IF NOT EXISTS gate_event (
     opened_at_epoch_ms BIGINT NOT NULL,
     note VARCHAR(100)
 );
+
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS password TEXT;
