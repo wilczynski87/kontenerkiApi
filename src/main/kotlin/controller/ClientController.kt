@@ -96,6 +96,8 @@ fun Route.clientRoute(clientService: ClientService) {
                 val clientFinanse: ClientFinanceDto = clientService.finanseForClient(id, fromLocalDate, toLocalDate)
                     ?: throw NotFoundException("ClientFinance not found")
 
+                println("clientFinanse: $clientFinanse")
+
                 call.respond(clientFinanse)
 
             } catch (e: Exception) {

@@ -1,9 +1,13 @@
 package com.kontenery.service.impl
 
 import com.kontenery.GateConfig
+import com.kontenery.data.Contract
 import com.kontenery.data.gate.OpenGateResponse
+import com.kontenery.data.invoice.Invoice
 import com.kontenery.data.utils.now
+import com.kontenery.repository.BillRepo
 import com.kontenery.repository.GateEventRepo
+import com.kontenery.repository.InvoiceRepo
 import com.kontenery.service.ContractService
 import com.kontenery.service.GateAccessDeniedException
 import com.kontenery.service.GateService
@@ -27,12 +31,15 @@ import kotlinx.datetime.minus
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import java.math.BigDecimal
+import java.math.RoundingMode
 import kotlin.time.Duration.Companion.seconds
 
 class GateServiceImpl(
     private val gateConfig: GateConfig,
     private val contractService: ContractService,
     private val listingService: ListingService,
+    private val invoiceRepo: InvoiceRepo,
+    private val billRepo: BillRepo,
     private val gateEventRepo: GateEventRepo,
     private val suplaTokenProvider: SuplaTokenProvider,
     private val httpClient: HttpClient = HttpClient(),
@@ -56,18 +63,46 @@ class GateServiceImpl(
         }
     }
 
-    // TODO do poprawy... logika zepsuta
     override suspend fun ensureNoOverdue(clientId: Long) {
         val balance = listingService.clientOverdue(
             clientId,
             LocalDate.now().minus(1, DateTimeUnit.YEAR),
             LocalDate.now(),
         ) ?: BigDecimal.ZERO
-
-        if (balance < BigDecimal.ZERO) {
+        val unAcceptableOverdue = resolveUnAcceptableOverdue(clientId)
+        if (balance < -unAcceptableOverdue) {
             throw GateAccessDeniedException("Wykryto nieuregulowane zadłużenie")
         }
     }
+
+    private suspend fun resolveUnAcceptableOverdue(clientId: Long): BigDecimal {
+        val activeContracts = contractService.getByClientId(clientId, onlyActive = true)
+        if (activeContracts.isNotEmpty()) {
+            return activeContracts
+                .mapNotNull { it.grossAmount() }
+                .fold(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP)
+        }
+
+        val lastDocument = listOfNotNull(
+            invoiceRepo.getLastInvoiceForClient(clientId),
+            billRepo.getLastBillForClient(clientId),
+        ).maxByOrNull { it.invoiceDate ?: LocalDate(1970, 1, 1) }
+
+        return lastDocument.amount()
+    }
+
+    private fun Contract.grossAmount(): BigDecimal? {
+        val net = netPrice ?: return null
+        val factor = (vatRate + BigDecimal(100))
+            .divide(BigDecimal(100), 4, RoundingMode.HALF_UP)
+        return net.multiply(factor).setScale(2, RoundingMode.HALF_UP)
+    }
+
+    private fun Invoice?.amount(): BigDecimal =
+        this?.priceWithVatSum?.toBigDecimalOrNull()
+            ?: this?.priceSum?.toBigDecimalOrNull()
+            ?: BigDecimal.ZERO
 
     override suspend fun ensureCooldown(clientId: Long) {
         val lastOpenEpochMs = gateEventRepo.getLastOpenEventEpochMs(clientId) ?: return

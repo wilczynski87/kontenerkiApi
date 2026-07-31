@@ -2,7 +2,10 @@ package com.kontenery.service.impl
 
 import com.kontenery.GateConfig
 import com.kontenery.data.Contract
+import com.kontenery.data.invoice.Invoice
+import com.kontenery.repository.BillRepo
 import com.kontenery.repository.GateEventRepo
+import com.kontenery.repository.InvoiceRepo
 import com.kontenery.service.ContractService
 import com.kontenery.service.GateAccessDeniedException
 import com.kontenery.service.ListingService
@@ -12,6 +15,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -24,6 +28,8 @@ class GateServiceImplTest {
 
     private lateinit var contractService: ContractService
     private lateinit var listingService: ListingService
+    private lateinit var invoiceRepo: InvoiceRepo
+    private lateinit var billRepo: BillRepo
     private lateinit var gateEventRepo: GateEventRepo
     private lateinit var suplaTokenProvider: SuplaTokenProvider
     private lateinit var service: GateServiceImpl
@@ -32,6 +38,8 @@ class GateServiceImplTest {
     fun setUp() {
         contractService = mockk()
         listingService = mockk()
+        invoiceRepo = mockk()
+        billRepo = mockk()
         gateEventRepo = mockk(relaxUnitFun = true)
         suplaTokenProvider = mockk()
         service = GateServiceImpl(
@@ -42,6 +50,8 @@ class GateServiceImplTest {
             ),
             contractService = contractService,
             listingService = listingService,
+            invoiceRepo = invoiceRepo,
+            billRepo = billRepo,
             gateEventRepo = gateEventRepo,
             suplaTokenProvider = suplaTokenProvider,
         )
@@ -101,12 +111,67 @@ class GateServiceImplTest {
         @Test
         fun `passes when balance is zero or positive`() = runTest {
             coEvery { listingService.clientOverdue(any(), any(), any()) } returns BigDecimal("10.00")
+            coEvery { contractService.getByClientId(1L, onlyActive = true) } returns emptyList()
+            coEvery { invoiceRepo.getLastInvoiceForClient(1L) } returns null
+            coEvery { billRepo.getLastBillForClient(1L) } returns null
             service.ensureNoOverdue(1L)
         }
 
         @Test
-        fun `throws when balance is negative`() = runTest {
+        fun `passes when debt is within active contracts sum`() = runTest {
+            // 100 net * 1.23 = 123.00 gross threshold; debt 100 is acceptable
+            coEvery { listingService.clientOverdue(any(), any(), any()) } returns BigDecimal("-100.00")
+            coEvery { contractService.getByClientId(1L, onlyActive = true) } returns listOf(
+                Contract(id = 1L, netPrice = BigDecimal("100.00"), vatRate = BigDecimal("23")),
+            )
+            service.ensureNoOverdue(1L)
+        }
+
+        @Test
+        fun `throws when debt exceeds active contracts sum`() = runTest {
+            coEvery { listingService.clientOverdue(any(), any(), any()) } returns BigDecimal("-200.00")
+            coEvery { contractService.getByClientId(1L, onlyActive = true) } returns listOf(
+                Contract(id = 1L, netPrice = BigDecimal("100.00"), vatRate = BigDecimal("23")),
+            )
+            val ex = assertThrows<GateAccessDeniedException> {
+                service.ensureNoOverdue(1L)
+            }
+            assertTrue(ex.message!!.contains("zadłużenie", ignoreCase = true))
+        }
+
+        @Test
+        fun `uses last invoice amount when no active contracts`() = runTest {
+            coEvery { listingService.clientOverdue(any(), any(), any()) } returns BigDecimal("-50.00")
+            coEvery { contractService.getByClientId(1L, onlyActive = true) } returns emptyList()
+            coEvery { invoiceRepo.getLastInvoiceForClient(1L) } returns Invoice(
+                invoiceDate = LocalDate(2026, 6, 1),
+                priceWithVatSum = "100.00",
+            )
+            coEvery { billRepo.getLastBillForClient(1L) } returns null
+            service.ensureNoOverdue(1L)
+        }
+
+        @Test
+        fun `throws when debt exceeds last invoice and no contracts`() = runTest {
+            coEvery { listingService.clientOverdue(any(), any(), any()) } returns BigDecimal("-150.00")
+            coEvery { contractService.getByClientId(1L, onlyActive = true) } returns emptyList()
+            coEvery { invoiceRepo.getLastInvoiceForClient(1L) } returns Invoice(
+                invoiceDate = LocalDate(2026, 6, 1),
+                priceWithVatSum = "100.00",
+            )
+            coEvery { billRepo.getLastBillForClient(1L) } returns null
+            val ex = assertThrows<GateAccessDeniedException> {
+                service.ensureNoOverdue(1L)
+            }
+            assertTrue(ex.message!!.contains("zadłużenie", ignoreCase = true))
+        }
+
+        @Test
+        fun `throws when balance is negative and no threshold available`() = runTest {
             coEvery { listingService.clientOverdue(any(), any(), any()) } returns BigDecimal("-5.00")
+            coEvery { contractService.getByClientId(1L, onlyActive = true) } returns emptyList()
+            coEvery { invoiceRepo.getLastInvoiceForClient(1L) } returns null
+            coEvery { billRepo.getLastBillForClient(1L) } returns null
             val ex = assertThrows<GateAccessDeniedException> {
                 service.ensureNoOverdue(1L)
             }
@@ -162,6 +227,8 @@ class GateServiceImplTest {
                 ),
                 contractService = contractService,
                 listingService = listingService,
+                invoiceRepo = invoiceRepo,
+                billRepo = billRepo,
                 gateEventRepo = gateEventRepo,
                 suplaTokenProvider = suplaTokenProvider,
             )

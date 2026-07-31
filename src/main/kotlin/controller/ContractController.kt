@@ -37,6 +37,8 @@ fun Route.contractRoutes(
             val id = call.parameters["id"]?.toLongOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
             val contracts = service.getByClientId(id)
 
+            println("contracts: $contracts")
+
             call.respond(contracts)
         }
 

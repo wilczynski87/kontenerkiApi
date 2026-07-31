@@ -159,6 +159,8 @@ fun Application.module() {
         gateConfig = apiConfig.gate,
         contractService = contractService,
         listingService = listingService,
+        invoiceRepo = invoiceRepo,
+        billRepo = billRepo,
         gateEventRepo = gateEventRepo,
         suplaTokenProvider = suplaTokenProvider,
         httpClient = gateHttpClient,
