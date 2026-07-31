@@ -30,3 +30,9 @@ data class AuthResponse(
     val loginResponse: LoginResponse,
     val tokenResponse: TokenResponse
 )
+
+@Serializable
+data class ChangePasswordRequest(
+    val currentPassword: String,
+    val newPassword: String,
+)

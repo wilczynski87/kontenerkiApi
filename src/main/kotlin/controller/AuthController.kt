@@ -4,7 +4,9 @@ import com.kontenery.library.model.auth.*
 import com.kontenery.service.AuthService
 import com.kontenery.service.RefreshTokenRequest
 import com.kontenery.service.TokenType
+import com.kontenery.service.ChangePasswordResult
 import com.kontenery.utils.ApiErrorResponse
+import com.kontenery.utils.respondBadRequest
 import com.kontenery.utils.respondInternalError
 import com.kontenery.utils.respondUnauthorized
 import io.ktor.http.HttpStatusCode
@@ -161,6 +163,31 @@ fun Route.authController(
                 } catch (e: Exception) {
                     authLog.warn("Logout failed", e)
                     call.respond(HttpStatusCode.OK, ApiErrorResponse("Logged out"))
+                }
+            }
+
+            post("/change-password") {
+                try {
+                    val principal = call.principal<JWTPrincipal>()
+                        ?: return@post call.respondUnauthorized("Unauthorized")
+                    val userId = principal.payload.getClaim("userId").asString()
+                        ?: return@post call.respondUnauthorized("User ID not found in token")
+                    val body = call.receive<ChangePasswordRequest>()
+
+                    when (val result = authService.changePassword(userId, body)) {
+                        is ChangePasswordResult.Ok ->
+                            call.respond(HttpStatusCode.OK, ApiErrorResponse("Password changed"))
+                        is ChangePasswordResult.InvalidCurrent ->
+                            call.respondUnauthorized("Invalid current password")
+                        is ChangePasswordResult.BadRequest ->
+                            call.respondBadRequest(result.message)
+                        is ChangePasswordResult.Forbidden ->
+                            call.respond(HttpStatusCode.Forbidden, ApiErrorResponse(result.message))
+                        is ChangePasswordResult.NotFound ->
+                            call.respond(HttpStatusCode.NotFound, ApiErrorResponse("Client not found"))
+                    }
+                } catch (e: Exception) {
+                    call.respondInternalError(e, "Failed to change password")
                 }
             }
         }

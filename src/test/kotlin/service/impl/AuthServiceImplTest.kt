@@ -8,9 +8,11 @@ import com.kontenery.GateConfig
 import com.kontenery.KsefConfig
 import com.kontenery.data.Client
 import com.kontenery.data.ClientPersonalData
+import com.kontenery.library.model.auth.ChangePasswordRequest
 import com.kontenery.library.model.auth.LoginRequest
 import com.kontenery.library.model.auth.LoginResponse
 import com.kontenery.repository.ClientRepo
+import com.kontenery.service.ChangePasswordResult
 import com.kontenery.service.JwtConfig
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -250,6 +252,122 @@ class AuthServiceImplTest {
 
             assertNotNull(result)
             assertFalse(result!!.isValid)
+        }
+    }
+
+    @Nested
+    inner class ChangePassword {
+
+        @Test
+        fun `updates password when current password matches`() = runTest {
+            val client = Client(
+                id = 15,
+                password = "stareHaslo",
+                clientPrivate = ClientPersonalData(email = "jan@example.com", pesel = "90010112345"),
+            )
+            coEvery { clientRepo.findClientById(15) } returns client
+            coEvery { clientRepo.updateClient(any()) } answers {
+                firstArg<Client>().copy(password = firstArg<Client>().password)
+            }
+
+            val result = service.changePassword(
+                userId = "15",
+                request = ChangePasswordRequest(
+                    currentPassword = "stareHaslo",
+                    newPassword = "noweHaslo",
+                ),
+            )
+
+            assertEquals(ChangePasswordResult.Ok, result)
+            coVerify {
+                clientRepo.updateClient(match { it.id == 15L && it.password == "noweHaslo" })
+            }
+        }
+
+        @Test
+        fun `accepts pesel as current password when password is not set`() = runTest {
+            val client = Client(
+                id = 27,
+                password = null,
+                clientPrivate = ClientPersonalData(email = "anna@example.com", pesel = "88050554321"),
+            )
+            coEvery { clientRepo.findClientById(27) } returns client
+            coEvery { clientRepo.updateClient(any()) } answers {
+                firstArg<Client>()
+            }
+
+            val result = service.changePassword(
+                userId = "27",
+                request = ChangePasswordRequest(
+                    currentPassword = "88050554321",
+                    newPassword = "noweHaslo",
+                ),
+            )
+
+            assertEquals(ChangePasswordResult.Ok, result)
+        }
+
+        @Test
+        fun `rejects wrong current password`() = runTest {
+            coEvery { clientRepo.findClientById(15) } returns Client(
+                id = 15,
+                password = "stareHaslo",
+                clientPrivate = ClientPersonalData(email = "jan@example.com", pesel = "90010112345"),
+            )
+
+            val result = service.changePassword(
+                userId = "15",
+                request = ChangePasswordRequest(
+                    currentPassword = "zleHaslo",
+                    newPassword = "noweHaslo",
+                ),
+            )
+
+            assertEquals(ChangePasswordResult.InvalidCurrent, result)
+            coVerify(exactly = 0) { clientRepo.updateClient(any()) }
+        }
+
+        @Test
+        fun `rejects admin account`() = runTest {
+            val result = service.changePassword(
+                userId = "0",
+                request = ChangePasswordRequest(
+                    currentPassword = "admin-secret",
+                    newPassword = "noweHaslo",
+                ),
+            )
+
+            assertTrue(result is ChangePasswordResult.Forbidden)
+            coVerify(exactly = 0) { clientRepo.findClientById(any()) }
+        }
+
+        @Test
+        fun `rejects short new password`() = runTest {
+            val result = service.changePassword(
+                userId = "15",
+                request = ChangePasswordRequest(
+                    currentPassword = "stareHaslo",
+                    newPassword = "123",
+                ),
+            )
+
+            assertTrue(result is ChangePasswordResult.BadRequest)
+            coVerify(exactly = 0) { clientRepo.findClientById(any()) }
+        }
+
+        @Test
+        fun `returns not found for missing client`() = runTest {
+            coEvery { clientRepo.findClientById(99) } returns null
+
+            val result = service.changePassword(
+                userId = "99",
+                request = ChangePasswordRequest(
+                    currentPassword = "stareHaslo",
+                    newPassword = "noweHaslo",
+                ),
+            )
+
+            assertEquals(ChangePasswordResult.NotFound, result)
         }
     }
 
