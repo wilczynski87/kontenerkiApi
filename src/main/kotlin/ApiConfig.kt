@@ -60,6 +60,23 @@ data class GateConfig(
 )
 
 @Serializable
+data class P24Config(
+    /** SANDBOX | PRODUCTION */
+    val environment: String = "SANDBOX",
+    val baseUrl: String = "https://sandbox.przelewy24.pl/api/v1",
+    val paymentUrl: String = "https://sandbox.przelewy24.pl/trnRequest",
+    val merchantId: Int? = null,
+    val posId: Int? = null,
+    /** Klucz CRC — tylko do podpisu, nigdy w request body poza polem sign. */
+    val crc: String? = null,
+    /** Klucz do raportów — Basic Auth password. */
+    val apiKey: String? = null,
+    /** Publiczny URL webhooka statusu (urlStatus w register). */
+    val urlStatus: String? = null,
+    val mockMode: Boolean = false,
+)
+
+@Serializable
 data class ApiConfig(
     val env: String,
     val email: EmailConfig,
@@ -67,6 +84,7 @@ data class ApiConfig(
     val auth: AuthConfig,
     val ksef: KsefConfig,
     val gate: GateConfig,
+    val p24: P24Config = P24Config(),
 )
 
 private fun env(name: String, default: String): String =
@@ -153,6 +171,57 @@ fun Application.loadApiConfig(): ApiConfig {
 
         ksef = resolveKsefConfig(apiEnv),
         gate = resolveGateConfig(apiEnv),
+        p24 = resolveP24Config(apiEnv),
+    )
+}
+
+internal fun resolveP24Config(
+    apiEnv: String,
+    getenv: (String) -> String? = { System.getenv(it) },
+): P24Config {
+    val isDev = apiEnv.equals("DEV", ignoreCase = true)
+    val environment = getenv("P24_ENV")?.trim()?.uppercase()
+        ?: if (isDev) "SANDBOX" else "PRODUCTION"
+    val isSandbox = environment != "PRODUCTION"
+
+    val merchantId = getenv("P24_MERCHANT_ID")?.trim()?.toIntOrNull()
+    val posId = getenv("P24_POS_ID")?.trim()?.toIntOrNull() ?: merchantId
+    val crc = getenv("P24_CRC")?.trim()?.takeIf { it.isNotEmpty() }
+        ?: getenv("P24_CRC_KEY")?.trim()?.takeIf { it.isNotEmpty() }
+    val apiKey = getenv("P24_API_KEY")?.trim()?.takeIf { it.isNotEmpty() }
+    val urlStatus = getenv("P24_URL_STATUS")?.trim()?.takeIf { it.isNotEmpty() }
+
+    val mockMode = getenv("P24_MOCK")?.toBooleanStrictOrNull()
+        ?: (isDev && (merchantId == null || crc.isNullOrBlank() || apiKey.isNullOrBlank()))
+
+    val defaultBase = if (isSandbox) {
+        "https://sandbox.przelewy24.pl/api/v1"
+    } else {
+        "https://secure.przelewy24.pl/api/v1"
+    }
+    val defaultPayment = if (isSandbox) {
+        "https://sandbox.przelewy24.pl/trnRequest"
+    } else {
+        "https://secure.przelewy24.pl/trnRequest"
+    }
+
+    if (isDev && !isSandbox) {
+        error(
+            "API_ENV=DEV nie może używać produkcyjnego P24_ENV=PRODUCTION. " +
+                "Ustaw P24_ENV=SANDBOX lub pomiń P24_ENV.",
+        )
+    }
+
+    return P24Config(
+        environment = environment,
+        baseUrl = getenv("P24_BASE_URL")?.trim()?.takeIf { it.isNotEmpty() } ?: defaultBase,
+        paymentUrl = getenv("P24_PAYMENT_URL")?.trim()?.takeIf { it.isNotEmpty() } ?: defaultPayment,
+        merchantId = merchantId,
+        posId = posId,
+        crc = crc,
+        apiKey = apiKey,
+        urlStatus = urlStatus,
+        mockMode = mockMode,
     )
 }
 

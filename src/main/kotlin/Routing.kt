@@ -32,6 +32,7 @@ fun Application.configureRouting(
     gateConfig: GateConfig = GateConfig(),
     suplaTokenProvider: SuplaTokenProvider? = null,
     gateHttpClient: io.ktor.client.HttpClient? = null,
+    p24Service: com.kontenery.p24.service.P24Service? = null,
 ) {
     routing {
 
@@ -70,5 +71,8 @@ fun Application.configureRouting(
         authController(authService)
         bramaController()
         ksefRoutes(ksefService)
+        if (p24Service != null) {
+            p24Routes(p24Service)
+        }
     }
 }

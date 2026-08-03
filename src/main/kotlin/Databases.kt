@@ -5,6 +5,7 @@ import com.kontenery.data.utils.Env
 import com.kontenery.repository.entity.*
 import com.kontenery.repository.entity.invoice.*
 import com.kontenery.repository.entity.ksef.KsefSessionInvoiceStatusTable
+import com.kontenery.repository.entity.p24.P24TransactionTable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Table
@@ -24,6 +25,7 @@ private val applicationTables: Array<Table> = arrayOf(
     KsefSessionInvoiceStatusTable,
     GateEventTable,
     SuplaTokenTable,
+    P24TransactionTable,
 )
 
 private fun resolveDbEnv(apiConfig: ApiConfig): Env = when (apiConfig.env.uppercase()) {
@@ -56,6 +58,7 @@ fun configureDatabases(apiConfig: ApiConfig) {
     ensureSuplaTokenSchemaIfNeeded(apiConfig)
     ensureClientPasswordSchemaIfNeeded(apiConfig)
     ensureInvoiceNumberUniqueIndexesIfNeeded(apiConfig)
+    ensureP24SchemaIfNeeded(apiConfig)
 //    repairInvoiceForeignKeysIfNeeded(apiConfig)
 
     val connection = {

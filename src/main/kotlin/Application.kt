@@ -10,6 +10,7 @@ import com.kontenery.repository.InvoiceRepo
 import com.kontenery.repository.KsefSessionInvoiceStatusRepo
 import com.kontenery.repository.PaymentRepo
 import com.kontenery.repository.ProductRepo
+import com.kontenery.repository.P24TransactionRepo
 import com.kontenery.repository.SuplaTokenRepo
 import com.kontenery.repository.UtilitiesRepo
 import com.kontenery.repository.impl.AddressRepoImpl
@@ -21,6 +22,7 @@ import com.kontenery.repository.impl.GateEventRepoImpl
 import com.kontenery.repository.impl.InvoiceRepoImpl
 import com.kontenery.repository.impl.KsefSessionInvoiceStatusRepoImpl
 import com.kontenery.repository.impl.PaymentRepoImpl
+import com.kontenery.repository.impl.P24TransactionRepoImpl
 import com.kontenery.repository.impl.ProductRepoImpl
 import com.kontenery.repository.impl.SuplaTokenRepoImpl
 import com.kontenery.repository.impl.UtilitiesRepoImpl
@@ -59,6 +61,9 @@ import com.kontenery.ksef.repository.KsefRepository
 import com.kontenery.ksef.repository.impl.KsefRepositoryImpl
 import com.kontenery.ksef.service.KsefService
 import com.kontenery.ksef.service.impl.KsefServiceImpl
+import com.kontenery.p24.client.P24ApiClient
+import com.kontenery.p24.service.P24Service
+import com.kontenery.p24.service.impl.P24ServiceImpl
 import com.kontenery.validator.BankAccountValidator
 import com.kontenery.validator.PaymentValidator
 import com.kontenery.validator.httpValidator
@@ -166,6 +171,23 @@ fun Application.module() {
         httpClient = gateHttpClient,
     )
 
+    val p24TransactionRepo: P24TransactionRepo = P24TransactionRepoImpl()
+    val p24ApiClient = P24ApiClient(apiConfig.p24)
+    val p24Service: P24Service = P24ServiceImpl(
+        config = apiConfig.p24,
+        apiClient = p24ApiClient,
+        transactionRepo = p24TransactionRepo,
+        clientService = clientService,
+        paymentService = paymentService,
+    )
+    log.info(
+        "P24 [{}]: {} | merchantId={} | mock={}",
+        apiConfig.p24.environment,
+        apiConfig.p24.baseUrl,
+        apiConfig.p24.merchantId ?: "(not set)",
+        apiConfig.p24.mockMode,
+    )
+
     logger()
     configureFrameworks()
     configureSerialization()
@@ -197,5 +219,6 @@ fun Application.module() {
         apiConfig.gate,
         suplaTokenProvider,
         gateHttpClient,
+        p24Service,
     )
 }
