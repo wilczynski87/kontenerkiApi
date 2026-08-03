@@ -106,29 +106,33 @@ fun Route.invoiceRoutes(
                 val client: Client = clientService.findClientById(clientId)
                     ?: throw NullPointerException("no Client with given Id: $clientId")
 
-                val createdInvoice: Invoice = invoiceService.createPeriodicInvoiceForClient(client, period, errorList)
-                    ?: throw IllegalStateException("Could not create invoice for client: $clientId")
+                // Same contract as forAll: always 200 + List<ErrorMessage> (empty = success).
+                // Frontend (postPeriodicInvoice) decodes the body as List, not a number string.
+                val createdInvoice = invoiceService.createPeriodicInvoiceForClient(client, period, errorList)
+                if (createdInvoice == null) {
+                    call.respond(errorList)
+                    return@post
+                }
                 println("created Invoice/Bill: $createdInvoice")
 
-                val savedInvoice: Invoice = saveInvoiceWithOptionalKsef(
+                val savedInvoice = saveInvoiceWithOptionalKsef(
                     createdInvoice,
                     invoiceService,
                     ksefService,
                     errorList,
-                ) ?: throw IllegalStateException("Could not create or save invoice for client: $clientId")
+                )
+                if (savedInvoice == null) {
+                    call.respond(errorList)
+                    return@post
+                }
 
                 printService.sendPeriodicInvoice(savedInvoice)
                 println("Mail wysłany, od clientId: $clientId")
 
-                if(errorList.isEmpty()) call.respond(savedInvoice.invoiceNumber as Any)
-                else call.respond(HttpStatusCode.ExpectationFailed, errorList)
-//                call.respond(savedInvoice?.invoiceNumber ?: throw NullPointerException("No invoice number for savedInvoice"))
-            } catch (e: IllegalStateException) {
-                println("$e, errorList: $errorList")
-                call.respond(HttpStatusCode.ExpectationFailed, errorList)
+                call.respond(errorList)
             } catch (e:Exception) {
                 if (errorList.isNotEmpty()) {
-                    call.respond(HttpStatusCode.ExpectationFailed, errorList)
+                    call.respond(errorList)
                 } else {
                     call.respondInternalError(e, "Failed to create invoice")
                 }

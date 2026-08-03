@@ -25,10 +25,15 @@ import org.junit.jupiter.params.provider.CsvSource
 
 class InvoiceSendSupportTest {
 
+    private fun mockInvoiceService(): InvoiceService = mockk<InvoiceService>().also {
+        coEvery { it.getInvoiceByNumber(any()) } returns null
+        coEvery { it.hasPeriodicDocumentForClient(any(), any(), any()) } returns false
+    }
+
     @Test
     fun `saves non-VAT invoice without calling KSeF`() = runBlocking {
         val invoice = sampleNonVatInvoice()
-        val invoiceService = mockk<InvoiceService>()
+        val invoiceService = mockInvoiceService()
         val ksefService = mockk<KsefService>()
         coEvery { invoiceService.saveInvoiceWithErrors(false, invoice, any()) } returns invoice
 
@@ -52,7 +57,7 @@ class InvoiceSendSupportTest {
             status = KsefStatusInfo(code = 200, description = "OK"),
             permanentStorageDate = "2025-05-15T10:01:00Z",
         )
-        val invoiceService = mockk<InvoiceService>()
+        val invoiceService = mockInvoiceService()
         val ksefService = mockk<KsefService>()
         coEvery { ksefService.persistSessionStatus(any(), any()) } returns Unit
         coEvery { ksefService.sendInvoiceToKsef(invoice) } returns KsefSendInvoiceResponse(
@@ -87,7 +92,7 @@ class InvoiceSendSupportTest {
             status = KsefStatusInfo(code = 200, description = "OK"),
             permanentStorageDate = null,
         )
-        val invoiceService = mockk<InvoiceService>()
+        val invoiceService = mockInvoiceService()
         val ksefService = mockk<KsefService>()
         coEvery { ksefService.persistSessionStatus(any(), any()) } returns Unit
         coEvery { ksefService.sendInvoiceToKsef(invoice) } returns KsefSendInvoiceResponse(
@@ -122,7 +127,7 @@ class InvoiceSendSupportTest {
     fun `KSeF failure adds error and skips save when error list provided`() = runBlocking {
         val invoice = sampleVatInvoice()
         val errors = mutableListOf<com.kontenery.data.utils.errors.ErrorMessage>()
-        val invoiceService = mockk<InvoiceService>()
+        val invoiceService = mockInvoiceService()
         val ksefService = mockk<KsefService>()
         coEvery { ksefService.sendInvoiceToKsef(invoice) } throws KsefException("KSeF invoice processing failed: 450")
 
@@ -137,7 +142,7 @@ class InvoiceSendSupportTest {
     @Test
     fun `KSeF failure propagates when error list is null`() {
         val invoice = sampleVatInvoice()
-        val invoiceService = mockk<InvoiceService>()
+        val invoiceService = mockInvoiceService()
         val ksefService = mockk<KsefService>()
         coEvery { ksefService.sendInvoiceToKsef(invoice) } throws KsefException("processing failed")
 
@@ -149,7 +154,7 @@ class InvoiceSendSupportTest {
     @Test
     fun `returns null when save fails`() = runBlocking {
         val invoice = sampleNonVatInvoice()
-        val invoiceService = mockk<InvoiceService>()
+        val invoiceService = mockInvoiceService()
         val ksefService = mockk<KsefService>()
         coEvery { invoiceService.saveInvoiceWithErrors(false, invoice, any()) } returns null
 
@@ -167,7 +172,7 @@ class InvoiceSendSupportTest {
             customer = (base.customer as com.kontenery.data.invoice.Subject.Customer).copy(client = client),
         )
         val errors = mutableListOf<com.kontenery.data.utils.errors.ErrorMessage>()
-        val invoiceService = mockk<InvoiceService>()
+        val invoiceService = mockInvoiceService()
         val ksefService = mockk<KsefService>()
         coEvery {
             invoiceService.hasPeriodicDocumentForClient(65L, invoice.invoiceDate!!, true)
@@ -180,5 +185,42 @@ class InvoiceSendSupportTest {
         assertTrue(errors.single() is InvoiceErrorMessage)
         coVerify(exactly = 0) { ksefService.sendInvoiceToKsef(any()) }
         coVerify(exactly = 0) { invoiceService.saveInvoiceWithErrors(any(), any(), any()) }
+    }
+
+    @Test
+    fun `already persisted PERIODIC invoice is not blocked by duplicate check`() = runBlocking {
+        val client = com.kontenery.data.Client(id = 65L, isActive = true)
+        val base = sampleVatInvoice()
+        val invoice = base.copy(
+            type = com.kontenery.data.utils.InvoiceType.PERIODIC.name,
+            customer = (base.customer as com.kontenery.data.invoice.Subject.Customer).copy(client = client),
+        )
+        val invoiceWithKsef = invoice.copy(
+            ksefNumber = "KSeF-1",
+            invoiceSendToClient = LocalDate(2025, 5, 15),
+        )
+        val invoiceService = mockInvoiceService()
+        val ksefService = mockk<KsefService>()
+        coEvery { invoiceService.getInvoiceByNumber(invoice.invoiceNumber!!) } returns invoice
+        coEvery { ksefService.sendInvoiceToKsef(invoice) } returns KsefSendInvoiceResponse(
+            sessionReferenceNumber = "sess-1",
+            invoiceReferenceNumber = "inv-ref-1",
+            ksefNumber = "KSeF-1",
+            invoiceNumber = invoice.invoiceNumber,
+            sessionStatus = KsefSessionInvoiceStatusResponse(
+                ksefNumber = "KSeF-1",
+                invoiceNumber = invoice.invoiceNumber,
+                status = KsefStatusInfo(code = 200, description = "OK"),
+                permanentStorageDate = "2025-05-15T10:01:00Z",
+            ),
+        )
+        coEvery { ksefService.persistSessionStatus(any(), any()) } returns Unit
+        coEvery { invoiceService.saveInvoiceWithErrors(true, invoiceWithKsef, any()) } returns invoiceWithKsef
+
+        val saved = saveInvoiceWithOptionalKsef(invoice, invoiceService, ksefService, mutableListOf())
+
+        assertEquals("KSeF-1", saved?.ksefNumber)
+        coVerify(exactly = 0) { invoiceService.hasPeriodicDocumentForClient(any(), any(), any()) }
+        coVerify(exactly = 1) { ksefService.sendInvoiceToKsef(invoice) }
     }
 }

@@ -21,22 +21,30 @@ internal suspend fun saveInvoiceWithOptionalKsef(
     ksefService: KsefService,
     errorList: MutableList<ErrorMessage>? = null,
 ): Invoice? {
+    // Block duplicate PERIODIC create+KSeF only for *new* documents.
+    // Skip when this invoice number is already in DB (e.g. sendAgain → KSeF only).
     val clientId = createdInvoice.customer?.client?.id
     val period = createdInvoice.invoiceDate ?: LocalDate.now()
-    if (createdInvoice.type == InvoiceType.PERIODIC.name && clientId != null) {
-        if (invoiceService.hasPeriodicDocumentForClient(clientId, period, createdInvoice.vatApply)) {
-            val error = InvoiceErrorMessage(
-                title = "periodic invoice already created",
-                message = "periodic document already exists for client id=$clientId for period=$period; skipped KSeF/save",
-                clientId = clientId,
-                period = period,
-            )
-            if (errorList != null) {
-                errorList.add(error)
-                return null
-            }
-            throw IllegalStateException(error.message)
+    val invoiceNumber = createdInvoice.invoiceNumber?.trim()
+    val alreadyPersisted = !invoiceNumber.isNullOrBlank() &&
+        invoiceService.getInvoiceByNumber(invoiceNumber) != null
+    if (
+        !alreadyPersisted &&
+        createdInvoice.type == InvoiceType.PERIODIC.name &&
+        clientId != null &&
+        invoiceService.hasPeriodicDocumentForClient(clientId, period, createdInvoice.vatApply)
+    ) {
+        val error = InvoiceErrorMessage(
+            title = "periodic invoice already created",
+            message = "periodic document already exists for client id=$clientId for period=$period; skipped KSeF/save",
+            clientId = clientId,
+            period = period,
+        )
+        if (errorList != null) {
+            errorList.add(error)
+            return null
         }
+        throw IllegalStateException(error.message)
     }
 
     var ksefResponse: KsefSendInvoiceResponse? = null

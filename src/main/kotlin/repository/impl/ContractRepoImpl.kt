@@ -40,11 +40,13 @@ class ContractRepoImpl: ContractRepo {
     }
 
     override suspend fun findByClientId(clientId: Long, fromDate: LocalDate, toDate: LocalDate): List<Contract> = suspendTransaction {
+        // null startDate / endDate = open-ended (same as onlyActive query for endDate).
+        // Without allowing null startDate, contracts like Aurora (id=21) never match a billing period.
         ContractEntity.find {
             (ContractTable.client eq clientId) and
             (
                 (ContractTable.endDate.isNull() or (ContractTable.endDate greater toDate)) and
-                (ContractTable.startDate lessEq fromDate)
+                (ContractTable.startDate.isNull() or (ContractTable.startDate lessEq fromDate))
             )
         }.map { it.toContract() }
     }

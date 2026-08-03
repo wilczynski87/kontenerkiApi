@@ -12,7 +12,9 @@ import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 
 object InvoiceTable: LongIdTable() {
-    val invoiceNumber = varchar("invoice_number", 50).uniqueIndex()
+    // Unique index is applied best-effort in InvoiceNumberUniqueSchemaMigration
+    // (SchemaUtils would fail startup when historical duplicates exist).
+    val invoiceNumber = varchar("invoice_number", 50)
     val invoiceTitle = varchar("invoice_title", 250)
     val invoiceDate = date("invoice_date")
 
