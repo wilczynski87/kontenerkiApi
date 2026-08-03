@@ -35,6 +35,16 @@ services:
       KSEF_BASE_URL: ${KSEF_BASE_URL:-https://api-test.ksef.mf.gov.pl}
       KSEF_API_SUFFIX: ${KSEF_API_SUFFIX:-v2}
       KSEF_NIP: ${KSEF_NIP:-8943278612}
+      # P24 — wartości z .env; w DEV bez credentials API samo włącza mock
+      P24_ENV: ${P24_ENV:-SANDBOX}
+      P24_BASE_URL: ${P24_BASE_URL:-}
+      P24_PAYMENT_URL: ${P24_PAYMENT_URL:-}
+      P24_MERCHANT_ID: ${P24_MERCHANT_ID:-}
+      P24_POS_ID: ${P24_POS_ID:-}
+      P24_CRC: ${P24_CRC:-}
+      P24_API_KEY: ${P24_API_KEY:-}
+      P24_URL_STATUS: ${P24_URL_STATUS:-}
+      P24_MOCK: ${P24_MOCK:-}
       GATE_MOCK: ${GATE_MOCK:-}
       GATE_OPEN_URL: ${GATE_OPEN_URL:-}
       GATE_OPEN_METHOD: ${GATE_OPEN_METHOD:-PATCH}

@@ -61,6 +61,10 @@ jobs:
           SUPLA_ID=${{ secrets.SUPLA_ID }}
           SUPLA_SECRET=${{ secrets.SUPLA_SECRET }}
           SUPLA_REFRESH_TOKEN=${{ secrets.SUPLA_REFRESH_TOKEN }}
+          P24_MERCHANT_ID=${{ secrets.P24_MERCHANT_ID }}
+          P24_POS_ID=${{ secrets.P24_POS_ID }}
+          P24_CRC=${{ secrets.P24_CRC }}
+          P24_API_KEY=${{ secrets.P24_API_KEY }}
 
           # === VARIABLES ===
           API_ENV=${{ vars.API_ENV }}
@@ -88,6 +92,11 @@ jobs:
           SUPLA_TOKEN_URL=${{ vars.SUPLA_TOKEN_URL }}
           SUPLA_OAUTH_HELPER=${{ vars.SUPLA_OAUTH_HELPER }}
           SUPLA_REDIRECT_URI=${{ vars.SUPLA_REDIRECT_URI }}
+          P24_ENV=${{ vars.P24_ENV }}
+          P24_BASE_URL=${{ vars.P24_BASE_URL }}
+          P24_PAYMENT_URL=${{ vars.P24_PAYMENT_URL }}
+          P24_URL_STATUS=${{ vars.P24_URL_STATUS }}
+          P24_MOCK=${{ vars.P24_MOCK }}
           EOF
           sed -i 's/^[[:space:]]*//' /tmp/kontenerki.env
           scp /tmp/kontenerki.env vps:/opt/app/.env

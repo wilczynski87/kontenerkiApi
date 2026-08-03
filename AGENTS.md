@@ -129,6 +129,37 @@ Invoice creation (`POST /invoice/...`) for VAT clients: build invoice in memory 
 
 Mapper: `ksef/mapper/InvoiceToKsefFa3Mapper.kt` (`Invoice` → XML FA v3).
 
+### Przelewy24 (P24)
+
+Online payments under `com.kontenery.p24`. Magazynki creates sessions via `X-Internal-Key`; P24 posts status to a public webhook. Confirmed charges create a ledger `Payment` (`method=przelewy24`).
+
+With **`API_ENV=DEV`**, P24 defaults to **SANDBOX** and **mock mode** when merchant/CRC/API key are missing. Production (`P24_ENV=PRODUCTION`) is blocked when `API_ENV=DEV`.
+
+Add to `.env`:
+
+```
+P24_ENV=SANDBOX
+P24_MERCHANT_ID=
+P24_POS_ID=
+P24_CRC=
+P24_API_KEY=
+P24_URL_STATUS=https://<public-api-host>/p24/notification
+P24_MOCK=true
+```
+
+Deploy (GitHub environment `kontenerki`) must define:
+
+- **Secrets:** `P24_MERCHANT_ID`, `P24_POS_ID`, `P24_CRC`, `P24_API_KEY`
+- **Variables:** `P24_ENV`, `P24_URL_STATUS`, optional `P24_BASE_URL` / `P24_PAYMENT_URL` / `P24_MOCK`
+
+Schema: table `p24_transaction` (Exposed auto-migrate in DEV; `P24SchemaMigration` on PROD). Disable with `DB_P24_SCHEMA_MIGRATE=false`.
+
+Endpoints:
+
+- `POST /p24/transactions` — register (internal API key) → `redirectUrl`
+- `GET /p24/transactions/{sessionId}` — status (internal API key)
+- `POST /p24/notification` — P24 webhook (CRC-verified; respond `OK`)
+
 ### Key gotchas
 
 - The `email` service (separate repo at `../kontenerkiEmail`) is optional. The API catches exceptions if it's unavailable -- invoice-sending features won't work but the app runs fine.
