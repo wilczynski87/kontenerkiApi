@@ -143,18 +143,18 @@ fun Route.invoiceRoutes(
 
                 val allClients: List<Client> = clientService.getFilteredClients(true)
 
-                val createdInvoice:List<Invoice> =
-                    allClients.mapNotNull { invoiceService.createPeriodicInvoiceForClient(it, period, errorList) }
-
-                val savedInvoices: List<Invoice> = createdInvoice.mapNotNull { invoice ->
-                    saveInvoiceWithOptionalKsef(invoice, invoiceService, ksefService, errorList)
+                // Create + save per client so numbers are not burned when a later save fails
+                allClients.forEach { client ->
+                    val createdInvoice = invoiceService.createPeriodicInvoiceForClient(client, period, errorList)
+                        ?: return@forEach
+                    val savedInvoice = saveInvoiceWithOptionalKsef(
+                        createdInvoice,
+                        invoiceService,
+                        ksefService,
+                        errorList,
+                    ) ?: return@forEach
+                    printService.sendPeriodicInvoice(savedInvoice)
                 }
-
-                savedInvoices
-//                    .filter { it.vatApply.not() }
-                    .forEach { savedInvoice ->
-                        printService.sendPeriodicInvoice(savedInvoice)
-                    }
 
                 call.respond(errorList)
             } catch (e:Exception) {

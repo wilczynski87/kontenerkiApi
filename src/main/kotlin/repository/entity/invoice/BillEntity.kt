@@ -10,7 +10,7 @@ import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 
 object BillTable: LongIdTable() {
-    val billNumber = varchar("bill_number", 50)
+    val billNumber = varchar("bill_number", 50).uniqueIndex()
     val billTitle = varchar("bill_title", 250)
     val billDate = date("bill_date")
 

@@ -157,4 +157,28 @@ class InvoiceSendSupportTest {
 
         assertNull(saved)
     }
+
+    @Test
+    fun `PERIODIC with client skips KSeF when document already exists`() = runBlocking {
+        val client = com.kontenery.data.Client(id = 65L, isActive = true)
+        val base = sampleVatInvoice()
+        val invoice = base.copy(
+            type = com.kontenery.data.utils.InvoiceType.PERIODIC.name,
+            customer = (base.customer as com.kontenery.data.invoice.Subject.Customer).copy(client = client),
+        )
+        val errors = mutableListOf<com.kontenery.data.utils.errors.ErrorMessage>()
+        val invoiceService = mockk<InvoiceService>()
+        val ksefService = mockk<KsefService>()
+        coEvery {
+            invoiceService.hasPeriodicDocumentForClient(65L, invoice.invoiceDate!!, true)
+        } returns true
+
+        val saved = saveInvoiceWithOptionalKsef(invoice, invoiceService, ksefService, errors)
+
+        assertNull(saved)
+        assertEquals(1, errors.size)
+        assertTrue(errors.single() is InvoiceErrorMessage)
+        coVerify(exactly = 0) { ksefService.sendInvoiceToKsef(any()) }
+        coVerify(exactly = 0) { invoiceService.saveInvoiceWithErrors(any(), any(), any()) }
+    }
 }

@@ -20,30 +20,12 @@ import com.kontenery.service.InvoiceService
 import com.kontenery.service.ProductService
 import com.kontenery.validator.ObjectValidators
 import io.ktor.util.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.*
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
 import java.math.RoundingMode
-
-object InvoiceCurrentNumber {
-
-    var invoiceNumber: InvoiceNumber? = null
-
-    fun addOne(): InvoiceNumber {
-        invoiceNumber?.number = invoiceNumber?.number?.plus(1L)!!
-        return invoiceNumber as InvoiceNumber
-    }
-}
-
-object BillCurrentNumber {
-
-    var billNumber: InvoiceNumber? = null
-
-    fun addOne(): InvoiceNumber {
-        billNumber?.number = billNumber?.number?.plus(1L)!!
-        return billNumber as InvoiceNumber
-    }
-}
 
 class InvoiceServiceImpl(
     private val invoiceRepo: InvoiceRepo,
@@ -53,6 +35,13 @@ class InvoiceServiceImpl(
     private val contractService: ContractService
 ): InvoiceService {
     private val log = LoggerFactory.getLogger(InvoiceServiceImpl::class.java)
+
+    private val invoiceNumberMutex = Mutex()
+    private val billNumberMutex = Mutex()
+
+    /** Last number allocated in this process for the current month (avoids collisions before DB save). */
+    private var lastAllocatedInvoice: InvoiceNumber? = null
+    private var lastAllocatedBill: InvoiceNumber? = null
 
     override suspend fun getInvoicesForDate(page: Int, size: Int, from: LocalDate, to: LocalDate): List<Invoice> {
         return invoiceRepo.getInvoicesForDate(page, size, from, to)
@@ -171,9 +160,23 @@ class InvoiceServiceImpl(
 
         val document: Invoice = if(addTax) createInvoice(client, period, contracts, positions)
             else createBill(client, period, contracts, positions)
-//        println("document: $document")
 
         return document
+    }
+
+    override suspend fun hasPeriodicDocumentForClient(
+        clientId: Long,
+        period: LocalDate,
+        vatApply: Boolean,
+    ): Boolean {
+        val from = LocalDate.startOfCurrentMonth(period)
+        val to = LocalDate.endOfCurrentMonth(period)
+        val documents = if (vatApply) {
+            invoiceRepo.getInvoicesForClient(0, 100, clientId, from, to)
+        } else {
+            billRepo.getBillsForClient(0, 100, clientId, from, to)
+        }
+        return documents.any { it.type == InvoiceType.PERIODIC.name }
     }
 
     override suspend fun createCustomInvoice(invoice: Invoice): Invoice? {
@@ -261,26 +264,39 @@ class InvoiceServiceImpl(
         )
     }
 
-    private suspend fun createInvoiceNumber(): String {
-        return if(InvoiceCurrentNumber.invoiceNumber == null) {
-            // fetching las invoice number (or set up 0)
-            val invoiceNumberString = invoiceRepo.getLastInvoiceNumber() ?: InvoiceNumber(0).toInvoiceNumberString()
-            // assigning invoice number to Object
-            InvoiceCurrentNumber.invoiceNumber = InvoiceNumber.toInvoiceNumber(invoiceNumberString)
-            // adding 1 to number and returning String
-            InvoiceCurrentNumber.addOne().toInvoiceNumberString()
-        } else InvoiceCurrentNumber.addOne().toInvoiceNumberString()
+    private suspend fun createInvoiceNumber(): String = invoiceNumberMutex.withLock {
+        val next = nextNumber(
+            lastFromDb = invoiceRepo.getLastInvoiceNumber()?.let { InvoiceNumber.toInvoiceNumber(it) },
+            lastAllocated = lastAllocatedInvoice,
+        )
+        lastAllocatedInvoice = next
+        next.toInvoiceNumberString()
     }
-    private suspend fun createBillNumber(): String {
-        return if(BillCurrentNumber.billNumber == null) {
-            // fetching las invoice number (or set up 0)
-            val invoiceNumberString = invoiceRepo.getLastBillNumber() ?: InvoiceNumber(0).toInvoiceNumberString()
-            // assigning invoice number to Object
-            BillCurrentNumber.billNumber = InvoiceNumber.toInvoiceNumber(invoiceNumberString)
-            // adding 1 to number and returning String
-            BillCurrentNumber.addOne().toInvoiceNumberString()
-                .run { if(endsWith('r')) this else this + "r" }
-        } else BillCurrentNumber.addOne().toInvoiceNumberString()
-            .run { if(endsWith('r')) this else this + "r" }
+
+    private suspend fun createBillNumber(): String = billNumberMutex.withLock {
+        val next = nextNumber(
+            lastFromDb = invoiceRepo.getLastBillNumber()?.let { InvoiceNumber.toInvoiceNumber(it) },
+            lastAllocated = lastAllocatedBill,
+        )
+        lastAllocatedBill = next
+        next.toInvoiceNumberString().let { if (it.endsWith('r')) it else it + "r" }
+    }
+
+    /**
+     * Allocates the next sequence for the current calendar month.
+     * Uses max(DB, in-process cache) so concurrent creates before save do not collide,
+     * and a month/year change resets the sequence from DB (or 0).
+     */
+    private fun nextNumber(lastFromDb: InvoiceNumber?, lastAllocated: InvoiceNumber?): InvoiceNumber {
+        val current = InvoiceNumber(0)
+        val sameMonthAsCurrent: (InvoiceNumber) -> Boolean = {
+            it.month == current.month && it.year == current.year
+        }
+        val candidates = listOfNotNull(
+            lastFromDb?.takeIf(sameMonthAsCurrent),
+            lastAllocated?.takeIf(sameMonthAsCurrent),
+        )
+        val maxSoFar = candidates.maxOfOrNull { it.number } ?: 0L
+        return InvoiceNumber(maxSoFar + 1, current.month, current.year)
     }
 }

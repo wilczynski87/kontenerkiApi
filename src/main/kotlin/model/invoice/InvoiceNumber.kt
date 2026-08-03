@@ -18,7 +18,8 @@ data class InvoiceNumber(
         fun toInvoiceNumber(invoiceNumberString: String): InvoiceNumber {
             val number = invoiceNumberString.substringBefore("/").toLong()
             val month = invoiceNumberString.substringAfter("/").substringBefore("/").toInt()
-            val year: String = invoiceNumberString.substringAfterLast("/")
+            // Bills use trailing "r" (e.g. 26/8/2026r) — strip it so year stays numeric
+            val year: String = invoiceNumberString.substringAfterLast("/").trimEnd('r', 'R')
             return InvoiceNumber(number, month, year)
         }
         fun getNumberFromInvoiceNumber(invoiceNumberString: String): Long {

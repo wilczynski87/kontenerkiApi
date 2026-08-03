@@ -30,6 +30,13 @@ interface InvoiceService {
         errorList: MutableList<ErrorMessage>
     ): Invoice?
 
+    /** True if client already has a PERIODIC invoice/bill for the given month. */
+    suspend fun hasPeriodicDocumentForClient(
+        clientId: Long,
+        period: LocalDate,
+        vatApply: Boolean,
+    ): Boolean
+
     // przerobić save Invoice
     suspend fun createCustomInvoice(invoice: Invoice): Invoice?
 

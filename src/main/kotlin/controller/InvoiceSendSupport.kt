@@ -1,6 +1,7 @@
 package com.kontenery.controller
 
 import com.kontenery.data.invoice.Invoice
+import com.kontenery.data.utils.InvoiceType
 import com.kontenery.data.utils.errors.ErrorMessage
 import com.kontenery.data.utils.errors.InvoiceErrorMessage
 import com.kontenery.ksef.dto.KsefSendInvoiceResponse
@@ -20,6 +21,24 @@ internal suspend fun saveInvoiceWithOptionalKsef(
     ksefService: KsefService,
     errorList: MutableList<ErrorMessage>? = null,
 ): Invoice? {
+    val clientId = createdInvoice.customer?.client?.id
+    val period = createdInvoice.invoiceDate ?: LocalDate.now()
+    if (createdInvoice.type == InvoiceType.PERIODIC.name && clientId != null) {
+        if (invoiceService.hasPeriodicDocumentForClient(clientId, period, createdInvoice.vatApply)) {
+            val error = InvoiceErrorMessage(
+                title = "periodic invoice already created",
+                message = "periodic document already exists for client id=$clientId for period=$period; skipped KSeF/save",
+                clientId = clientId,
+                period = period,
+            )
+            if (errorList != null) {
+                errorList.add(error)
+                return null
+            }
+            throw IllegalStateException(error.message)
+        }
+    }
+
     var ksefResponse: KsefSendInvoiceResponse? = null
     val toSave = if (createdInvoice.vatApply) {
         try {
