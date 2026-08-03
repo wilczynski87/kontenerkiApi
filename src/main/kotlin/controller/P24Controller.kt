@@ -33,9 +33,21 @@ fun Route.p24ClientRoutes(p24Service: P24Service) {
                 ?.payload
                 ?.getClaim("userId")
                 ?.asString()
-            val clientId = userId?.toLongOrNull()
-            if (clientId == null) {
-                call.respond(HttpStatusCode.Unauthorized, ApiErrorResponse("Unauthorized"))
+                ?.trim()
+                .orEmpty()
+            val clientId = userId.toLongOrNull()
+            if (clientId == null || clientId <= 0L) {
+                // 400 — nie 401: Magazynki traktuje 401 jako wygasłą sesję i wylogowuje
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ApiErrorResponse(
+                        if (userId == "0" || clientId == 0L) {
+                            "Konto administracyjne nie może tworzyć płatności klienta"
+                        } else {
+                            "Nieprawidłowy identyfikator klienta w tokenie"
+                        },
+                    ),
+                )
                 return@post
             }
             try {
