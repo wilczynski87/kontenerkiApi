@@ -1,5 +1,6 @@
 package com.kontenery.controller
 
+import com.kontenery.p24.dto.P24CreateForClientRequest
 import com.kontenery.p24.dto.P24CreateTransactionRequest
 import com.kontenery.p24.dto.P24NotificationPayload
 import com.kontenery.p24.exception.P24Exception
@@ -7,6 +8,8 @@ import com.kontenery.p24.service.P24Service
 import com.kontenery.utils.ApiErrorResponse
 import com.kontenery.utils.isValidInternalApiKey
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
@@ -17,6 +20,51 @@ import io.ktor.server.routing.route
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("P24Controller")
+
+private const val DEFAULT_URL_RETURN = "https://kontenery-magazynowe.pl"
+
+/**
+ * JWT-protected routes for Magazynki (clientId from access token).
+ */
+fun Route.p24ClientRoutes(p24Service: P24Service) {
+    route("/p24") {
+        post("/transactions/forClient") {
+            val userId = call.principal<JWTPrincipal>()
+                ?.payload
+                ?.getClaim("userId")
+                ?.asString()
+            val clientId = userId?.toLongOrNull()
+            if (clientId == null) {
+                call.respond(HttpStatusCode.Unauthorized, ApiErrorResponse("Unauthorized"))
+                return@post
+            }
+            try {
+                val body = call.receive<P24CreateForClientRequest>()
+                val request = P24CreateTransactionRequest(
+                    clientId = clientId,
+                    amount = body.amount,
+                    email = body.email,
+                    description = body.description,
+                    invoiceNumbers = body.invoiceNumbers,
+                    urlReturn = body.urlReturn?.trim()?.takeIf { it.isNotEmpty() } ?: DEFAULT_URL_RETURN,
+                    currency = body.currency,
+                    language = body.language,
+                    country = body.country,
+                )
+                val response = p24Service.createTransaction(request)
+                call.respond(HttpStatusCode.Created, response)
+            } catch (e: P24Exception) {
+                logger.warn("P24 forClient create failed: {}", e.message)
+                call.respond(
+                    e.statusCode?.let { HttpStatusCode.fromValue(it) } ?: HttpStatusCode.BadGateway,
+                    ApiErrorResponse(e.message ?: "P24 error"),
+                )
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, ApiErrorResponse(e.message ?: "Bad request"))
+            }
+        }
+    }
+}
 
 fun Route.p24Routes(p24Service: P24Service) {
     route("/p24") {

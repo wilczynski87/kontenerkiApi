@@ -26,6 +26,21 @@ data class P24CreateTransactionRequest(
     val country: String = "PL",
 )
 
+/** Body for JWT Magazynki clients — clientId is taken from the access token. */
+@Serializable
+data class P24CreateForClientRequest(
+    /** Kwota w PLN (np. 12.34). */
+    val amount: Double,
+    val email: String? = null,
+    val description: String? = null,
+    val invoiceNumbers: List<String> = emptyList(),
+    /** URL powrotu po płatności; gdy brak — używany jest domyślny. */
+    val urlReturn: String? = null,
+    val currency: String = "PLN",
+    val language: String = "pl",
+    val country: String = "PL",
+)
+
 @Serializable
 data class P24CreateTransactionResponse(
     val sessionId: String,

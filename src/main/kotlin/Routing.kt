@@ -59,6 +59,9 @@ fun Application.configureRouting(
             listingRoute(listingService)
             utilitiesController(utilitiesService, clientService)
             gate(gateService)
+            if (p24Service != null) {
+                p24ClientRoutes(p24Service)
+            }
         }
         if (suplaTokenProvider != null) {
             suplaOAuth(
