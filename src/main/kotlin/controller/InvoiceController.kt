@@ -4,6 +4,7 @@ import com.kontenery.data.Client
 import com.kontenery.data.invoice.Invoice
 import com.kontenery.data.utils.endOfCurrentMonth
 import com.kontenery.data.utils.errors.ErrorMessage
+import com.kontenery.data.utils.errors.InvoiceErrorMessage
 import com.kontenery.data.utils.now
 import com.kontenery.data.utils.startOfCurrentMonth
 import com.kontenery.data.utils.startOfCurrentYear
@@ -106,9 +107,37 @@ fun Route.invoiceRoutes(
                 val client: Client = clientService.findClientById(clientId)
                     ?: throw NullPointerException("no Client with given Id: $clientId")
 
+                val periodResolved = period ?: LocalDate.now()
+
                 // Same contract as forAll: always 200 + List<ErrorMessage> (empty = success).
                 // Frontend (postPeriodicInvoice) decodes the body as List, not a number string.
-                val createdInvoice = invoiceService.createPeriodicInvoiceForClient(client, period, errorList)
+                val existingPeriodic = invoiceService.findPeriodicDocumentForClient(
+                    clientId,
+                    periodResolved,
+                    client.needInvoice(),
+                )
+                if (existingPeriodic != null) {
+                    println(
+                        "periodic already exists for clientId=$clientId " +
+                            "number=${existingPeriodic.invoiceNumber} — resending email",
+                    )
+                    try {
+                        printService.sendInvoiceAgain(existingPeriodic)
+                    } catch (e: Exception) {
+                        errorList.add(
+                            InvoiceErrorMessage(
+                                title = "błąd ponownego wysłania maila",
+                                message = "nie udało się ponownie wysłać ${existingPeriodic.invoiceNumber}: ${e.message}",
+                                clientId = clientId,
+                                period = periodResolved,
+                            ),
+                        )
+                    }
+                    call.respond(errorList)
+                    return@post
+                }
+
+                val createdInvoice = invoiceService.createPeriodicInvoiceForClient(client, periodResolved, errorList)
                 if (createdInvoice == null) {
                     call.respond(errorList)
                     return@post
@@ -147,8 +176,31 @@ fun Route.invoiceRoutes(
 
                 val allClients: List<Client> = clientService.getFilteredClients(true)
 
-                // Create + save per client so numbers are not burned when a later save fails
+                // Create + save per client so numbers are not burned when a later save fails.
+                // If PERIODIC already exists — resend email only (no new document / KSeF).
                 allClients.forEach { client ->
+                    val clientId = client.id ?: return@forEach
+                    val existingPeriodic = invoiceService.findPeriodicDocumentForClient(
+                        clientId,
+                        period,
+                        client.needInvoice(),
+                    )
+                    if (existingPeriodic != null) {
+                        try {
+                            printService.sendInvoiceAgain(existingPeriodic)
+                        } catch (e: Exception) {
+                            errorList.add(
+                                InvoiceErrorMessage(
+                                    title = "błąd ponownego wysłania maila",
+                                    message = "nie udało się ponownie wysłać ${existingPeriodic.invoiceNumber}: ${e.message}",
+                                    clientId = clientId,
+                                    period = period,
+                                ),
+                            )
+                        }
+                        return@forEach
+                    }
+
                     val createdInvoice = invoiceService.createPeriodicInvoiceForClient(client, period, errorList)
                         ?: return@forEach
                     val savedInvoice = saveInvoiceWithOptionalKsef(

@@ -164,11 +164,11 @@ class InvoiceServiceImpl(
         return document
     }
 
-    override suspend fun hasPeriodicDocumentForClient(
+    override suspend fun findPeriodicDocumentForClient(
         clientId: Long,
         period: LocalDate,
         vatApply: Boolean,
-    ): Boolean {
+    ): Invoice? {
         val from = LocalDate.startOfCurrentMonth(period)
         val to = LocalDate.endOfCurrentMonth(period)
         val documents = if (vatApply) {
@@ -176,8 +176,14 @@ class InvoiceServiceImpl(
         } else {
             billRepo.getBillsForClient(0, 100, clientId, from, to)
         }
-        return documents.any { it.type == InvoiceType.PERIODIC.name }
+        return documents.firstOrNull { it.type == InvoiceType.PERIODIC.name }
     }
+
+    override suspend fun hasPeriodicDocumentForClient(
+        clientId: Long,
+        period: LocalDate,
+        vatApply: Boolean,
+    ): Boolean = findPeriodicDocumentForClient(clientId, period, vatApply) != null
 
     override suspend fun createCustomInvoice(invoice: Invoice): Invoice? {
         return try {

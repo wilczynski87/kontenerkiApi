@@ -30,6 +30,13 @@ interface InvoiceService {
         errorList: MutableList<ErrorMessage>
     ): Invoice?
 
+    /** Existing PERIODIC invoice/bill for client in the given month, if any. */
+    suspend fun findPeriodicDocumentForClient(
+        clientId: Long,
+        period: LocalDate,
+        vatApply: Boolean,
+    ): Invoice?
+
     /** True if client already has a PERIODIC invoice/bill for the given month. */
     suspend fun hasPeriodicDocumentForClient(
         clientId: Long,
