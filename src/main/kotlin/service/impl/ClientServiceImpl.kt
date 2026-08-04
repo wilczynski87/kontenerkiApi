@@ -49,8 +49,11 @@ class ClientServiceImpl(
         return clientRepo.paysVat(clientId)
     }
 
-    override suspend fun finanseForClient(clientId: Long, from: LocalDate, to: LocalDate): ClientFinanceDto? {
-        if(clientRepo.findClientById(clientId) == null) return null
+    override suspend fun finanseForClient(clientId: Long, from: LocalDate, to: LocalDate): ClientFinanceDto {
+        // New / unknown client → zero balance (caller may open the gate)
+        if (clientRepo.findClientById(clientId) == null) {
+            return zeroFinance(clientId, from, to)
+        }
 
         return try {
             coroutineScope {
@@ -75,7 +78,16 @@ class ClientServiceImpl(
             }
         } catch (e: Exception) {
             println("ClientFinanceDto: $e")
-            null
+            zeroFinance(clientId, from, to)
         }
     }
+
+    private fun zeroFinance(clientId: Long, from: LocalDate, to: LocalDate) = ClientFinanceDto(
+        clientId = clientId,
+        from = from,
+        to = to,
+        income = 0.0,
+        documentBalance = 0.0,
+        totalBalance = 0.0,
+    )
 }

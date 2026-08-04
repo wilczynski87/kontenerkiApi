@@ -19,5 +19,5 @@ interface ClientService {
 
     suspend fun paysVat(clientId: Long): Boolean
 
-    suspend fun finanseForClient(clientId: Long, from: LocalDate, to: LocalDate): ClientFinanceDto?
+    suspend fun finanseForClient(clientId: Long, from: LocalDate, to: LocalDate): ClientFinanceDto
 }

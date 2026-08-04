@@ -93,8 +93,8 @@ fun Route.clientRoute(clientService: ClientService) {
                     LocalDate.parse(to)
                 }
 
-                val clientFinanse: ClientFinanceDto = clientService.finanseForClient(id, fromLocalDate, toLocalDate)
-                    ?: throw NotFoundException("ClientFinance not found")
+                // Missing / unknown client → zero balance (new client; gate may open)
+                val clientFinanse = clientService.finanseForClient(id, fromLocalDate, toLocalDate)
 
                 println("clientFinanse: $clientFinanse")
 
@@ -102,7 +102,7 @@ fun Route.clientRoute(clientService: ClientService) {
 
             } catch (e: Exception) {
                 when (e) {
-                    is BadRequestException, is NotFoundException -> throw e
+                    is BadRequestException -> throw e
                     else -> call.respondInternalError(e, "Failed to load client finances")
                 }
             }
