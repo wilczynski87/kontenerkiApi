@@ -34,6 +34,8 @@ jobs:
 
       - name: Upload repo to VPS
         run: |
+          ssh vps "mkdir -p /opt/app"
+
           rsync -az --delete --exclude '.git' --exclude '.github' ./ vps:/opt/app/ || {
             echo "rsync failed"
             exit 1
@@ -97,6 +99,8 @@ jobs:
           P24_PAYMENT_URL=${{ vars.P24_PAYMENT_URL }}
           P24_URL_STATUS=${{ vars.P24_URL_STATUS }}
           P24_MOCK=${{ vars.P24_MOCK }}
+          WEB_IMAGE=${{ vars.WEB_IMAGE }}
+          WEB_PORT=${{ vars.WEB_PORT }}
           EOF
           sed -i 's/^[[:space:]]*//' /tmp/kontenerki.env
           scp /tmp/kontenerki.env vps:/opt/app/.env
