@@ -303,6 +303,7 @@ fun Route.invoiceRoutes(
 
             } catch (e: Exception) {
                 println("/{month}/print: ${e.message}")
+                call.respondInternalError(e, "Failed to print invoices")
             }
         }
 
