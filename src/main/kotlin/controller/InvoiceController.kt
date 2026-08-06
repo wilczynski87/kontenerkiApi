@@ -215,7 +215,7 @@ fun Route.invoiceRoutes(
                 call.respond(errorList)
             } catch (e:Exception) {
                 if (errorList.isNotEmpty()) {
-                    call.respond(HttpStatusCode.ExpectationFailed, errorList)
+                    call.respond(errorList)
                 } else {
                     call.respondInternalError(e, "Failed to send invoices")
                 }

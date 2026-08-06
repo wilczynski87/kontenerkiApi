@@ -195,4 +195,49 @@ class InvoiceControllerPeriodicSendTest {
         coVerify(exactly = 1) { printService.sendInvoiceAgain(existingInvoice) }
         coVerify(exactly = 0) { invoiceService.createPeriodicInvoiceForClient(any(), any(), any()) }
     }
+
+    @Test
+    fun `POST forAll returns 200 with accumulated errors when loop throws`() = runTest {
+        val invoiceService = mockk<InvoiceService>()
+        val printService = mockk<PrintService>()
+        val clientService = mockk<ClientService>()
+        val ksefService = mockk<KsefService>()
+
+        val secondClient = vatClient.copy(id = 22L)
+
+        coEvery { clientService.getFilteredClients(true) } returns listOf(vatClient, secondClient)
+        coEvery {
+            invoiceService.findPeriodicDocumentForClient(21L, any(), true)
+        } returns null
+        coEvery {
+            invoiceService.createPeriodicInvoiceForClient(vatClient, any(), any())
+        } answers {
+            arg<MutableList<InvoiceErrorMessage>>(2).add(
+                InvoiceErrorMessage(
+                    title = "partial failure",
+                    message = "client 21 skipped",
+                    clientId = 21L,
+                ),
+            )
+            null
+        }
+        coEvery {
+            invoiceService.findPeriodicDocumentForClient(22L, any(), true)
+        } throws RuntimeException("unexpected loop failure")
+
+        testApplication {
+            application {
+                install(ContentNegotiation) { json(json) }
+                routing {
+                    invoiceRoutes(invoiceService, printService, clientService, ksefService)
+                }
+            }
+            val response = client.post("/invoice/sendInvoices/forAll?period=2026-08-01")
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            val body = response.bodyAsText()
+            assertTrue(body.contains("partial failure"))
+            assertTrue(body.contains("client 21 skipped"))
+        }
+    }
 }
