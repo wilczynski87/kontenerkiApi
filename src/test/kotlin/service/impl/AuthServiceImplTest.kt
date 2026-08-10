@@ -7,6 +7,7 @@ import com.kontenery.EmailConfig
 import com.kontenery.GateConfig
 import com.kontenery.KsefConfig
 import com.kontenery.data.Client
+import com.kontenery.data.ClientCompanyData
 import com.kontenery.data.ClientPersonalData
 import com.kontenery.library.model.auth.ChangePasswordRequest
 import com.kontenery.library.model.auth.LoginRequest
@@ -152,20 +153,58 @@ class AuthServiceImplTest {
         }
 
         @Test
-        fun `returns null when client has no personal data`() = runTest {
+        fun `authenticates company client by password`() = runTest {
             coEvery { clientRepo.findClientByEmail("firma@example.com") } returns Client(
                 id = 40,
                 password = "haslo",
                 clientPrivate = null,
+                clientCompany = ClientCompanyData(
+                    email = "firma@example.com",
+                    nip = "8943278612",
+                ),
             )
 
             val result = service.login(LoginRequest(email = "firma@example.com", password = "haslo"))
 
-            assertNull(result)
+            assertEquals(LoginResponse("40", "customer"), result)
         }
 
         @Test
-        fun `returns null when client has neither password nor pesel`() = runTest {
+        fun `falls back to nip when company client has no password`() = runTest {
+            coEvery { clientRepo.findClientByEmail("firma@example.com") } returns Client(
+                id = 40,
+                password = null,
+                clientPrivate = null,
+                clientCompany = ClientCompanyData(
+                    email = "firma@example.com",
+                    nip = "8943278612",
+                ),
+            )
+
+            val result = service.login(LoginRequest(email = "firma@example.com", password = "8943278612"))
+
+            assertEquals(LoginResponse("40", "customer"), result)
+        }
+
+        @Test
+        fun `falls back to nip when company client password is blank`() = runTest {
+            coEvery { clientRepo.findClientByEmail("firma@example.com") } returns Client(
+                id = 40,
+                password = "   ",
+                clientPrivate = null,
+                clientCompany = ClientCompanyData(
+                    email = "firma@example.com",
+                    nip = "8943278612",
+                ),
+            )
+
+            val result = service.login(LoginRequest(email = "firma@example.com", password = "8943278612"))
+
+            assertEquals(LoginResponse("40", "customer"), result)
+        }
+
+        @Test
+        fun `returns null when client has neither password nor pesel nor nip`() = runTest {
             coEvery { clientRepo.findClientByEmail("empty@example.com") } returns Client(
                 id = 41,
                 password = null,
@@ -305,6 +344,33 @@ class AuthServiceImplTest {
             )
 
             assertEquals(ChangePasswordResult.Ok, result)
+        }
+
+        @Test
+        fun `accepts nip as current password when company has no password`() = runTest {
+            val client = Client(
+                id = 40,
+                password = null,
+                clientPrivate = null,
+                clientCompany = ClientCompanyData(email = "firma@example.com", nip = "8943278612"),
+            )
+            coEvery { clientRepo.findClientById(40) } returns client
+            coEvery { clientRepo.updateClient(any()) } answers {
+                firstArg<Client>()
+            }
+
+            val result = service.changePassword(
+                userId = "40",
+                request = ChangePasswordRequest(
+                    currentPassword = "8943278612",
+                    newPassword = "noweHaslo",
+                ),
+            )
+
+            assertEquals(ChangePasswordResult.Ok, result)
+            coVerify {
+                clientRepo.updateClient(match { it.id == 40L && it.password == "noweHaslo" })
+            }
         }
 
         @Test

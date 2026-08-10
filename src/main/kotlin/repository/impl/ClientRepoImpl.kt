@@ -88,8 +88,7 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
         ClientEntity.all()
             .with(ClientEntity::personalData, ClientEntity::companyData)
             .firstOrNull { entity ->
-                entity.personalData?.email?.trim()?.lowercase() == normalizedEmail ||
-                    entity.companyData?.email?.trim()?.lowercase() == normalizedEmail
+                entity.getEmail() == normalizedEmail
             }
             ?.toClient()
     }

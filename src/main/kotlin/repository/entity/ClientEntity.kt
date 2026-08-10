@@ -119,6 +119,12 @@ class ClientEntity(id: EntityID<Long>) : LongEntity(id) {
             invoiceTitle = invoiceTitle,
             bankAccounts = bankAccounts.mapNotNull { it.bankAccount }
         )
+    fun getEmail(): String? = personalData?.email?.trim()?.takeUnless { it.isBlank() }?.lowercase()
+        ?: companyData?.email?.trim()?.takeUnless { it.isBlank() }?.lowercase()
+
+    fun resolvePassword(): String? = password?.trim()?.takeUnless { it.isBlank() }
+        ?: personalData?.pesel?.trim()?.takeUnless { it.isBlank() }
+        ?: companyData?.nip?.trim()?.takeUnless { it.isBlank() }
 }
 
 class ClientBankAccountEntity(id: EntityID<Long>) : LongEntity(id) {

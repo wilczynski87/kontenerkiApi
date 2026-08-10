@@ -1,7 +1,7 @@
 server {
     listen 80;
     listen [::]:80;
-    server_name app.example.com;
+    server_name magazynkifat.pl www.magazynkifat.pl;
 
     location / {
         proxy_pass http://127.0.0.1:8081;

@@ -29,10 +29,7 @@ class AuthServiceImpl(
         }
 
         val client = clientRepo.findClientByEmail(normalizedEmail) ?: return null
-        val personalData = client.clientPrivate ?: return null
-        val expectedSecret = client.password?.takeUnless { it.isBlank() }
-            ?: personalData.pesel?.takeUnless { it.isBlank() }
-            ?: return null
+        val expectedSecret = client.resolvePassword() ?: return null
 
         return if (providedSecret == expectedSecret) {
             LoginResponse(client.id.toString(), "customer")
@@ -73,8 +70,7 @@ class AuthServiceImpl(
         val client = clientRepo.findClientById(clientId)
             ?: return ChangePasswordResult.NotFound
 
-        val expectedSecret = client.password?.takeUnless { it.isBlank() }
-            ?: client.clientPrivate?.pesel?.takeUnless { it.isBlank() }
+        val expectedSecret = client.resolvePassword()
             ?: return ChangePasswordResult.InvalidCurrent
 
         if (currentPassword != expectedSecret) {

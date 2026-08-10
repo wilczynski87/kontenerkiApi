@@ -39,6 +39,13 @@ data class Client(
         invoiceTitle = invoiceTitle,
         bankAccounts = bankAccounts,
     )
+
+    fun getLogin(): String? = clientPrivate?.email?.trim()?.takeUnless { it.isBlank() }?.lowercase()
+        ?: clientCompany?.email?.trim()?.takeUnless { it.isBlank() }?.lowercase()
+
+    fun resolvePassword(): String? = password?.trim()?.takeUnless { it.isBlank() }
+        ?: clientPrivate?.pesel?.trim()?.takeUnless { it.isBlank() }
+        ?: clientCompany?.nip?.trim()?.takeUnless { it.isBlank() }
 }
 
 @Serializable
