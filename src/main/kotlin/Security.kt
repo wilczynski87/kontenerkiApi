@@ -74,9 +74,12 @@ fun Application.configureSecurity(jwtConfig: JwtConfig) {
 /**
  * Token with JWT role `employee` is allowed to call only `POST /gate/open`.
  * Other authenticated endpoints return 403.
+ *
+ * Uses [ApplicationCallPipeline.Call] so JWT authentication has already run
+ * (Plugins phase runs too early and `principal` is still null).
  */
 fun Application.configureEmployeeOnlyGateAccessControl() {
-    intercept(ApplicationCallPipeline.Plugins) {
+    intercept(ApplicationCallPipeline.Call) {
         val principal = call.principal<JWTPrincipal>() ?: return@intercept
         val role = principal.payload.getClaim("role").asString()
 

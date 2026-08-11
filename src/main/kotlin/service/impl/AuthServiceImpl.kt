@@ -30,22 +30,22 @@ class AuthServiceImpl(
             return LoginResponse("0", "admin")
         }
 
-        val client = clientRepo.findClientByEmail(normalizedEmail)
-        if (client != null) {
-            val expectedSecret = client.resolvePassword() ?: return null
-            return if (providedSecret == expectedSecret) {
-                LoginResponse(client.id.toString(), "customer")
-            } else {
-                null
-            }
-        }
-
+        // Prefer employee credentials when email+password match a worker.
+        // Previously client was checked first, so a shared/client email blocked worker login
+        // (or logged into the customer account when passwords collided).
         val matchingWorkers = workerRepo.findWorkersByEmail(normalizedEmail)
             .filter { it.resolvePassword() == providedSecret }
+        when (matchingWorkers.size) {
+            1 -> return LoginResponse(matchingWorkers.first().id.toString(), "employee")
+            else -> if (matchingWorkers.size > 1) return null
+        }
 
-        return when (matchingWorkers.size) {
-            1 -> LoginResponse(matchingWorkers.first().id.toString(), "employee")
-            else -> null
+        val client = clientRepo.findClientByEmail(normalizedEmail) ?: return null
+        val expectedSecret = client.resolvePassword() ?: return null
+        return if (providedSecret == expectedSecret) {
+            LoginResponse(client.id.toString(), "customer")
+        } else {
+            null
         }
     }
 

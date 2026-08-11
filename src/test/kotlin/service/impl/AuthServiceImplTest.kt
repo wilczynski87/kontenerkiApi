@@ -176,6 +176,56 @@ class AuthServiceImplTest {
         }
 
         @Test
+        fun `authenticates worker even when client has the same email but different password`() = runTest {
+            coEvery { clientRepo.findClientByEmail("shared@example.com") } returns Client(
+                id = 15,
+                password = "client-secret",
+                clientPrivate = ClientPersonalData(
+                    email = "shared@example.com",
+                    pesel = "90010112345",
+                ),
+            )
+            coEvery { workerRepo.findWorkersByEmail("shared@example.com") } returns listOf(
+                com.kontenery.data.worker.Worker(
+                    id = 7L,
+                    clientId = 15L,
+                    name = "Jan Pracownik",
+                    email = "shared@example.com",
+                    password = "worker123",
+                ),
+            )
+
+            val result = service.login(LoginRequest(email = "shared@example.com", password = "worker123"))
+
+            assertEquals(LoginResponse("7", "employee"), result)
+        }
+
+        @Test
+        fun `prefers worker over client when both match the same credentials`() = runTest {
+            coEvery { clientRepo.findClientByEmail("shared@example.com") } returns Client(
+                id = 15,
+                password = "same-secret",
+                clientPrivate = ClientPersonalData(
+                    email = "shared@example.com",
+                    pesel = "90010112345",
+                ),
+            )
+            coEvery { workerRepo.findWorkersByEmail("shared@example.com") } returns listOf(
+                com.kontenery.data.worker.Worker(
+                    id = 7L,
+                    clientId = 15L,
+                    name = "Jan Pracownik",
+                    email = "shared@example.com",
+                    password = "same-secret",
+                ),
+            )
+
+            val result = service.login(LoginRequest(email = "shared@example.com", password = "same-secret"))
+
+            assertEquals(LoginResponse("7", "employee"), result)
+        }
+
+        @Test
         fun `rejects invalid worker password`() = runTest {
             coEvery { clientRepo.findClientByEmail("worker@example.com") } returns null
             coEvery { workerRepo.findWorkersByEmail("worker@example.com") } returns listOf(
