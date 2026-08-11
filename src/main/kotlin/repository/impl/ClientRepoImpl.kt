@@ -20,48 +20,8 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
 
         return suspendTransaction {
 
-            val personalDataEntity = clientPersonalData?.let { personalData ->
-                ClientPersonalDataEntity.new {
-                    firstName = personalData.firstName
-                    lastName = personalData.lastName
-                    pesel = personalData.pesel
-                    passport = personalData.passport
-                    phone = personalData.phone
-                    email = personalData.email
-                    salutation = personalData.salutation
-
-                    personalData.address?.let { address ->
-                        this.address = AddressEntity.new {
-                            street = address.street
-                            house = address.house
-                            city = address.city
-                            postCode = address.postCode
-                            country = address.country
-                        }
-                    }
-                }
-            }
-
-            val companyDataEntity = clientCompanyData?.let { companyData ->
-                ClientCompanyDataEntity.new {
-                    name = companyData.name
-                    nip = companyData.nip
-                    krs = companyData.krs
-                    phone = companyData.phone
-                    email = companyData.email
-                    needInvoice = companyData.needInvoice
-
-                    companyData.address?.let { address ->
-                        this.address = AddressEntity.new {
-                            street = address.street
-                            house = address.house
-                            city = address.city
-                            postCode = address.postCode
-                            country = address.country
-                        }
-                    }
-                }
-            }
+            val personalDataEntity = clientPersonalData?.let { createPersonalDataEntity(it) }
+            val companyDataEntity = clientCompanyData?.let { createCompanyDataEntity(it) }
 
             val clientEntity: ClientEntity = ClientEntity.new {
                 this.personalData = personalDataEntity
@@ -91,114 +51,6 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
                 entity.getEmail() == normalizedEmail
             }
             ?.toClient()
-    }
-
-    suspend fun updateClient(id: Long, update: Client.() -> Unit): Client? = suspendTransaction {
-        ClientEntity.findById(id)?.apply {
-
-            val client = toClient().apply(update)
-
-            isActive = client.isActive ?: isActive
-            password = client.password ?: password
-
-            // Update personal data if exists
-            client.clientPrivate?.let { personalData ->
-                this.personalData?.apply {
-                    firstName = personalData.firstName ?: firstName
-                    lastName = personalData.lastName ?: lastName
-                    pesel = personalData.pesel ?: pesel
-                    passport = personalData.passport ?: passport
-                    phone = personalData.phone ?: phone
-                    email = personalData.email ?: email
-                    salutation = personalData.salutation ?: salutation
-
-                    personalData.address?.let { address ->
-                        this.address?.apply {
-                            street = address.street ?: street
-                            city = address.city ?: city
-                            postCode = (address.postCode ?: postCode).toString()
-                            country = address.country ?: country
-                        } ?: run {
-                            this.address = AddressEntity.new {
-                                street = address.street ?: ""
-                                city = address.city ?: ""
-                                postCode = address.postCode ?: ""
-                                country = address.country ?: ""
-                            }
-                        }
-                    }
-                } ?: run {
-                    this.personalData = ClientPersonalDataEntity.new {
-                        firstName = personalData.firstName
-                        lastName = personalData.lastName
-                        pesel = personalData.pesel
-                        passport = personalData.passport
-                        phone = personalData.phone
-                        email = personalData.email
-                        salutation = personalData.salutation
-
-                        personalData.address?.let { address ->
-                            this.address = AddressEntity.new {
-                                street = address.street ?: ""
-                                city = address.city ?: ""
-                                postCode = address.postCode ?: ""
-                                country = address.country ?: ""
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Update company data if exists
-            client.clientCompany?.let { companyData ->
-                this.companyData?.apply {
-                    name = companyData.name ?: name
-                    nip = companyData.nip ?: nip
-                    krs = companyData.krs ?: krs
-                    phone = companyData.phone ?: phone
-                    email = companyData.email ?: email
-                    needInvoice = companyData.needInvoice ?: needInvoice
-
-                    companyData.address?.let { address ->
-                        this.address?.apply {
-                            street = address.street ?: street
-                            city = address.city ?: city
-                            postCode = (address.postCode ?: postCode).toString()
-                            country = address.country ?: country
-                        } ?: run {
-                            this.address = AddressEntity.new {
-                                street = address.street ?: ""
-                                city = address.city ?: ""
-                                postCode = address.postCode ?: ""
-                                country = address.country ?: ""
-                            }
-                        }
-                    }
-                } ?: run {
-                    this.companyData = ClientCompanyDataEntity.new {
-                        name = companyData.name
-                        nip = companyData.nip
-                        krs = companyData.krs
-                        phone = companyData.phone
-                        email = companyData.email
-                        needInvoice = companyData.needInvoice
-
-                        companyData.address?.let { address ->
-                            this.address = AddressEntity.new {
-                                street = address.street ?: ""
-                                city = address.city ?: ""
-                                postCode = address.postCode ?: ""
-                                country = address.country
-                            }
-                        }
-                    }
-                }
-            }
-
-            val instant = Clock.System.now()
-            updatedAt = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
-//            bankAccounts = ClientBankAccountEntity.
-        }?.toClient()
     }
 
 //        fun deleteClient(id: Long): Boolean = transaction {
@@ -249,7 +101,7 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
         requireNotNull(client.id) { "Client ID must not be null for update" }
 
         return suspendTransaction {
-            ClientEntity.findByIdAndUpdate(client.id!!) { entity ->
+            ClientEntity.findByIdAndUpdate(client.id) { entity ->
                 entity.isActive = client.isActive ?: entity.isActive
                 entity.password = client.password ?: entity.password
 
@@ -257,7 +109,7 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
                     entity.personalData?.apply {
                         updatePersonalData(personalData)
                     } ?: run {
-                        entity.personalData = null
+                        entity.personalData = createPersonalDataEntity(personalData)
                     }
                 }
 
@@ -265,9 +117,13 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
                     entity.companyData?.apply {
                         updateCompanyData(companyData)
                     } ?: run {
-                        entity.companyData = null
+                        entity.companyData = createCompanyDataEntity(companyData)
                     }
                 }
+
+                entity.updatedAt = LocalDate.now()
+                entity.invoiceTitle = client.invoiceTitle ?: entity.invoiceTitle
+
             }?.toClient()
         }
     }
@@ -276,6 +132,47 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
         ClientEntity.findById(clientId)?.toClient()?.needInvoice() ?: throw NullPointerException("paysVat: Could not find client with given Id: $clientId")
     }
 
+    private fun createPersonalDataEntity(personalData: ClientPersonalData): ClientPersonalDataEntity =
+        ClientPersonalDataEntity.new {
+            firstName = personalData.firstName
+            lastName = personalData.lastName
+            pesel = personalData.pesel
+            passport = personalData.passport
+            phone = personalData.phone
+            email = personalData.email
+            salutation = personalData.salutation
+
+            personalData.address?.let { address ->
+                this.address = AddressEntity.new {
+                    street = address.street
+                    house = address.house
+                    city = address.city
+                    postCode = address.postCode
+                    country = address.country
+                }
+            }
+        }
+
+    private fun createCompanyDataEntity(companyData: ClientCompanyData): ClientCompanyDataEntity =
+        ClientCompanyDataEntity.new {
+            name = companyData.name
+            nip = companyData.nip
+            krs = companyData.krs
+            phone = companyData.phone
+            email = companyData.email
+            needInvoice = companyData.needInvoice
+
+            companyData.address?.let { address ->
+                this.address = AddressEntity.new {
+                    street = address.street
+                    house = address.house
+                    city = address.city
+                    postCode = address.postCode
+                    country = address.country
+                }
+            }
+        }
+
     private fun ClientPersonalDataEntity.updatePersonalData(data: ClientPersonalData) {
         firstName = data.firstName ?: firstName
         lastName = data.lastName ?: lastName
@@ -283,7 +180,7 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
         passport = data.passport ?: passport
         phone = data.phone ?: phone
         email = data.email ?: email
-        salutation = data.salutation
+        salutation = data.salutation.takeIf { it != "Drogi Kliencie" } ?: salutation
 
         data.address?.let { address ->
             this.address?.updateAddress(address) ?: run {

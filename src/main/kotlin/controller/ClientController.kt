@@ -49,11 +49,15 @@ fun Route.clientRoute(clientService: ClientService) {
 
         put("/{id}") {
             try {
-                call.pathParameters["id"]?.toLongOrNull()
+                val pathId = call.pathParameters["id"]?.toLongOrNull()
                     ?: throw BadRequestException("Invalid ID format")
 
                 val clientUpdate = call.receive<Client>()
-                val updatedClient = clientService.updateClient(clientUpdate)
+                if (clientUpdate.id != null && clientUpdate.id != pathId) {
+                    throw BadRequestException("Client ID in body does not match path ID")
+                }
+
+                val updatedClient = clientService.updateClient(clientUpdate.copy(id = pathId))
                     ?: throw NotFoundException("Client not found")
 
                 call.respond(updatedClient.toDto())
