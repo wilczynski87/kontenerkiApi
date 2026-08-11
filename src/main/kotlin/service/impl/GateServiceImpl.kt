@@ -8,6 +8,7 @@ import com.kontenery.data.utils.now
 import com.kontenery.repository.BillRepo
 import com.kontenery.repository.GateEventRepo
 import com.kontenery.repository.InvoiceRepo
+import com.kontenery.repository.WorkerRepo
 import com.kontenery.service.ContractService
 import com.kontenery.service.GateAccessDeniedException
 import com.kontenery.service.GateService
@@ -41,16 +42,25 @@ class GateServiceImpl(
     private val invoiceRepo: InvoiceRepo,
     private val billRepo: BillRepo,
     private val gateEventRepo: GateEventRepo,
+    private val workerRepo: WorkerRepo,
     private val suplaTokenProvider: SuplaTokenProvider,
     private val httpClient: HttpClient = HttpClient(),
 ) : GateService {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    override fun checkUserAuthenticated(userId: String?): Long {
+    override suspend fun checkUserAuthenticated(userId: String?, role: String?): Long {
         if (userId.isNullOrBlank()) {
             throw GateAccessDeniedException("Użytkownik nie jest zalogowany")
         }
+
+        if (role?.equals("employee", ignoreCase = true) == true) {
+            val workerId = userId.toLongOrNull()
+                ?: throw GateAccessDeniedException("Błąd userId, nieprawidłowy format")
+            return workerRepo.findClientIdByWorkerId(workerId)
+                ?: throw GateAccessDeniedException("Brak dostępu dla pracownika")
+        }
+
         val clientId = userId.toLongOrNull()
             ?: throw GateAccessDeniedException("Błąd userId, nieprawidłowy format")
         return clientId

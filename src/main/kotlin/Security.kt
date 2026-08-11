@@ -1,6 +1,7 @@
 package com.kontenery
 
 import com.kontenery.service.JwtConfig
+import com.kontenery.utils.ApiErrorResponse
 import io.ktor.http.*
 import io.ktor.http.auth.AuthScheme
 import io.ktor.http.auth.HttpAuthHeader
@@ -8,6 +9,9 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.plugins.cors.routing.CORS
+import io.ktor.server.response.respond
+import io.ktor.server.request.httpMethod
+import io.ktor.server.request.path
 
 fun Application.configureSecurity(jwtConfig: JwtConfig) {
 
@@ -63,6 +67,30 @@ fun Application.configureSecurity(jwtConfig: JwtConfig) {
                     JWTPrincipal(credential.payload)
                 } else null
             }
+        }
+    }
+}
+
+/**
+ * Token with JWT role `employee` is allowed to call only `POST /gate/open`.
+ * Other authenticated endpoints return 403.
+ */
+fun Application.configureEmployeeOnlyGateAccessControl() {
+    intercept(ApplicationCallPipeline.Plugins) {
+        val principal = call.principal<JWTPrincipal>() ?: return@intercept
+        val role = principal.payload.getClaim("role").asString()
+
+        if (!role.equals("employee", ignoreCase = true)) {
+            return@intercept
+        }
+
+        val path = call.request.path().trimEnd('/')
+        val method = call.request.httpMethod
+
+        val allowed = method == HttpMethod.Post && path == "/gate/open"
+        if (!allowed && method != HttpMethod.Options) {
+            call.respond(HttpStatusCode.Forbidden, ApiErrorResponse("Forbidden"))
+            finish()
         }
     }
 }

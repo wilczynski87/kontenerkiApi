@@ -12,6 +12,7 @@ import com.kontenery.repository.PaymentRepo
 import com.kontenery.repository.ProductRepo
 import com.kontenery.repository.P24TransactionRepo
 import com.kontenery.repository.SuplaTokenRepo
+import com.kontenery.repository.WorkerRepo
 import com.kontenery.repository.UtilitiesRepo
 import com.kontenery.repository.impl.AddressRepoImpl
 import com.kontenery.repository.impl.BillRepoImpl
@@ -26,6 +27,7 @@ import com.kontenery.repository.impl.P24TransactionRepoImpl
 import com.kontenery.repository.impl.ProductRepoImpl
 import com.kontenery.repository.impl.SuplaTokenRepoImpl
 import com.kontenery.repository.impl.UtilitiesRepoImpl
+import com.kontenery.repository.impl.WorkerRepoImpl
 import com.kontenery.service.AddressService
 import com.kontenery.service.AuthService
 import com.kontenery.service.BankAccountService
@@ -41,6 +43,7 @@ import com.kontenery.service.PrintService
 import com.kontenery.service.ProductService
 import com.kontenery.service.SuplaTokenProvider
 import com.kontenery.service.UtilitiesService
+import com.kontenery.service.WorkerService
 import com.kontenery.service.impl.AddressServiceImpl
 import com.kontenery.service.impl.AuthServiceImpl
 import com.kontenery.service.impl.BankAccountServiceImpl
@@ -55,6 +58,7 @@ import com.kontenery.service.impl.PrintServiceImpl
 import com.kontenery.service.impl.ProductServiceImp
 import com.kontenery.service.impl.SuplaTokenProviderImpl
 import com.kontenery.service.impl.UtilitiesServiceImpl
+import com.kontenery.service.impl.WorkerServiceImpl
 import com.kontenery.ksef.KsefTokenDiagnostics
 import com.kontenery.ksef.client.KsefApiClient
 import com.kontenery.ksef.repository.KsefRepository
@@ -141,7 +145,10 @@ fun Application.module() {
     val utilitiesService: UtilitiesService = UtilitiesServiceImpl(utilitiesRepo)
 
     val jwtConfig = JwtConfig(apiConfig)
-    val authService: AuthService = AuthServiceImpl(jwtConfig, apiConfig.auth, clientRepo)
+    val workerRepo: WorkerRepo = WorkerRepoImpl()
+    val authService: AuthService = AuthServiceImpl(jwtConfig, apiConfig.auth, clientRepo, workerRepo)
+
+    val workerService: WorkerService = WorkerServiceImpl(workerRepo = workerRepo)
 
     val ksefSessionInvoiceStatusRepo: KsefSessionInvoiceStatusRepo = KsefSessionInvoiceStatusRepoImpl()
     val ksefRepository: KsefRepository = KsefRepositoryImpl(KsefApiClient(apiConfig.ksef))
@@ -167,6 +174,7 @@ fun Application.module() {
         invoiceRepo = invoiceRepo,
         billRepo = billRepo,
         gateEventRepo = gateEventRepo,
+        workerRepo = workerRepo,
         suplaTokenProvider = suplaTokenProvider,
         httpClient = gateHttpClient,
     )
@@ -198,6 +206,7 @@ fun Application.module() {
     httpValidator(contractService)
     configureStatusPages()
     configureSecurity(jwtConfig)
+    configureEmployeeOnlyGateAccessControl()
     configureHTTP()
     configureRouting(
         addressService,
@@ -220,5 +229,6 @@ fun Application.module() {
         suplaTokenProvider,
         gateHttpClient,
         p24Service,
+        workerService,
     )
 }

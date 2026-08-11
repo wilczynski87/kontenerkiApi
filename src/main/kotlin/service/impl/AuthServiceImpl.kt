@@ -6,6 +6,7 @@ import com.kontenery.library.model.auth.LoginRequest
 import com.kontenery.library.model.auth.LoginResponse
 import com.kontenery.library.model.auth.TokenResponse
 import com.kontenery.repository.ClientRepo
+import com.kontenery.repository.WorkerRepo
 import com.kontenery.service.AuthService
 import com.kontenery.service.ChangePasswordResult
 import com.kontenery.service.JwtConfig
@@ -16,6 +17,7 @@ class AuthServiceImpl(
     private val jwtConfig: JwtConfig,
     authConfig: AuthConfig,
     private val clientRepo: ClientRepo,
+    private val workerRepo: WorkerRepo,
 ): AuthService {
     val appLogin = authConfig.appLogin
     val appPassword = authConfig.appSecret
@@ -28,13 +30,22 @@ class AuthServiceImpl(
             return LoginResponse("0", "admin")
         }
 
-        val client = clientRepo.findClientByEmail(normalizedEmail) ?: return null
-        val expectedSecret = client.resolvePassword() ?: return null
+        val client = clientRepo.findClientByEmail(normalizedEmail)
+        if (client != null) {
+            val expectedSecret = client.resolvePassword() ?: return null
+            return if (providedSecret == expectedSecret) {
+                LoginResponse(client.id.toString(), "customer")
+            } else {
+                null
+            }
+        }
 
-        return if (providedSecret == expectedSecret) {
-            LoginResponse(client.id.toString(), "customer")
-        } else {
-            null
+        val matchingWorkers = workerRepo.findWorkersByEmail(normalizedEmail)
+            .filter { it.resolvePassword() == providedSecret }
+
+        return when (matchingWorkers.size) {
+            1 -> LoginResponse(matchingWorkers.first().id.toString(), "employee")
+            else -> null
         }
     }
 

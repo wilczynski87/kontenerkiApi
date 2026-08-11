@@ -6,6 +6,7 @@ import com.kontenery.data.invoice.Invoice
 import com.kontenery.repository.BillRepo
 import com.kontenery.repository.GateEventRepo
 import com.kontenery.repository.InvoiceRepo
+import com.kontenery.repository.WorkerRepo
 import com.kontenery.service.ContractService
 import com.kontenery.service.GateAccessDeniedException
 import com.kontenery.service.ListingService
@@ -31,6 +32,7 @@ class GateServiceImplTest {
     private lateinit var invoiceRepo: InvoiceRepo
     private lateinit var billRepo: BillRepo
     private lateinit var gateEventRepo: GateEventRepo
+    private lateinit var workerRepo: WorkerRepo
     private lateinit var suplaTokenProvider: SuplaTokenProvider
     private lateinit var service: GateServiceImpl
 
@@ -41,6 +43,7 @@ class GateServiceImplTest {
         invoiceRepo = mockk()
         billRepo = mockk()
         gateEventRepo = mockk(relaxUnitFun = true)
+        workerRepo = mockk(relaxUnitFun = true)
         suplaTokenProvider = mockk()
         service = GateServiceImpl(
             gateConfig = GateConfig(
@@ -53,6 +56,7 @@ class GateServiceImplTest {
             invoiceRepo = invoiceRepo,
             billRepo = billRepo,
             gateEventRepo = gateEventRepo,
+            workerRepo = workerRepo,
             suplaTokenProvider = suplaTokenProvider,
         )
     }
@@ -60,29 +64,29 @@ class GateServiceImplTest {
     @Nested
     inner class CheckUserAuthenticated {
         @Test
-        fun `returns client id for numeric userId`() {
-            assertEquals(42L, service.checkUserAuthenticated("42"))
+        fun `returns client id for numeric userId`() = runTest {
+            assertEquals(42L, service.checkUserAuthenticated("42", role = "customer"))
         }
 
         @Test
-        fun `throws when userId is null`() {
+        fun `throws when userId is null`() = runTest {
             val ex = assertThrows<GateAccessDeniedException> {
-                service.checkUserAuthenticated(null)
+                service.checkUserAuthenticated(null, role = "customer")
             }
             assertTrue(ex.message!!.contains("zalogowany", ignoreCase = true))
         }
 
         @Test
-        fun `throws when userId is not numeric`() {
+        fun `throws when userId is not numeric`() = runTest {
             assertThrows<GateAccessDeniedException> {
-                service.checkUserAuthenticated("abc")
+                service.checkUserAuthenticated("abc", role = "customer")
             }
         }
 
         @Test
-        fun `accepts zero userId as numeric client id`() {
+        fun `accepts zero userId as numeric client id`() = runTest {
             // Admin/dev login (ppp) currently issues userId=0; gate auth only checks format.
-            assertEquals(0L, service.checkUserAuthenticated("0"))
+            assertEquals(0L, service.checkUserAuthenticated("0", role = "admin"))
         }
     }
 
@@ -230,6 +234,7 @@ class GateServiceImplTest {
                 invoiceRepo = invoiceRepo,
                 billRepo = billRepo,
                 gateEventRepo = gateEventRepo,
+                workerRepo = workerRepo,
                 suplaTokenProvider = suplaTokenProvider,
             )
             val ex = assertThrows<IllegalStateException> {

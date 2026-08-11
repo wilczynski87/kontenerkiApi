@@ -13,6 +13,7 @@ import com.kontenery.library.model.auth.ChangePasswordRequest
 import com.kontenery.library.model.auth.LoginRequest
 import com.kontenery.library.model.auth.LoginResponse
 import com.kontenery.repository.ClientRepo
+import com.kontenery.repository.WorkerRepo
 import com.kontenery.service.ChangePasswordResult
 import com.kontenery.service.JwtConfig
 import io.mockk.coEvery
@@ -31,17 +32,20 @@ import org.junit.jupiter.api.Test
 class AuthServiceImplTest {
 
     private lateinit var clientRepo: ClientRepo
+    private lateinit var workerRepo: WorkerRepo
     private lateinit var jwtConfig: JwtConfig
     private lateinit var service: AuthServiceImpl
 
     @BeforeEach
     fun setUp() {
         clientRepo = mockk()
+        workerRepo = mockk(relaxed = true)
         jwtConfig = JwtConfig(testApiConfig())
         service = AuthServiceImpl(
             jwtConfig = jwtConfig,
             authConfig = testApiConfig().auth,
             clientRepo = clientRepo,
+            workerRepo = workerRepo,
         )
     }
 
@@ -146,8 +150,45 @@ class AuthServiceImplTest {
         @Test
         fun `returns null when client email is unknown`() = runTest {
             coEvery { clientRepo.findClientByEmail("unknown@example.com") } returns null
+            coEvery { workerRepo.findWorkersByEmail("unknown@example.com") } returns emptyList()
 
             val result = service.login(LoginRequest(email = "unknown@example.com", password = "anything"))
+
+            assertNull(result)
+        }
+
+        @Test
+        fun `authenticates worker by email and password`() = runTest {
+            coEvery { clientRepo.findClientByEmail("worker@example.com") } returns null
+            coEvery { workerRepo.findWorkersByEmail("worker@example.com") } returns listOf(
+                com.kontenery.data.worker.Worker(
+                    id = 7L,
+                    clientId = 15L,
+                    name = "Jan Pracownik",
+                    email = "worker@example.com",
+                    password = "worker123",
+                ),
+            )
+
+            val result = service.login(LoginRequest(email = "worker@example.com", password = "worker123"))
+
+            assertEquals(LoginResponse("7", "employee"), result)
+        }
+
+        @Test
+        fun `rejects invalid worker password`() = runTest {
+            coEvery { clientRepo.findClientByEmail("worker@example.com") } returns null
+            coEvery { workerRepo.findWorkersByEmail("worker@example.com") } returns listOf(
+                com.kontenery.data.worker.Worker(
+                    id = 7L,
+                    clientId = 15L,
+                    name = "Jan Pracownik",
+                    email = "worker@example.com",
+                    password = "worker123",
+                ),
+            )
+
+            val result = service.login(LoginRequest(email = "worker@example.com", password = "wrong"))
 
             assertNull(result)
         }

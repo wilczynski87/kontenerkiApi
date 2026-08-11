@@ -4,6 +4,7 @@ import com.kontenery.configureStatusPages
 import com.kontenery.data.Client
 import com.kontenery.data.ClientPersonalData
 import com.kontenery.service.ClientService
+import com.kontenery.service.WorkerService
 import io.ktor.client.request.header
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -34,6 +35,7 @@ class ClientControllerUpdateTest {
     @Test
     fun `PUT client uses path id when body id is null`() = runTest {
         val clientService = mockk<ClientService>()
+        val workerService = mockk<WorkerService>()
         val requestBody = Client(
             clientPrivate = ClientPersonalData(firstName = "Jan", email = "jan@example.com"),
             isActive = true,
@@ -46,7 +48,7 @@ class ClientControllerUpdateTest {
             application {
                 install(ContentNegotiation) { json() }
                 configureStatusPages()
-                routing { clientRoute(clientService) }
+                routing { clientRoute(clientService, workerService) }
             }
 
             val response = client.put("/client/5") {
@@ -62,6 +64,7 @@ class ClientControllerUpdateTest {
     @Test
     fun `PUT client returns 400 when body id does not match path id`() = runTest {
         val clientService = mockk<ClientService>()
+        val workerService = mockk<WorkerService>()
         val requestBody = Client(
             id = 99L,
             clientPrivate = ClientPersonalData(firstName = "Jan"),
@@ -71,7 +74,7 @@ class ClientControllerUpdateTest {
             application {
                 install(ContentNegotiation) { json() }
                 configureStatusPages()
-                routing { clientRoute(clientService) }
+                routing { clientRoute(clientService, workerService) }
             }
 
             val response = client.put("/client/5") {
@@ -87,6 +90,7 @@ class ClientControllerUpdateTest {
     @Test
     fun `PUT client returns 404 when client not found`() = runTest {
         val clientService = mockk<ClientService>()
+        val workerService = mockk<WorkerService>()
         val requestBody = Client(
             id = 5L,
             clientPrivate = ClientPersonalData(firstName = "Jan"),
@@ -98,7 +102,7 @@ class ClientControllerUpdateTest {
             application {
                 install(ContentNegotiation) { json() }
                 configureStatusPages()
-                routing { clientRoute(clientService) }
+                routing { clientRoute(clientService, workerService) }
             }
 
             val response = client.put("/client/5") {

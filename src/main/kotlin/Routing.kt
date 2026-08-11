@@ -33,6 +33,7 @@ fun Application.configureRouting(
     suplaTokenProvider: SuplaTokenProvider? = null,
     gateHttpClient: io.ktor.client.HttpClient? = null,
     p24Service: com.kontenery.p24.service.P24Service? = null,
+    workerService: WorkerService,
 ) {
     routing {
 
@@ -45,11 +46,11 @@ fun Application.configureRouting(
         authenticate("auth-jwt") {
             get("securityTest") {
                 val principal = call.principal<JWTPrincipal>()
-                val role = principal!!.getClaim("role", String::class)
+                val role = principal!!.payload.getClaim("role").asString()
                 call.respondText("Hello $role")
             }
             addressRouting(addressService)
-            clientRoute(clientService)
+            clientRoute(clientService, workerService)
             productRouting(productService)
             contractRoutes(contractService, clientService, productService)
             invoiceRoutes(invoiceService, printService, clientService, ksefService)

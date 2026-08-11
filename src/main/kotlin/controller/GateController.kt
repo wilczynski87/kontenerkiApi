@@ -20,6 +20,10 @@ fun Route.gate(gateService: GateService) {
                 ?.payload
                 ?.getClaim("userId")
                 ?.asString()
+            val role = call.principal<JWTPrincipal>()
+                ?.payload
+                ?.getClaim("role")
+                ?.asString()
 
             println("jwtUserId: $jwtUserId")
 
@@ -27,7 +31,7 @@ fun Route.gate(gateService: GateService) {
 //                .getOrElse { OpenGateRequest() }
 
             try {
-                val clientId = gateService.checkUserAuthenticated(jwtUserId)
+                val clientId = gateService.checkUserAuthenticated(jwtUserId, role)
 //                gateService.ensureActiveContract(clientId)
                 gateService.ensureNoOverdue(clientId)
                 gateService.ensureCooldown(clientId)

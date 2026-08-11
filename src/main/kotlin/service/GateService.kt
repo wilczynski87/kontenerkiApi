@@ -4,7 +4,7 @@ import com.kontenery.data.gate.OpenGateResponse
 
 interface GateService {
     /** Sprawdza JWT userId i zwraca clientId. */
-    fun checkUserAuthenticated(userId: String?): Long
+    suspend fun checkUserAuthenticated(userId: String?, role: String?): Long
 
     /** Wymaga co najmniej jednej aktywnej umowy. */
     suspend fun ensureActiveContract(clientId: Long)
