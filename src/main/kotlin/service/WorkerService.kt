@@ -1,5 +1,6 @@
 package com.kontenery.service
 
+import com.kontenery.data.gate.GateEventDto
 import com.kontenery.data.worker.WorkerCreateRequest
 import com.kontenery.data.worker.WorkerDto
 
@@ -9,4 +10,6 @@ interface WorkerService {
     suspend fun listWorkersForClient(clientId: Long): List<WorkerDto>
 
     suspend fun deleteWorkerForClient(clientId: Long, workerId: Long): Boolean
+
+    suspend fun listGateEventsForWorker(clientId: Long, workerId: Long, limit: Int = 100): List<GateEventDto>
 }

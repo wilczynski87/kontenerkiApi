@@ -19,8 +19,12 @@ ALTER TABLE submeter ADD COLUMN IF NOT EXISTS foto_url VARCHAR(100);
 CREATE TABLE IF NOT EXISTS gate_event (
     id BIGSERIAL PRIMARY KEY,
     client_id BIGINT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+    worker_id BIGINT REFERENCES employees(id) ON DELETE SET NULL,
     opened_at_epoch_ms BIGINT NOT NULL,
     note VARCHAR(100)
 );
+
+ALTER TABLE gate_event ADD COLUMN IF NOT EXISTS worker_id BIGINT REFERENCES employees(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_gate_event_worker_id ON gate_event(worker_id);
 
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS password TEXT;

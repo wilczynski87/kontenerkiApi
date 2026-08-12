@@ -37,7 +37,12 @@ fun Route.gate(gateService: GateService) {
                 gateService.ensureCooldown(clientId)
 
                 val response = gateService.openGate()
-//                gateService.logOpenEvent(clientId)
+                val workerId = if (role?.equals("employee", ignoreCase = true) == true) {
+                    jwtUserId?.toLongOrNull()
+                } else {
+                    null
+                }
+                gateService.logOpenEvent(clientId, workerId)
 
                 call.respond(response)
             } catch (e: GateAccessDeniedException) {

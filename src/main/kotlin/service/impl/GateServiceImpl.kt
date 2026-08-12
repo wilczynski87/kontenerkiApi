@@ -133,8 +133,8 @@ class GateServiceImpl(
         )
     }
 
-    override suspend fun logOpenEvent(clientId: Long) {
-        gateEventRepo.logOpenEvent(clientId = clientId, note = "yard")
+    override suspend fun logOpenEvent(clientId: Long, workerId: Long?) {
+        gateEventRepo.logOpenEvent(clientId = clientId, workerId = workerId, note = "yard")
     }
 
     private suspend fun triggerGate() {

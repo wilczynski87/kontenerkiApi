@@ -83,6 +83,25 @@ fun Route.clientRoute(clientService: ClientService, workerService: WorkerService
             }
         }
 
+        get("/employees/{workerId}/gate-events") {
+            try {
+                val clientId = requireCustomerClientId(call)
+                val workerId = call.pathParameters["workerId"]?.toLongOrNull()
+                    ?: throw BadRequestException("Invalid employee ID format")
+                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 100
+
+                val events = workerService.listGateEventsForWorker(clientId, workerId, limit)
+                call.respond(events)
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.NotFound, ApiErrorResponse(e.message ?: "Employee not found"))
+            } catch (e: Exception) {
+                when (e) {
+                    is BadRequestException -> throw e
+                    else -> call.respondInternalError(e, "Failed to list gate events")
+                }
+            }
+        }
+
         get("/findAll") {
             val page: Int = call.request.queryParameters["page"]?.toInt() ?: 0
             val size: Int = call.request.queryParameters["size"]?.toInt() ?: 100

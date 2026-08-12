@@ -1,12 +1,15 @@
 package com.kontenery.service.impl
 
+import com.kontenery.data.gate.GateEventDto
 import com.kontenery.data.worker.WorkerCreateRequest
 import com.kontenery.data.worker.WorkerDto
+import com.kontenery.repository.GateEventRepo
 import com.kontenery.repository.WorkerRepo
 import com.kontenery.service.WorkerService
 
 class WorkerServiceImpl(
     private val workerRepo: WorkerRepo,
+    private val gateEventRepo: GateEventRepo,
 ) : WorkerService {
 
     override suspend fun createWorkerForClient(
@@ -43,6 +46,19 @@ class WorkerServiceImpl(
             return false
         }
         return workerRepo.deleteWorker(workerId)
+    }
+
+    override suspend fun listGateEventsForWorker(
+        clientId: Long,
+        workerId: Long,
+        limit: Int,
+    ): List<GateEventDto> {
+        val worker = workerRepo.findWorkerById(workerId)
+            ?: throw IllegalArgumentException("Employee not found")
+        if (worker.clientId != clientId) {
+            throw IllegalArgumentException("Employee not found")
+        }
+        return gateEventRepo.listOpenEventsByWorkerId(workerId, limit)
     }
 
     companion object {

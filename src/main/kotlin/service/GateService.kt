@@ -18,6 +18,6 @@ interface GateService {
     /** Wywołanie hardware / mock. */
     suspend fun openGate(): OpenGateResponse
 
-    /** Audyt otwarcia. */
-    suspend fun logOpenEvent(clientId: Long)
+    /** Audyt otwarcia (opcjonalnie przypisany do pracownika). */
+    suspend fun logOpenEvent(clientId: Long, workerId: Long? = null)
 }

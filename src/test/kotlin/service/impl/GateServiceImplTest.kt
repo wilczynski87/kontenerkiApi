@@ -246,9 +246,9 @@ class GateServiceImplTest {
 
         @Test
         fun `logOpenEvent delegates to repo`() = runTest {
-            coEvery { gateEventRepo.logOpenEvent(1L, "yard") } returns Unit
-            service.logOpenEvent(1L)
-            coVerify { gateEventRepo.logOpenEvent(1L, "yard") }
+            coEvery { gateEventRepo.logOpenEvent(1L, 7L, "yard") } returns Unit
+            service.logOpenEvent(1L, 7L)
+            coVerify { gateEventRepo.logOpenEvent(1L, 7L, "yard") }
         }
     }
 }

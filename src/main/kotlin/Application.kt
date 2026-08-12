@@ -148,8 +148,6 @@ fun Application.module() {
     val workerRepo: WorkerRepo = WorkerRepoImpl()
     val authService: AuthService = AuthServiceImpl(jwtConfig, apiConfig.auth, clientRepo, workerRepo)
 
-    val workerService: WorkerService = WorkerServiceImpl(workerRepo = workerRepo)
-
     val ksefSessionInvoiceStatusRepo: KsefSessionInvoiceStatusRepo = KsefSessionInvoiceStatusRepoImpl()
     val ksefRepository: KsefRepository = KsefRepositoryImpl(KsefApiClient(apiConfig.ksef))
     val ksefService: KsefService = KsefServiceImpl(
@@ -160,6 +158,10 @@ fun Application.module() {
     )
 
     val gateEventRepo: GateEventRepo = GateEventRepoImpl()
+    val workerService: WorkerService = WorkerServiceImpl(
+        workerRepo = workerRepo,
+        gateEventRepo = gateEventRepo,
+    )
     val gateHttpClient = HttpClient()
     val suplaTokenRepo: SuplaTokenRepo = SuplaTokenRepoImpl()
     val suplaTokenProvider: SuplaTokenProvider = SuplaTokenProviderImpl(

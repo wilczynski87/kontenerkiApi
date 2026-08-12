@@ -8,14 +8,20 @@ import org.jetbrains.exposed.sql.ReferenceOption
 
 object GateEventTable : LongIdTable("gate_event") {
     val client = reference("client_id", ClientTable, onDelete = ReferenceOption.CASCADE)
+    val worker = reference("worker_id", WorkerTable, onDelete = ReferenceOption.SET_NULL).nullable()
     val openedAtEpochMs = long("opened_at_epoch_ms")
     val note = varchar("note", 100).nullable()
+
+    init {
+        index(isUnique = false, columns = arrayOf(worker))
+    }
 }
 
 class GateEventEntity(id: EntityID<Long>) : LongEntity(id) {
     companion object : LongEntityClass<GateEventEntity>(GateEventTable)
 
     var client by ClientEntity referencedOn GateEventTable.client
+    var worker by WorkerEntity optionalReferencedOn GateEventTable.worker
     var openedAtEpochMs by GateEventTable.openedAtEpochMs
     var note by GateEventTable.note
 }

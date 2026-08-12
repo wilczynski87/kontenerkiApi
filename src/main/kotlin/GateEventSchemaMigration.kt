@@ -19,9 +19,21 @@ internal fun ensureGateEventSchemaIfNeeded(apiConfig: ApiConfig) {
                 CREATE TABLE IF NOT EXISTS gate_event (
                     id BIGSERIAL PRIMARY KEY,
                     client_id BIGINT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+                    worker_id BIGINT REFERENCES employees(id) ON DELETE SET NULL,
                     opened_at_epoch_ms BIGINT NOT NULL,
                     note VARCHAR(100)
                 )
+                """.trimIndent(),
+            )
+            stmt.execute(
+                """
+                ALTER TABLE gate_event
+                    ADD COLUMN IF NOT EXISTS worker_id BIGINT REFERENCES employees(id) ON DELETE SET NULL
+                """.trimIndent(),
+            )
+            stmt.execute(
+                """
+                CREATE INDEX IF NOT EXISTS idx_gate_event_worker_id ON gate_event(worker_id)
                 """.trimIndent(),
             )
         }
