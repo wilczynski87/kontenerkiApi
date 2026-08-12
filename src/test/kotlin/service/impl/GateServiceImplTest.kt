@@ -245,10 +245,17 @@ class GateServiceImplTest {
         }
 
         @Test
-        fun `logOpenEvent delegates to repo`() = runTest {
+        fun `logOpenEvent delegates to repo with worker id`() = runTest {
             coEvery { gateEventRepo.logOpenEvent(1L, 7L, "yard") } returns Unit
             service.logOpenEvent(1L, 7L)
             coVerify { gateEventRepo.logOpenEvent(1L, 7L, "yard") }
+        }
+
+        @Test
+        fun `logOpenEvent delegates to repo without worker id`() = runTest {
+            coEvery { gateEventRepo.logOpenEvent(1L, null, "yard") } returns Unit
+            service.logOpenEvent(1L, workerId = null)
+            coVerify { gateEventRepo.logOpenEvent(1L, null, "yard") }
         }
     }
 }
