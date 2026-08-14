@@ -85,7 +85,7 @@ class GateServiceImplTest {
 
         @Test
         fun `accepts zero userId as numeric client id`() = runTest {
-            // Admin/dev login (ppp) currently issues userId=0; gate auth only checks format.
+            // APP_LOGIN admin issues userId=0; gate still opens without a clients row.
             assertEquals(0L, service.checkUserAuthenticated("0", role = "admin"))
         }
     }
@@ -181,6 +181,12 @@ class GateServiceImplTest {
             }
             assertTrue(ex.message!!.contains("zadłużenie", ignoreCase = true))
         }
+
+        @Test
+        fun `skips overdue check for admin userId 0`() = runTest {
+            service.ensureNoOverdue(0L)
+            coVerify(exactly = 0) { listingService.clientOverdue(any(), any(), any()) }
+        }
     }
 
     @Nested
@@ -206,6 +212,12 @@ class GateServiceImplTest {
             val now = Clock.System.now().toEpochMilliseconds()
             coEvery { gateEventRepo.getLastOpenEventEpochMs(1L) } returns now - 61_000
             service.ensureCooldown(1L)
+        }
+
+        @Test
+        fun `skips cooldown for admin userId 0`() = runTest {
+            service.ensureCooldown(0L)
+            coVerify(exactly = 0) { gateEventRepo.getLastOpenEventEpochMs(any()) }
         }
     }
 
@@ -256,6 +268,12 @@ class GateServiceImplTest {
             coEvery { gateEventRepo.logOpenEvent(1L, null, "yard") } returns Unit
             service.logOpenEvent(1L, workerId = null)
             coVerify { gateEventRepo.logOpenEvent(1L, null, "yard") }
+        }
+
+        @Test
+        fun `logOpenEvent skips repo for admin userId 0`() = runTest {
+            service.logOpenEvent(0L, workerId = null)
+            coVerify(exactly = 0) { gateEventRepo.logOpenEvent(any(), any(), any()) }
         }
     }
 }

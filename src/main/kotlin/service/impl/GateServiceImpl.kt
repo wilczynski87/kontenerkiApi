@@ -74,6 +74,8 @@ class GateServiceImpl(
     }
 
     override suspend fun ensureNoOverdue(clientId: Long) {
+        if (isAdminAccount(clientId)) return
+
         val balance = listingService.clientOverdue(
             clientId,
             LocalDate.now().minus(1, DateTimeUnit.YEAR),
@@ -115,6 +117,8 @@ class GateServiceImpl(
             ?: BigDecimal.ZERO
 
     override suspend fun ensureCooldown(clientId: Long) {
+        if (isAdminAccount(clientId)) return
+
         val lastOpenEpochMs = gateEventRepo.getLastOpenEventEpochMs(clientId) ?: return
         val elapsedMs = Clock.System.now().toEpochMilliseconds() - lastOpenEpochMs
         val cooldownMs = gateConfig.cooldownSeconds.seconds.inWholeMilliseconds
@@ -134,8 +138,12 @@ class GateServiceImpl(
     }
 
     override suspend fun logOpenEvent(clientId: Long, workerId: Long?) {
+        if (isAdminAccount(clientId)) return
+
         gateEventRepo.logOpenEvent(clientId = clientId, workerId = workerId, note = "yard")
     }
+
+    private fun isAdminAccount(clientId: Long): Boolean = clientId <= 0L
 
     private suspend fun triggerGate() {
         if (gateConfig.mockMode) {
