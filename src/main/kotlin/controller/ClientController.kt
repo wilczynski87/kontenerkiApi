@@ -29,6 +29,8 @@ fun Route.clientRoute(clientService: ClientService, workerService: WorkerService
                 val saveClient: Client? = clientService.save(client)
                 if (saveClient != null) call.respond(saveClient.toDto())
                 else call.respond(HttpStatusCode.ExpectationFailed, ApiErrorResponse("Failed to save client"))
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.Conflict, ApiErrorResponse(e.message ?: "Client already exists"))
             } catch (e: Exception) {
                 call.respondInternalError(e, "Failed to save client")
             }
@@ -135,6 +137,8 @@ fun Route.clientRoute(clientService: ClientService, workerService: WorkerService
                     ?: throw NotFoundException("Client not found")
 
                 call.respond(updatedClient.toDto())
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.Conflict, ApiErrorResponse(e.message ?: "Client already exists"))
             } catch (e: Exception) {
                 when (e) {
                     is BadRequestException, is NotFoundException -> throw e
@@ -148,6 +152,8 @@ fun Route.clientRoute(clientService: ClientService, workerService: WorkerService
                 val clients: List<Client> = call.receive<List<Client>>()
                 clients.forEach { clientService.save(it) }
                 call.respond(HttpStatusCode.OK, ApiErrorResponse("Import completed"))
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.Conflict, ApiErrorResponse(e.message ?: "Client already exists"))
             } catch (e: Exception) {
                 call.respondInternalError(e, "Failed to import clients")
             }

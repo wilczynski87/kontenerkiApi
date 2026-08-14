@@ -44,13 +44,29 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
     }
 
     override suspend fun findClientByEmail(email: String): Client? = suspendTransaction {
-        val normalizedEmail = email.trim().lowercase()
+        val normalizedEmail = email.normalizeEmail() ?: return@suspendTransaction null
         ClientEntity.all()
             .with(ClientEntity::personalData, ClientEntity::companyData)
-            .firstOrNull { entity ->
-                entity.getEmail() == normalizedEmail
-            }
+            .firstOrNull { it.hasEmail(normalizedEmail) }
             ?.toClient()
+    }
+
+    override suspend fun existsByEmail(email: String, excludeClientId: Long?): Boolean = suspendTransaction {
+        val normalizedEmail = email.normalizeEmail() ?: return@suspendTransaction false
+        ClientEntity.all()
+            .with(ClientEntity::personalData, ClientEntity::companyData)
+            .any { entity ->
+                entity.id.value != excludeClientId && entity.hasEmail(normalizedEmail)
+            }
+    }
+
+    override suspend fun existsByPesel(pesel: String, excludeClientId: Long?): Boolean = suspendTransaction {
+        val normalizedPesel = pesel.trim().takeUnless { it.isBlank() } ?: return@suspendTransaction false
+        ClientEntity.all()
+            .with(ClientEntity::personalData)
+            .any { entity ->
+                entity.id.value != excludeClientId && entity.normalizedPesel() == normalizedPesel
+            }
     }
 
 //        fun deleteClient(id: Long): Boolean = transaction {

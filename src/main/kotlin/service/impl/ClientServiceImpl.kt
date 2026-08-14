@@ -22,6 +22,7 @@ class ClientServiceImpl(
 ) : ClientService {
 
     override suspend fun save(client: Client): Client? {
+        ensureUniqueClientIdentity(client)
         val newClient: Client = if(client.clientCompany != null) {
                 val needInvoice: Boolean = client.clientCompany.needInvoice ?: true
                 client.copy(clientCompany = client.clientCompany.copy(needInvoice = needInvoice))
@@ -42,7 +43,21 @@ class ClientServiceImpl(
     }
 
     override suspend fun updateClient(client: Client): Client? {
+        ensureUniqueClientIdentity(client)
         return clientRepo.updateClient(client)
+    }
+
+    private suspend fun ensureUniqueClientIdentity(client: Client) {
+        client.identityEmails().forEach { email ->
+            if (clientRepo.existsByEmail(email, client.id)) {
+                throw IllegalArgumentException("Client with this email already exists")
+            }
+        }
+        client.identityPesel()?.let { pesel ->
+            if (clientRepo.existsByPesel(pesel, client.id)) {
+                throw IllegalArgumentException("Client with this PESEL already exists")
+            }
+        }
     }
 
     override suspend fun paysVat(clientId: Long): Boolean {
@@ -91,3 +106,14 @@ class ClientServiceImpl(
         totalBalance = 0.0,
     )
 }
+
+private fun Client.identityEmails(): List<String> = listOfNotNull(
+    clientPrivate?.email.normalizeEmail(),
+    clientCompany?.email.normalizeEmail(),
+).distinct()
+
+private fun Client.identityPesel(): String? =
+    clientPrivate?.pesel?.trim()?.takeUnless { it.isBlank() }
+
+private fun String?.normalizeEmail(): String? =
+    this?.trim()?.takeUnless { it.isBlank() }?.lowercase()

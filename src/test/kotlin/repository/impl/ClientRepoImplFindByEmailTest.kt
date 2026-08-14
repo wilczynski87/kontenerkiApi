@@ -21,8 +21,10 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -160,5 +162,56 @@ class ClientRepoImplFindByEmailTest {
 
         assertEquals("sekret", saved.password)
         assertEquals("sekret", repository.findClientById(saved.id!!)?.password)
+    }
+
+    @Test
+    fun `findClientByEmail finds company email even when personal email is set`() = runBlocking {
+        val saved = repository.save(
+            Client(
+                clientPrivate = ClientPersonalData(email = "jan@example.com"),
+                clientCompany = ClientCompanyData(email = "biuro@firma.pl"),
+            )
+        )
+
+        val found = repository.findClientByEmail("biuro@firma.pl")
+
+        assertEquals(saved.id, found?.id)
+    }
+
+    @Test
+    fun `existsByEmail detects personal and company emails case insensitively`() = runBlocking {
+        val saved = repository.save(
+            Client(
+                clientPrivate = ClientPersonalData(email = "Jan@Example.com", pesel = "90010112345"),
+                clientCompany = ClientCompanyData(email = "biuro@firma.pl"),
+            )
+        )
+
+        assertTrue(repository.existsByEmail("jan@example.com"))
+        assertTrue(repository.existsByEmail("  BIURO@FIRMA.PL  "))
+        assertFalse(repository.existsByEmail("inny@example.com"))
+        assertFalse(repository.existsByEmail("jan@example.com", excludeClientId = saved.id))
+        assertFalse(repository.existsByEmail("   "))
+    }
+
+    @Test
+    fun `existsByPesel detects duplicate pesel and ignores the same client`() = runBlocking {
+        val saved = repository.save(
+            Client(
+                clientPrivate = ClientPersonalData(
+                    email = "jan@example.com",
+                    pesel = "90010112345",
+                ),
+            )
+        )
+        repository.save(
+            Client(clientPrivate = ClientPersonalData(email = "anna@example.com", pesel = "88050554321")),
+        )
+
+        assertTrue(repository.existsByPesel("90010112345"))
+        assertTrue(repository.existsByPesel(" 90010112345 "))
+        assertFalse(repository.existsByPesel("11111111111"))
+        assertFalse(repository.existsByPesel("90010112345", excludeClientId = saved.id))
+        assertFalse(repository.existsByPesel("   "))
     }
 }

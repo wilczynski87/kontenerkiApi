@@ -119,13 +119,24 @@ class ClientEntity(id: EntityID<Long>) : LongEntity(id) {
             invoiceTitle = invoiceTitle,
             bankAccounts = bankAccounts.mapNotNull { it.bankAccount }
         )
-    fun getEmail(): String? = personalData?.email?.trim()?.takeUnless { it.isBlank() }?.lowercase()
-        ?: companyData?.email?.trim()?.takeUnless { it.isBlank() }?.lowercase()
+    fun getEmail(): String? = emails().firstOrNull()
+
+    fun emails(): Set<String> = buildSet {
+        personalData?.email.normalizeEmail()?.let { add(it) }
+        companyData?.email.normalizeEmail()?.let { add(it) }
+    }
+
+    fun hasEmail(normalizedEmail: String): Boolean = normalizedEmail in emails()
+
+    fun normalizedPesel(): String? = personalData?.pesel?.trim()?.takeUnless { it.isBlank() }
 
     fun resolvePassword(): String? = password?.trim()?.takeUnless { it.isBlank() }
         ?: personalData?.pesel?.trim()?.takeUnless { it.isBlank() }
         ?: companyData?.nip?.trim()?.takeUnless { it.isBlank() }
 }
+
+internal fun String?.normalizeEmail(): String? =
+    this?.trim()?.takeUnless { it.isBlank() }?.lowercase()
 
 class ClientBankAccountEntity(id: EntityID<Long>) : LongEntity(id) {
     companion object : LongEntityClass<ClientBankAccountEntity>(ClientBankAccountTable)

@@ -59,6 +59,7 @@ fun configureDatabases(apiConfig: ApiConfig) {
     ensureSuplaTokenSchemaIfNeeded(apiConfig)
     ensureClientPasswordSchemaIfNeeded(apiConfig)
     ensureInvoiceNumberUniqueIndexesIfNeeded(apiConfig)
+    ensureClientUniqueIndexesIfNeeded(apiConfig)
     ensureP24SchemaIfNeeded(apiConfig)
     ensureWorkerSchemaIfNeeded(apiConfig)
 //    repairInvoiceForeignKeysIfNeeded(apiConfig)

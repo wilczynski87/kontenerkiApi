@@ -6,8 +6,10 @@ import com.kontenery.data.ClientPersonalData
 import com.kontenery.service.ClientService
 import com.kontenery.service.WorkerService
 import io.ktor.client.request.header
+import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -111,6 +113,69 @@ class ClientControllerUpdateTest {
             }
 
             assertEquals(HttpStatusCode.NotFound, response.status)
+        }
+    }
+
+    @Test
+    fun `PUT client returns 409 when email already exists`() = runTest {
+        val clientService = mockk<ClientService>()
+        val workerService = mockk<WorkerService>()
+        val requestBody = Client(
+            id = 5L,
+            clientPrivate = ClientPersonalData(email = "zajety@example.com"),
+        )
+
+        coEvery { clientService.updateClient(any()) } throws
+            IllegalArgumentException("Client with this email already exists")
+
+        testApplication {
+            application {
+                install(ContentNegotiation) { json() }
+                configureStatusPages()
+                routing { clientRoute(clientService, workerService) }
+            }
+
+            val response = client.put("/client/5") {
+                header(HttpHeaders.ContentType, ContentType.Application.Json)
+                setBody(json.encodeToString(requestBody))
+            }
+
+            assertEquals(HttpStatusCode.Conflict, response.status)
+            assertEquals(
+                """{"error":"Client with this email already exists"}""",
+                response.bodyAsText(),
+            )
+        }
+    }
+
+    @Test
+    fun `POST client returns 409 when pesel already exists`() = runTest {
+        val clientService = mockk<ClientService>()
+        val workerService = mockk<WorkerService>()
+        val requestBody = Client(
+            clientPrivate = ClientPersonalData(email = "jan@example.com", pesel = "90010112345"),
+        )
+
+        coEvery { clientService.save(any()) } throws
+            IllegalArgumentException("Client with this PESEL already exists")
+
+        testApplication {
+            application {
+                install(ContentNegotiation) { json() }
+                configureStatusPages()
+                routing { clientRoute(clientService, workerService) }
+            }
+
+            val response = client.post("/client") {
+                header(HttpHeaders.ContentType, ContentType.Application.Json)
+                setBody(json.encodeToString(requestBody))
+            }
+
+            assertEquals(HttpStatusCode.Conflict, response.status)
+            assertEquals(
+                """{"error":"Client with this PESEL already exists"}""",
+                response.bodyAsText(),
+            )
         }
     }
 }

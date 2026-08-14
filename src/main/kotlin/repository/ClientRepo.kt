@@ -8,6 +8,10 @@ interface ClientRepo {
 
     suspend fun findClientByEmail(email: String): Client?
 
+    suspend fun existsByEmail(email: String, excludeClientId: Long? = null): Boolean
+
+    suspend fun existsByPesel(pesel: String, excludeClientId: Long? = null): Boolean
+
     suspend fun getAllClients(page:Int, size:Int): List<Client>
 
     suspend fun clientsListSize(): Long

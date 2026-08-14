@@ -51,6 +51,8 @@ On every startup (including PROD), the API ensures the `gate_event` table exists
 
 On every startup (including PROD), the API ensures `clients.password` exists (see `ClientPasswordSchemaMigration.kt`). Disable with `DB_CLIENT_PASSWORD_SCHEMA_MIGRATE=false`.
 
+On every startup (including PROD), the API ensures unique indexes on client emails (`client_personal_data.email`, `client_company_data.email`) and PESEL (`client_personal_data.pesel`). Skips creation when duplicates already exist. Disable with `DB_CLIENT_UNIQUE_MIGRATE=false`.
+
 ### Restoring a PostgreSQL dump
 
 Import into a **fresh** `db1` (avoids duplicate tables / broken migrations):
