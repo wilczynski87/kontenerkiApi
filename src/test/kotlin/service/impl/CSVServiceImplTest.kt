@@ -45,11 +45,13 @@ class CSVServiceImplTest {
         assertEquals(BigDecimal("984"), first.amount)
         assertEquals("72114020040000320278657853", first.fromAccount)
         assertEquals("18/4/2026", first.title)
+        assertEquals("KRUSZWIL MAREK KRUSZEL", first.senderName)
 
         val second = result[1]
         assertEquals(BigDecimal("350"), second.amount)
         assertEquals("82109025290000000151502141", second.fromAccount)
         assertEquals("Faktura numer 1/4/2026", second.title)
+        assertEquals("MARCIN NALAZEK UL. WOLBROMSKA 18/1B", second.senderName)
     }
 
     @Test
@@ -69,6 +71,7 @@ class CSVServiceImplTest {
         assertNotNull(payment)
         assertEquals(BigDecimal("492"), payment.amount)
         assertEquals("66114020040000330282694955", payment.fromAccount)
+        assertEquals("FLORIS OGRODY SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ", payment.senderName)
     }
 
     @Test
@@ -86,6 +89,7 @@ class CSVServiceImplTest {
         val payment = result.first()
         assertEquals(BigDecimal("1275.51"), payment.amount)
         assertEquals("92124019941111001006915996", payment.fromAccount)
+        assertEquals("MYSZKOWSKI BENEDYKT", payment.senderName)
     }
 
     @Test
@@ -118,6 +122,7 @@ class CSVServiceImplTest {
         assertEquals(BigDecimal("984.00"), payment.amount)
         assertEquals("72114020040000320278657853", payment.fromAccount)
         assertEquals("18/4/2026", payment.title)
+        assertEquals("KRUSZWIL MAREK", payment.senderName)
         assertNull(payment.fromClient)
     }
 

@@ -21,7 +21,8 @@ data class Payment(
     val fromAccount: String? = null,
     val title: String? = null,
     val forInvoices: List<Invoice> = listOf(),
-    val referenceNumber: String? = null
+    val referenceNumber: String? = null,
+    val senderName: String? = null,
 
     ) {
 
@@ -36,7 +37,8 @@ data class Payment(
             fromAccount = this.fromAccount,
             title = this.title,
             forInvoices = this.forInvoices.mapNotNull { it.invoiceNumber },
-            referenceNumber = this.referenceNumber
+            referenceNumber = this.referenceNumber,
+            senderName = this.senderName,
         )
     }
 }
@@ -54,6 +56,7 @@ data class PaymentDto(
     val title: String? = null,
     val forInvoices: List<String>? = null,
     val referenceNumber: String? = null,
+    val senderName: String? = null,
 )
 
 @Serializable

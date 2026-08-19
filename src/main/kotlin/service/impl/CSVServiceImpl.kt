@@ -143,7 +143,8 @@ class CSVServiceImpl(
             fromAccount = this.rachunekZrodlowy,
             title = tytulem,
             forInvoices = mutableListOf(),
-            referenceNumber = numerReferencyjny
+            referenceNumber = numerReferencyjny,
+            senderName = nadawcaOdbiorca.takeIf { it.isNotBlank() },
         )
     }
 
