@@ -3,6 +3,7 @@ import com.kontenery.data.Address
 import com.kontenery.data.Client
 import com.kontenery.data.ClientCompanyData
 import com.kontenery.data.ClientPersonalData
+import com.kontenery.data.utils.BankAccount
 import com.kontenery.data.utils.now
 import com.kontenery.repository.AddressRepo
 import com.kontenery.repository.ClientRepo
@@ -31,10 +32,10 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
                 this.createdAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
             }
 
-            client.bankAccounts?.forEach {
+            client.bankAccounts?.forEach { rawAccount ->
                 ClientBankAccountEntity.new {
                     this.client = clientEntity
-                    bankAccount = it
+                    bankAccount = BankAccount.normalize(rawAccount)
                     createdAt = LocalDate.now()
                 }
             }

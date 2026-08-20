@@ -2,6 +2,7 @@ package com.kontenery.repository.impl
 
 import com.kontenery.data.Client
 import com.kontenery.data.ClientBankAccount
+import com.kontenery.data.utils.BankAccount
 import com.kontenery.repository.ClientBankAccountRepository
 import com.kontenery.repository.entity.ClientBankAccountEntity
 import com.kontenery.repository.entity.ClientBankAccountTable
@@ -32,16 +33,22 @@ class ClientBankAccountRepositoryImpl: ClientBankAccountRepository {
     }
 
     override suspend fun findClientByAccountNumber(accountNumber: String): Client? = suspendTransaction {
+        val variants = BankAccount.lookupVariants(accountNumber)
+        if (variants.isEmpty()) return@suspendTransaction null
+
         ClientBankAccountEntity
-            .find { ClientBankAccountTable.bankAccount eq accountNumber }
+            .find { ClientBankAccountTable.bankAccount inList variants }
             .firstOrNull()
             ?.client
             ?.toClient()
     }
 
     override suspend fun findBankAccountByAccountNumber(accountNumber: String): ClientBankAccount?  = suspendTransaction {
+        val variants = BankAccount.lookupVariants(accountNumber)
+        if (variants.isEmpty()) return@suspendTransaction null
+
         ClientBankAccountEntity
-            .find { ClientBankAccountTable.bankAccount eq accountNumber }
+            .find { ClientBankAccountTable.bankAccount inList variants }
             .firstOrNull()
             ?.toDomain()
     }

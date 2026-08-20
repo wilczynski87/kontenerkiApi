@@ -2,13 +2,16 @@ package com.kontenery.service.impl
 
 import com.kontenery.data.Client
 import com.kontenery.data.ClientBankAccount
+import com.kontenery.data.utils.BankAccount
 import com.kontenery.repository.ClientBankAccountRepository
 import com.kontenery.service.BankAccountService
 
 class BankAccountServiceImpl(private val repo: ClientBankAccountRepository): BankAccountService {
 
     override suspend fun save(dto: ClientBankAccount): ClientBankAccount? {
-        val updatedBankAccount = dto.copy(bankAccount = dto.bankAccount?.filterNot { it.isWhitespace() })
+        val updatedBankAccount = dto.copy(
+            bankAccount = dto.bankAccount?.let { BankAccount.normalize(it) }
+        )
         return repo.save(updatedBankAccount)
     }
 
@@ -21,29 +24,21 @@ class BankAccountServiceImpl(private val repo: ClientBankAccountRepository): Ban
     }
 
     override suspend fun findClientByAccountNumber(accountNumber: String): Client? {
-        val updatedBankAccount: String = accountNumber.filterNot { it.isWhitespace() }
-            .ensurePrefix()
-        return repo.findClientByAccountNumber(updatedBankAccount)
+        return repo.findClientByAccountNumber(accountNumber)
     }
 
     override suspend fun findBankAccountByAccountNumber(accountNumber: String): ClientBankAccount? {
-        val updatedBankAccount: String = accountNumber.filterNot { it.isWhitespace() }
-        return repo.findBankAccountByAccountNumber(updatedBankAccount)
+        return repo.findBankAccountByAccountNumber(accountNumber)
     }
 
     override suspend fun update(id: Long, updated: ClientBankAccount): ClientBankAccount? {
-        return repo.update(id, updated)
+        val normalized = updated.copy(
+            bankAccount = updated.bankAccount?.let { BankAccount.normalize(it) }
+        )
+        return repo.update(id, normalized)
     }
 
     override suspend fun delete(id: Long): Boolean {
         return repo.delete(id)
-    }
-
-    private fun String.ensurePrefix(prefix: String = "PL"): String {
-        return if (this.matches(Regex("^[A-Z]{2,3}.*"))) {
-            this
-        } else {
-            prefix + this
-        }
     }
 }

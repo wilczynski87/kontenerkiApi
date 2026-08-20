@@ -121,4 +121,39 @@ class ClientBankAccountRepositoryImplTest {
         assertEquals(3, all.size)
         assertTrue(all.all { it.client?.id == client.id.value })
     }
+
+    @Test
+    fun `should find client by account number with or without PL prefix`() = runBlocking {
+        val client = createClient("Apleona")
+        repository.save(
+            ClientBankAccount(
+                bankAccount = "25114010100000536605001001",
+                client = Client(id = client.id.value, createdAt = client.createdAt),
+                createdAt = LocalDate.now()
+            )
+        )
+
+        val byBare = repository.findClientByAccountNumber("25114010100000536605001001")
+        val byPrefixed = repository.findClientByAccountNumber("PL25114010100000536605001001")
+
+        assertEquals(client.id.value, byBare?.id)
+        assertEquals(client.id.value, byPrefixed?.id)
+    }
+
+    @Test
+    fun `should find bank account stored with PL when queried without prefix`() = runBlocking {
+        val client = createClient("Prefixed")
+        repository.save(
+            ClientBankAccount(
+                bankAccount = "PL36188000090000001102843000",
+                client = Client(id = client.id.value, createdAt = client.createdAt),
+                createdAt = LocalDate.now()
+            )
+        )
+
+        val found = repository.findBankAccountByAccountNumber("36188000090000001102843000")
+
+        assertEquals("PL36188000090000001102843000", found?.bankAccount)
+        assertEquals(client.id.value, found?.client?.id)
+    }
 }

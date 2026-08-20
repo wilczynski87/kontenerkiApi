@@ -19,6 +19,25 @@ enum class SellerAccount(val accountNumber: String) {
 class BankAccount {
     companion object {
 
+        /** Store form: no whitespace, with country prefix (default PL). */
+        fun normalize(accountNumber: String, defaultPrefix: String = "PL"): String {
+            val cleaned = accountNumber.filterNot { it.isWhitespace() }
+            if (cleaned.isEmpty()) return cleaned
+            return if (HAS_COUNTRY_PREFIX.matches(cleaned)) cleaned else defaultPrefix + cleaned
+        }
+
+        /** Match both legacy (digits only) and canonical PL-prefixed rows. */
+        fun lookupVariants(accountNumber: String, defaultPrefix: String = "PL"): List<String> {
+            val cleaned = accountNumber.filterNot { it.isWhitespace() }
+            if (cleaned.isEmpty()) return emptyList()
+            val withPrefix = normalize(cleaned, defaultPrefix)
+            val withoutPrefix = withPrefix.replaceFirst(COUNTRY_PREFIX, "")
+            return listOf(withPrefix, withoutPrefix, cleaned).distinct().filter { it.isNotEmpty() }
+        }
+
+        private val COUNTRY_PREFIX = Regex("^[A-Z]{2,3}")
+        private val HAS_COUNTRY_PREFIX = Regex("^[A-Z]{2,3}.*")
+
         fun toPolishIbanFormatted(countryCode: String = "PL", rawNrb: String): String {
             // Usuń spacje i znaki niebędące cyframi
             val nrb = rawNrb.filter { it.isDigit() }
