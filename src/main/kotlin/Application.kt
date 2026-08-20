@@ -71,6 +71,7 @@ import com.kontenery.p24.service.impl.P24ServiceImpl
 import com.kontenery.validator.BankAccountValidator
 import com.kontenery.validator.PaymentValidator
 import com.kontenery.validator.httpValidator
+import com.kontenery.data.utils.BankAccount
 import io.ktor.client.HttpClient
 import io.ktor.server.application.Application
 import io.ktor.server.application.log
@@ -203,7 +204,20 @@ fun Application.module() {
     configureSerialization()
     configureDatabases(apiConfig)
     configureSuplaTokenRefresh(suplaTokenProvider)
-    val bankAccountValidator = BankAccountValidator(bankAccountService)
+    val blockedAccountsEnv = System.getenv("BANK_ACCOUNT_ASSIGNMENT_BLOCKED")?.trim().orEmpty()
+    val blockedAccounts = blockedAccountsEnv
+        .takeIf { it.isNotBlank() }
+        ?.split(",")
+        ?.map { it.trim() }
+        ?.filter { it.isNotEmpty() }
+        .orEmpty()
+        .flatMap { BankAccount.lookupVariants(it) }
+        .toSet()
+
+    val bankAccountValidator = BankAccountValidator(
+        bankAccountService = bankAccountService,
+        blockedBankAccounts = blockedAccounts,
+    )
 
     httpValidator(contractService)
     configureStatusPages()

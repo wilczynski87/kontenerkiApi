@@ -3,7 +3,7 @@ package com.kontenery.data.utils
 import java.math.BigInteger
 
 enum class SellerAccount(val accountNumber: String) {
-    BUSSINESS("PL50 1950 0001 2006 0023 6241 0001"),
+    BUSINESS("PL51 1870 1045 2078 1089 5944 0001"),
     PRIVATE("PL11 2490 1044 0000 4200 8845 2192");
 
     companion object {

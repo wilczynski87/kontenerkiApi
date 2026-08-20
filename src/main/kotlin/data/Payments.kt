@@ -17,7 +17,7 @@ data class Payment(
     val date: LocalDate,
     val fromClient: Client? = null,
     val method: String? = null,
-    val toAccount: SellerAccount? = SellerAccount.BUSSINESS,
+    val toAccount: SellerAccount? = SellerAccount.BUSINESS,
     val fromAccount: String? = null,
     val title: String? = null,
     val forInvoices: List<Invoice> = listOf(),

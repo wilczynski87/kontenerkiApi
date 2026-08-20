@@ -131,7 +131,7 @@ class CSVServiceImpl(
 //        println("this.rachunekZrodlowy: ${this.rachunekZrodlowy} -> ${client?.getName()}")
 
         val trimmedBusinessAccount: String =
-            SellerAccount.BUSSINESS.accountNumber.trim().filterNot { it.isWhitespace() }
+            SellerAccount.BUSINESS.accountNumber.trim().filterNot { it.isWhitespace() }
         val isBusinessAccount: Boolean = this.rachunekDocelowy == trimmedBusinessAccount
 
         return Payment(
@@ -139,7 +139,7 @@ class CSVServiceImpl(
             date = dataKsiegowania,
             fromClient = client,
             method = typOperacji,
-            toAccount = if (isBusinessAccount) SellerAccount.BUSSINESS else SellerAccount.PRIVATE,
+            toAccount = if (isBusinessAccount) SellerAccount.BUSINESS else SellerAccount.PRIVATE,
             fromAccount = this.rachunekZrodlowy,
             title = tytulem,
             forInvoices = mutableListOf(),

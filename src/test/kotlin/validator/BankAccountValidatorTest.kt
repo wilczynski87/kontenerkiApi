@@ -5,6 +5,7 @@ import com.kontenery.data.utils.errors.BankAccountError
 import com.kontenery.data.utils.errors.ValidationErrorType
 import com.kontenery.service.BankAccountService
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
@@ -93,5 +94,29 @@ class BankAccountValidatorTest {
 
         assertNull(result1)
         assertNull(result2)
+    }
+
+    @Test
+    fun `should block account number from blocked list`() = runTest {
+        val blockedNormalized = "PL25114010100000536605001001"
+        validator = BankAccountValidator(
+            bankAccountService = bankAccountService,
+            blockedBankAccounts = setOf(blockedNormalized),
+        )
+
+        // Na pewno nie powinno iść dalej do sprawdzania duplikatu.
+        coEvery { bankAccountService.findBankAccountByAccountNumber(any()) } returns null
+
+        val result = validator.validate(
+            ClientBankAccount(
+                bankAccount = "25114010100000536605001001", // bez PL
+                createdAt = LocalDate(2026, 4, 15),
+            )
+        )
+
+        assertNotNull(result)
+        assertEquals(ValidationErrorType.BLOCKED.name, result!!.title)
+        assertEquals("Bank account 25114010100000536605001001 is blocked and cannot be assigned to a client", result.message)
+        coVerify(exactly = 0) { bankAccountService.findBankAccountByAccountNumber(any()) }
     }
 }
