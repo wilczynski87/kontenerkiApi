@@ -7,6 +7,14 @@ enum class SellerAccount(val accountNumber: String) {
     PRIVATE("PL11 2490 1044 0000 4200 8845 2192");
 
     companion object {
+        /** Legacy DB rows may still store the pre-rename typo [BUSSINESS]. */
+        private const val LEGACY_BUSINESS_NAME = "BUSSINESS"
+
+        fun fromDbName(value: String): SellerAccount? = when (value) {
+            LEGACY_BUSINESS_NAME -> BUSINESS
+            else -> entries.find { it.name == value }
+        }
+
         fun fromAccountNumber(value: String): SellerAccount? {
             return entries.firstOrNull { it1 ->
                 it1.accountNumber

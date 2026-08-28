@@ -16,7 +16,17 @@ object PaymentTable: LongIdTable("payments") {
     val date = date("date")
     val fromClient = reference("from_client_id", ClientTable) // assuming Clients table exists
     val method = varchar("method", 100).nullable()
-    val toAccount = enumerationByName("to_account", 50, SellerAccount::class).nullable()
+    val toAccount = customEnumeration(
+        name = "to_account",
+        sql = "VARCHAR(50)",
+        fromDb = { value ->
+            SellerAccount.fromDbName(value.toString())
+                ?: throw IllegalStateException(
+                    "${value.toString()} can't be associated with any from enum ${SellerAccount::class.qualifiedName}",
+                )
+        },
+        toDb = { it.name },
+    ).nullable()
     val fromAccount = varchar("from_account", 100).nullable()
     val title = varchar("title", 255).nullable()
     val referenceNumber = varchar("reference_number", 100).nullable()

@@ -62,6 +62,7 @@ fun configureDatabases(apiConfig: ApiConfig) {
     ensureClientUniqueIndexesIfNeeded(apiConfig)
     ensureP24SchemaIfNeeded(apiConfig)
     ensureWorkerSchemaIfNeeded(apiConfig)
+    ensurePaymentToAccountSchemaIfNeeded(apiConfig)
 //    repairInvoiceForeignKeysIfNeeded(apiConfig)
 
     val connection = {
