@@ -15,6 +15,9 @@ import com.kontenery.library.model.auth.LoginResponse
 import com.kontenery.repository.ClientRepo
 import com.kontenery.repository.WorkerRepo
 import com.kontenery.service.ChangePasswordResult
+import com.kontenery.service.GoogleIdTokenVerifierService
+import com.kontenery.service.GoogleLoginResult
+import com.kontenery.service.GoogleUserClaims
 import com.kontenery.service.JwtConfig
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -528,6 +531,97 @@ class AuthServiceImplTest {
         }
     }
 
+    @Nested
+    inner class GoogleLogin {
+
+        private lateinit var googleVerifier: GoogleIdTokenVerifierService
+
+        @BeforeEach
+        fun setUpGoogle() {
+            googleVerifier = mockk()
+            service = AuthServiceImpl(
+                jwtConfig = jwtConfig,
+                authConfig = testApiConfig().auth,
+                clientRepo = clientRepo,
+                workerRepo = workerRepo,
+                googleIdTokenVerifier = googleVerifier,
+            )
+        }
+
+        @Test
+        fun `returns success when client already linked by google sub`() = runTest {
+            coEvery { googleVerifier.verify("token") } returns GoogleUserClaims(
+                sub = "google-sub-1",
+                email = "client@example.com",
+                emailVerified = true,
+            )
+            coEvery { clientRepo.findClientByGoogleSub("google-sub-1") } returns activeClient(id = 42L)
+
+            val result = service.loginWithGoogle("token")
+
+            assertEquals(GoogleLoginResult.Success(LoginResponse("42", "customer")), result)
+            coVerify(exactly = 0) { clientRepo.findClientByEmail(any()) }
+        }
+
+        @Test
+        fun `links google sub when client found by email`() = runTest {
+            coEvery { googleVerifier.verify("token") } returns GoogleUserClaims(
+                sub = "google-sub-2",
+                email = "client@example.com",
+                emailVerified = true,
+            )
+            coEvery { clientRepo.findClientByGoogleSub("google-sub-2") } returns null
+            coEvery { clientRepo.findClientByEmail("client@example.com") } returns activeClient(id = 7L)
+            coEvery { clientRepo.linkGoogleSub(7L, "google-sub-2") } returns true
+
+            val result = service.loginWithGoogle("token")
+
+            assertEquals(GoogleLoginResult.Success(LoginResponse("7", "customer")), result)
+        }
+
+        @Test
+        fun `rejects unverified email`() = runTest {
+            coEvery { googleVerifier.verify("token") } returns GoogleUserClaims(
+                sub = "google-sub-3",
+                email = "client@example.com",
+                emailVerified = false,
+            )
+
+            assertEquals(GoogleLoginResult.EmailNotVerified, service.loginWithGoogle("token"))
+        }
+
+        @Test
+        fun `rejects unknown client email`() = runTest {
+            coEvery { googleVerifier.verify("token") } returns GoogleUserClaims(
+                sub = "google-sub-4",
+                email = "unknown@example.com",
+                emailVerified = true,
+            )
+            coEvery { clientRepo.findClientByGoogleSub("google-sub-4") } returns null
+            coEvery { clientRepo.findClientByEmail("unknown@example.com") } returns null
+
+            assertEquals(GoogleLoginResult.ClientNotFound, service.loginWithGoogle("token"))
+        }
+
+        @Test
+        fun `rejects inactive client`() = runTest {
+            coEvery { googleVerifier.verify("token") } returns GoogleUserClaims(
+                sub = "google-sub-5",
+                email = "client@example.com",
+                emailVerified = true,
+            )
+            coEvery { clientRepo.findClientByGoogleSub("google-sub-5") } returns activeClient(id = 1L, isActive = false)
+
+            assertEquals(GoogleLoginResult.ClientInactive, service.loginWithGoogle("token"))
+        }
+    }
+
+    private fun activeClient(id: Long, isActive: Boolean = true) = Client(
+        id = id,
+        clientPrivate = ClientPersonalData(email = "client@example.com"),
+        isActive = isActive,
+    )
+
     private fun testApiConfig(): ApiConfig = ApiConfig(
         env = "TEST",
         email = EmailConfig(host = "localhost", port = 8200),
@@ -538,7 +632,7 @@ class AuthServiceImplTest {
             issuer = "test-issuer",
             audience = "test-audience",
             realm = "test-realm",
-            googleClientId = "google-client-id",
+            googleClientIds = listOf("google-client-id"),
             appLogin = "admin@example.com",
             appSecret = "admin-secret",
         ),

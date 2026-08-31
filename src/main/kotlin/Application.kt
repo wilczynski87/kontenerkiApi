@@ -46,6 +46,7 @@ import com.kontenery.service.UtilitiesService
 import com.kontenery.service.WorkerService
 import com.kontenery.service.impl.AddressServiceImpl
 import com.kontenery.service.impl.AuthServiceImpl
+import com.kontenery.service.impl.GoogleIdTokenVerifierServiceImpl
 import com.kontenery.service.impl.BankAccountServiceImpl
 import com.kontenery.service.impl.CSVServiceImpl
 import com.kontenery.service.impl.ClientServiceImpl
@@ -147,7 +148,14 @@ fun Application.module() {
 
     val jwtConfig = JwtConfig(apiConfig)
     val workerRepo: WorkerRepo = WorkerRepoImpl()
-    val authService: AuthService = AuthServiceImpl(jwtConfig, apiConfig.auth, clientRepo, workerRepo)
+    val googleIdTokenVerifier = GoogleIdTokenVerifierServiceImpl(apiConfig.auth.googleClientIds)
+    val authService: AuthService = AuthServiceImpl(
+        jwtConfig,
+        apiConfig.auth,
+        clientRepo,
+        workerRepo,
+        googleIdTokenVerifier,
+    )
 
     val ksefSessionInvoiceStatusRepo: KsefSessionInvoiceStatusRepo = KsefSessionInvoiceStatusRepoImpl()
     val ksefRepository: KsefRepository = KsefRepositoryImpl(KsefApiClient(apiConfig.ksef))

@@ -9,6 +9,7 @@ postgres-version = "42.7.7"
 junit-jupiter-version = "5.10.1"
 junit-jupiter = "5.14.0"
 mockk = "1.14.7"
+google-api-client = "2.7.2"
 
 
 [libraries]
@@ -41,6 +42,7 @@ ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor-ve
 ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor-version" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit-jupiter" }
 io-mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+google-api-client = { module = "com.google.api-client:google-api-client", version.ref = "google-api-client" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-version" }

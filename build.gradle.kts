@@ -56,6 +56,7 @@ dependencies {
     implementation(files("libs/library-1.0.1.jar"))
     implementation(libs.ktor.server.cors)
     implementation(libs.ktor.server.status.pages)
+    implementation(libs.google.api.client)
 
     //Test
     implementation(libs.io.mockk)

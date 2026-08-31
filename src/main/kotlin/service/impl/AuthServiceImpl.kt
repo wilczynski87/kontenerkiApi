@@ -9,6 +9,8 @@ import com.kontenery.repository.ClientRepo
 import com.kontenery.repository.WorkerRepo
 import com.kontenery.service.AuthService
 import com.kontenery.service.ChangePasswordResult
+import com.kontenery.service.GoogleIdTokenVerifierService
+import com.kontenery.service.GoogleLoginResult
 import com.kontenery.service.JwtConfig
 import com.kontenery.service.TokenValidationResult
 import java.util.Date
@@ -18,6 +20,7 @@ class AuthServiceImpl(
     authConfig: AuthConfig,
     private val clientRepo: ClientRepo,
     private val workerRepo: WorkerRepo,
+    private val googleIdTokenVerifier: GoogleIdTokenVerifierService? = null,
 ): AuthService {
     val appLogin = authConfig.appLogin
     val appPassword = authConfig.appSecret
@@ -47,6 +50,28 @@ class AuthServiceImpl(
         } else {
             null
         }
+    }
+
+    override suspend fun loginWithGoogle(idToken: String): GoogleLoginResult {
+        val verifier = googleIdTokenVerifier ?: return GoogleLoginResult.NotConfigured
+        val claims = verifier.verify(idToken) ?: return GoogleLoginResult.InvalidToken
+        if (!claims.emailVerified) return GoogleLoginResult.EmailNotVerified
+
+        clientRepo.findClientByGoogleSub(claims.sub)?.let { client ->
+            if (client.isActive == false) return GoogleLoginResult.ClientInactive
+            val clientId = client.id ?: return GoogleLoginResult.ClientNotFound
+            return GoogleLoginResult.Success(LoginResponse(clientId.toString(), "customer"))
+        }
+
+        val client = clientRepo.findClientByEmail(claims.email) ?: return GoogleLoginResult.ClientNotFound
+        if (client.isActive == false) return GoogleLoginResult.ClientInactive
+        val clientId = client.id ?: return GoogleLoginResult.ClientNotFound
+
+        if (!clientRepo.linkGoogleSub(clientId, claims.sub)) {
+            return GoogleLoginResult.GoogleSubConflict
+        }
+
+        return GoogleLoginResult.Success(LoginResponse(clientId.toString(), "customer"))
     }
 
     override suspend fun changePassword(

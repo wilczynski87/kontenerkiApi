@@ -8,6 +8,11 @@ interface ClientRepo {
 
     suspend fun findClientByEmail(email: String): Client?
 
+    suspend fun findClientByGoogleSub(googleSub: String): Client?
+
+    /** Links Google subject to client when unused or already linked to the same client. */
+    suspend fun linkGoogleSub(clientId: Long, googleSub: String): Boolean
+
     suspend fun existsByEmail(email: String, excludeClientId: Long? = null): Boolean
 
     suspend fun existsByPesel(pesel: String, excludeClientId: Long? = null): Boolean

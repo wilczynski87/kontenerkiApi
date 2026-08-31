@@ -52,6 +52,25 @@ class ClientRepoImpl(val addressRepo: AddressRepo): ClientRepo {
             ?.toClient()
     }
 
+    override suspend fun findClientByGoogleSub(googleSub: String): Client? = suspendTransaction {
+        val normalized = googleSub.trim().takeUnless { it.isBlank() } ?: return@suspendTransaction null
+        ClientEntity.find { ClientTable.googleSub eq normalized }
+            .with(ClientEntity::personalData, ClientEntity::companyData)
+            .firstOrNull()
+            ?.toClient()
+    }
+
+    override suspend fun linkGoogleSub(clientId: Long, googleSub: String): Boolean = suspendTransaction {
+        val normalized = googleSub.trim().takeUnless { it.isBlank() } ?: return@suspendTransaction false
+        val owner = ClientEntity.find { ClientTable.googleSub eq normalized }.firstOrNull()
+        if (owner != null && owner.id.value != clientId) {
+            return@suspendTransaction false
+        }
+        val client = ClientEntity.findById(clientId) ?: return@suspendTransaction false
+        client.googleSub = normalized
+        true
+    }
+
     override suspend fun existsByEmail(email: String, excludeClientId: Long?): Boolean = suspendTransaction {
         val normalizedEmail = email.normalizeEmail() ?: return@suspendTransaction false
         ClientEntity.all()

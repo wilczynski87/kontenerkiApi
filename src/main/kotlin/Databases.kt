@@ -58,6 +58,7 @@ fun configureDatabases(apiConfig: ApiConfig) {
     ensureGateEventSchemaIfNeeded(apiConfig)
     ensureSuplaTokenSchemaIfNeeded(apiConfig)
     ensureClientPasswordSchemaIfNeeded(apiConfig)
+    ensureClientGoogleSubSchemaIfNeeded(apiConfig)
     ensureInvoiceNumberUniqueIndexesIfNeeded(apiConfig)
     ensureClientUniqueIndexesIfNeeded(apiConfig)
     ensureP24SchemaIfNeeded(apiConfig)

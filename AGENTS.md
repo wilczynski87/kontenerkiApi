@@ -98,6 +98,8 @@ There is no separate lint tool configured; Kotlin compiler warnings serve that r
 
 The dev login is hardcoded in `AuthServiceImpl`: email=`ppp`, password=`ppp`. Use `POST /auth/login` with JSON body `{"email":"ppp","password":"ppp"}` to get a JWT. Pass it as `Authorization: Bearer <token>` for authenticated routes.
 
+**Google Sign-In (Magazynki clients):** `POST /auth/google` with JSON body `{"idToken":"<Google ID token>"}`. Server verifies the token against `GOOGLE_CLIENT_ID` (comma-separated list for web + Android client IDs). Links Google `sub` to an existing client by email on first login; stores `clients.google_sub`. Returns the same JWT format as password login. Requires a real Google OAuth client ID (placeholder `1234567890` disables verification).
+
 ### KSeF integration
 
 KSeF (Krajowy System e-Faktur) API v2 is integrated under `com.kontenery.ksef` (client → repository → service → `/ksef` routes). Authentication uses a **KSeF system token** (generated in the KSeF portal), not the app JWT.

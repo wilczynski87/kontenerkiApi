@@ -25,7 +25,8 @@ data class AuthConfig(
     val realm: String,
     val accessTokenExpiry: Long = 3600000,
     val refreshTokenExpiry: Long = 2592000000,
-    val googleClientId: String,
+    /** OAuth 2.0 client IDs allowed as JWT `aud` (web + Android). Comma-separated in GOOGLE_CLIENT_ID. */
+    val googleClientIds: List<String>,
     val appLogin: String?,
     val appSecret: String?,
 )
@@ -164,7 +165,10 @@ fun Application.loadApiConfig(): ApiConfig {
             realm = env("JWT_REALM", "ktor sample app"),
             accessTokenExpiry = env("VALIDITY_MS", "3600000").toLong(),
             refreshTokenExpiry = env("VALIDITY_REFRESH_MS", "2592000000").toLong(),
-            googleClientId = env("GOOGLE_CLIENT_ID", "1234567890"),
+            googleClientIds = parseGoogleClientIds(
+                env("GOOGLE_CLIENT_ID", "1234567890"),
+                envOrNull("GOOGLE_CLIENT_IDS"),
+            ),
             appLogin = envOrNull("APP_LOGIN"),
             appSecret = envOrNull("APP_SECRET"),
         ),
@@ -259,3 +263,9 @@ internal fun resolveGateConfig(
         cooldownSeconds = getenv("GATE_COOLDOWN_SECONDS")?.toLongOrNull() ?: 60,
     )
 }
+
+internal fun parseGoogleClientIds(primary: String, extra: String?): List<String> =
+    buildList {
+        addAll(primary.split(',').map { it.trim() }.filter { it.isNotEmpty() })
+        extra?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }?.let { addAll(it) }
+    }.distinct()
