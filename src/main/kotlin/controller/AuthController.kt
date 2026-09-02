@@ -12,6 +12,7 @@ import com.kontenery.utils.respondInternalError
 import com.kontenery.utils.respondUnauthorized
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Cookie
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
@@ -63,56 +64,12 @@ fun Route.authController(
         }
 
         post("/google") {
-            try {
-                val request = call.receive<GoogleLoginRequest>()
-                if (request.idToken.isBlank()) {
-                    call.respondBadRequest("Google ID token is required")
-                    return@post
-                }
+            call.handleGoogleLogin(authService)
+        }
 
-                when (val result = authService.loginWithGoogle(request.idToken)) {
-                    is GoogleLoginResult.Success -> {
-                        val tokenResponse = authService.generateTokenResponse(result.loginResponse)
-                        call.response.cookies.append(
-                            Cookie(
-                                name = "auth_token",
-                                value = tokenResponse.accessToken,
-                                secure = false,
-                                httpOnly = true,
-                                path = "/",
-                                maxAge = 3600,
-                                extensions = mapOf("SameSite" to SameSite.None),
-                            ),
-                        )
-                        call.respond(
-                            HttpStatusCode.OK,
-                            AuthResponse(
-                                loginResponse = result.loginResponse,
-                                tokenResponse = tokenResponse,
-                            ),
-                        )
-                    }
-                    GoogleLoginResult.InvalidToken ->
-                        call.respondUnauthorized("Invalid Google token")
-                    GoogleLoginResult.EmailNotVerified ->
-                        call.respondUnauthorized("Google email is not verified")
-                    GoogleLoginResult.ClientNotFound ->
-                        call.respondUnauthorized("No client account for this Google email")
-                    GoogleLoginResult.ClientInactive ->
-                        call.respond(HttpStatusCode.Forbidden, ApiErrorResponse("Client account is inactive"))
-                    GoogleLoginResult.GoogleSubConflict ->
-                        call.respond(
-                            HttpStatusCode.Conflict,
-                            ApiErrorResponse("Google account is linked to another client"),
-                        )
-                    GoogleLoginResult.NotConfigured ->
-                        call.respond(
-                            HttpStatusCode.ServiceUnavailable,
-                            ApiErrorResponse("Google Sign-In is not configured on the server"),
-                        )
-                }
-            } catch (e: Exception) {
-                call.respondInternalError(e, "Google login failed")
+        route("/oauth") {
+            post("/google") {
+                call.handleGoogleLogin(authService)
             }
         }
 
@@ -246,5 +203,59 @@ fun Route.authController(
                 }
             }
         }
+    }
+}
+
+private suspend fun ApplicationCall.handleGoogleLogin(authService: AuthService) {
+    try {
+        val request = receive<GoogleLoginRequest>()
+        if (request.idToken.isBlank()) {
+            respondBadRequest("Google ID token is required")
+            return
+        }
+
+        when (val result = authService.loginWithGoogle(request.idToken)) {
+            is GoogleLoginResult.Success -> {
+                val tokenResponse = authService.generateTokenResponse(result.loginResponse)
+                response.cookies.append(
+                    Cookie(
+                        name = "auth_token",
+                        value = tokenResponse.accessToken,
+                        secure = false,
+                        httpOnly = true,
+                        path = "/",
+                        maxAge = 3600,
+                        extensions = mapOf("SameSite" to SameSite.None),
+                    ),
+                )
+                respond(
+                    HttpStatusCode.OK,
+                    AuthResponse(
+                        loginResponse = result.loginResponse,
+                        tokenResponse = tokenResponse,
+                    ),
+                )
+            }
+            GoogleLoginResult.InvalidToken ->
+                respondUnauthorized("Invalid Google token")
+            GoogleLoginResult.EmailNotVerified ->
+                respondUnauthorized("Google email is not verified")
+            GoogleLoginResult.ClientNotFound ->
+                respondUnauthorized("No client account for this Google email")
+            GoogleLoginResult.ClientInactive ->
+                respond(HttpStatusCode.Forbidden, ApiErrorResponse("Client account is inactive"))
+            GoogleLoginResult.GoogleSubConflict ->
+                respond(
+                    HttpStatusCode.Conflict,
+                    ApiErrorResponse("Google account is linked to another client"),
+                )
+            GoogleLoginResult.NotConfigured ->
+                respond(
+                    HttpStatusCode.ServiceUnavailable,
+                    ApiErrorResponse("Google Sign-In is not configured on the server"),
+                )
+        }
+    } catch (e: Exception) {
+        respondInternalError(e, "Google login failed")
     }
 }

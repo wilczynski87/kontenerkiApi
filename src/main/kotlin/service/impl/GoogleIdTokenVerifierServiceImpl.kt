@@ -21,7 +21,11 @@ class GoogleIdTokenVerifierServiceImpl(
         val token = idToken.trim().takeUnless { it.isBlank() } ?: return null
         if (verifier.audience.isEmpty()) return null
 
-        val googleToken = verifier.verify(token) ?: return null
+        val googleToken = try {
+            verifier.verify(token)
+        } catch (_: IllegalArgumentException) {
+            return null
+        } ?: return null
         val payload = googleToken.payload
         val email = payload.email?.trim()?.lowercase()?.takeUnless { it.isBlank() } ?: return null
         val sub = payload.subject?.trim()?.takeUnless { it.isBlank() } ?: return null
