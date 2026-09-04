@@ -216,6 +216,11 @@ private suspend fun ApplicationCall.handleGoogleLogin(authService: AuthService) 
 
         when (val result = authService.loginWithGoogle(request.idToken)) {
             is GoogleLoginResult.Success -> {
+                authLog.info(
+                    "Google login OK userId={} role={}",
+                    result.loginResponse.userId,
+                    result.loginResponse.role,
+                )
                 val tokenResponse = authService.generateTokenResponse(result.loginResponse)
                 response.cookies.append(
                     Cookie(
@@ -236,24 +241,36 @@ private suspend fun ApplicationCall.handleGoogleLogin(authService: AuthService) 
                     ),
                 )
             }
-            GoogleLoginResult.InvalidToken ->
+            GoogleLoginResult.InvalidToken -> {
+                authLog.warn("Google login rejected: InvalidToken (idToken length={})", request.idToken.length)
                 respondUnauthorized("Invalid Google token")
-            GoogleLoginResult.EmailNotVerified ->
+            }
+            GoogleLoginResult.EmailNotVerified -> {
+                authLog.warn("Google login rejected: EmailNotVerified")
                 respondUnauthorized("Google email is not verified")
-            GoogleLoginResult.ClientNotFound ->
+            }
+            GoogleLoginResult.ClientNotFound -> {
+                authLog.warn("Google login rejected: ClientNotFound")
                 respondUnauthorized("No client account for this Google email")
-            GoogleLoginResult.ClientInactive ->
+            }
+            GoogleLoginResult.ClientInactive -> {
+                authLog.warn("Google login rejected: ClientInactive")
                 respond(HttpStatusCode.Forbidden, ApiErrorResponse("Client account is inactive"))
-            GoogleLoginResult.GoogleSubConflict ->
+            }
+            GoogleLoginResult.GoogleSubConflict -> {
+                authLog.warn("Google login rejected: GoogleSubConflict")
                 respond(
                     HttpStatusCode.Conflict,
                     ApiErrorResponse("Google account is linked to another client"),
                 )
-            GoogleLoginResult.NotConfigured ->
+            }
+            GoogleLoginResult.NotConfigured -> {
+                authLog.warn("Google login rejected: NotConfigured")
                 respond(
                     HttpStatusCode.ServiceUnavailable,
                     ApiErrorResponse("Google Sign-In is not configured on the server"),
                 )
+            }
         }
     } catch (e: Exception) {
         respondInternalError(e, "Google login failed")
