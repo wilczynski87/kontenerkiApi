@@ -30,7 +30,9 @@ For **Gradle on the host**, use `DB_HOST=localhost` and `DB_PORT=5432` (or `5431
 
 For **docker compose**, set `DB_PORT=5431` in `.env` for the host mapping; compose overrides `DB_HOST`/`DB_PORT` for the `api` service on the internal network.
 
-The **email** service requires `INTERNAL_API_KEY` (same value as in the API `.env`), plus `GOOGLE_CLIENT_*` and `EMAIL_USER`. Compose sets `API_NAME=api` for container networking. Quote values that contain spaces or `|` (e.g. `JWT_REALM`, `KSEF_TOKEN`).
+The **email** service requires `INTERNAL_API_KEY` (same value as in the API `.env`), plus **single** `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` + `GOOGLE_REFRESH_TOKEN` (Gmail OAuth — one Desktop/Web client only) and `EMAIL_USER`. Compose sets `API_NAME=api` for container networking. Quote values that contain spaces or `|` (e.g. `JWT_REALM`, `KSEF_TOKEN`).
+
+**Google Sign-In vs Gmail:** Magazynki login accepts multiple audiences via env var `GOOGLE_CLIENT_IDS` (web + Android, comma-separated). Do **not** put that list into secret `GOOGLE_CLIENT_ID` — email will then fail with `The OAuth client was not found`.
 
 ### Docker Compose (full stack)
 

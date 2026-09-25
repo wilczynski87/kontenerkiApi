@@ -3,7 +3,6 @@ package com.kontenery.controller
 import com.kontenery.service.InvoiceService
 import com.kontenery.utils.ApiErrorResponse
 import com.kontenery.utils.isValidInternalApiKey
-import com.kontenery.utils.respondInternalError
 import io.ktor.http.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -15,6 +14,29 @@ private val mailSendLog = LoggerFactory.getLogger("MailSendConfirmation")
 
 fun Route.mailSendConfirmation(invoiceService: InvoiceService) {
     route("/mailSend") {
+        // Error callback from email service (GET /mailSend?invoiceNumber=...&error=ERROR&message=...)
+        get {
+            if (!call.isValidInternalApiKey()) {
+                call.respond(HttpStatusCode.Unauthorized, ApiErrorResponse("Unauthorized"))
+                return@get
+            }
+
+            val invoiceNumber = call.queryParameters[MailSendParam.INVOICE_NUMBER.param]
+            val sendDate = call.queryParameters[MailSendParam.SEND_DATE.param]
+            val error = call.queryParameters[MailSendParam.ERROR.param]
+            val message = call.queryParameters[MailSendParam.MESSAGE.param]
+
+            mailSendLog.error(
+                "Mail send failed: invoice={}, date={}, error={}, message={}",
+                invoiceNumber,
+                sendDate,
+                error,
+                message,
+            )
+
+            call.respond(HttpStatusCode.OK)
+        }
+
         get("/invoice") {
             if (!call.isValidInternalApiKey()) {
                 call.respond(HttpStatusCode.Unauthorized, ApiErrorResponse("Unauthorized"))

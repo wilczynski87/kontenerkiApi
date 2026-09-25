@@ -49,9 +49,12 @@ jobs:
           cat > /tmp/kontenerki.env <<EOF
           # === SECRETS ===
           DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          # Gmail (email service): must be ONE OAuth client ID matching CLIENT_SECRET + REFRESH_TOKEN
           GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
           GOOGLE_REFRESH_TOKEN=${{ secrets.GOOGLE_REFRESH_TOKEN }}
+          # Magazynki Sign-In (API): web + Android audiences (comma-separated OK)
+          GOOGLE_CLIENT_IDS=${{ vars.GOOGLE_CLIENT_IDS }}
           INTERNAL_API_KEY=${{ secrets.INTERNAL_API_KEY }}
           JWT_AUDIENCE=${{ secrets.JWT_AUDIENCE }}
           JWT_REALM=${{ secrets.JWT_REALM }}
