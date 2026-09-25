@@ -3,6 +3,7 @@ package com.kontenery.controller
 import com.kontenery.data.Client
 import com.kontenery.data.finance.ClientFinanceDto
 import com.kontenery.data.worker.WorkerCreateRequest
+import com.kontenery.data.utils.historyStart
 import com.kontenery.data.utils.startOfCurrentYear
 import com.kontenery.service.ClientService
 import com.kontenery.service.WorkerService
@@ -167,7 +168,7 @@ fun Route.clientRoute(clientService: ClientService, workerService: WorkerService
                 val to: String? = call.request.queryParameters["to"]
 
                 val fromLocalDate: LocalDate = if (from.isNullOrBlank()) {
-                    LocalDate.startOfCurrentYear().minus(1, DateTimeUnit.YEAR)
+                    LocalDate.historyStart()
                 } else {
                     LocalDate.parse(from)
                 }

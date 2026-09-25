@@ -24,3 +24,6 @@ fun LocalDate.Companion.endOfCurrentYear(period: LocalDate? = null): LocalDate {
     val period = period ?: LocalDate.now()
     return parse("${period.year}-12-31")
 }
+
+/** Najwcześniejsza data używana przy saldzie / pełnej historii klienta. */
+fun LocalDate.Companion.historyStart(): LocalDate = LocalDate(2000, 1, 1)

@@ -7,9 +7,8 @@ import com.kontenery.data.Payment
 import com.kontenery.data.PaymentForFinanceTable
 import com.kontenery.data.Product
 import com.kontenery.data.invoice.Invoice
-import com.kontenery.data.utils.endOfCurrentYear
+import com.kontenery.data.utils.historyStart
 import com.kontenery.data.utils.now
-import com.kontenery.data.utils.startOfCurrentYear
 import com.kontenery.data.PaymentsListForFinanceTable
 import com.kontenery.repository.*
 import com.kontenery.service.ListingService
@@ -43,8 +42,8 @@ class ListingServiceImpl(
 
     private suspend fun clientToClientOnList(client: Client): ClientOnList? {
         if(client.id == null) throw NullPointerException("Client dose not have ID: $client")
-        val from: LocalDate = LocalDate.startOfCurrentYear()
-        val to: LocalDate = LocalDate.endOfCurrentYear()
+        val from: LocalDate = LocalDate.historyStart()
+        val to: LocalDate = LocalDate.now()
         return try {
             ClientOnList(
                 id = client.id,
@@ -69,9 +68,9 @@ class ListingServiceImpl(
     override suspend fun clientOverdue(clientId: Long, from: LocalDate, to: LocalDate): BigDecimal? {
         return try {
             coroutineScope {
-                val payments = async { paymentsRepo.getPaymentsByClient(0, 1000, clientId, from, to) }
-                val invoices = async { invoicesRepo.getInvoicesForClient(0, 1000, clientId, from, to) }
-                val bills = async { billRepo.getBillsForClient(0, 1000, clientId, from, to) }
+                val payments = async { loadAllPayments(clientId, from, to) }
+                val invoices = async { loadAllInvoices(clientId, from, to) }
+                val bills = async { loadAllBills(clientId, from, to) }
 
                 val paymentSum = payments.await().sumOf { it.amount }
                 val billsSum = bills.await().sumOf { it.priceSum?.toBigDecimal() ?: BigDecimal.ZERO }
@@ -83,6 +82,42 @@ class ListingServiceImpl(
             println("clientOverdue: $e")
             null
         }
+    }
+
+    private suspend fun loadAllPayments(clientId: Long, from: LocalDate, to: LocalDate): List<Payment> {
+        val all = mutableListOf<Payment>()
+        var page = 0
+        while (true) {
+            val chunk = paymentsRepo.getPaymentsByClient(page, PAGE_SIZE, clientId, from, to)
+            all += chunk
+            if (chunk.size < PAGE_SIZE) break
+            page++
+        }
+        return all
+    }
+
+    private suspend fun loadAllInvoices(clientId: Long, from: LocalDate, to: LocalDate): List<Invoice> {
+        val all = mutableListOf<Invoice>()
+        var page = 0
+        while (true) {
+            val chunk = invoicesRepo.getInvoicesForClient(page, PAGE_SIZE, clientId, from, to)
+            all += chunk
+            if (chunk.size < PAGE_SIZE) break
+            page++
+        }
+        return all
+    }
+
+    private suspend fun loadAllBills(clientId: Long, from: LocalDate, to: LocalDate): List<Invoice> {
+        val all = mutableListOf<Invoice>()
+        var page = 0
+        while (true) {
+            val chunk = billRepo.getBillsForClient(page, PAGE_SIZE, clientId, from, to)
+            all += chunk
+            if (chunk.size < PAGE_SIZE) break
+            page++
+        }
+        return all
     }
 
     override suspend fun clientsOverdue(
@@ -177,3 +212,5 @@ private fun addEmptyMonths(payments: List<Payment>, to: LocalDate = LocalDate.no
 
     return paymentForFinanceList
 }
+
+private const val PAGE_SIZE = 500

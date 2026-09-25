@@ -1,12 +1,13 @@
 package com.kontenery.service.impl
 
 import com.kontenery.data.Client
+import com.kontenery.data.Payment
 import com.kontenery.data.finance.ClientFinanceDto
+import com.kontenery.data.invoice.Invoice
 import com.kontenery.repository.BillRepo
 import com.kontenery.repository.ClientRepo
 import com.kontenery.repository.InvoiceRepo
 import com.kontenery.repository.PaymentRepo
-import com.kontenery.repository.impl.PaymentRepoImpl
 import com.kontenery.service.ClientService
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -72,9 +73,9 @@ class ClientServiceImpl(
 
         return try {
             coroutineScope {
-                val payments = async { paymentRepo.getPaymentsByClient(0, 1000, clientId, from, to) }
-                val invoices = async { invoiceRepo.getInvoicesForClient(0, 1000, clientId, from, to) }
-                val bills = async { billRepo.getBillsForClient(0, 1000, clientId, from, to) }
+                val payments = async { loadAllPayments(clientId, from, to) }
+                val invoices = async { loadAllInvoices(clientId, from, to) }
+                val bills = async { loadAllBills(clientId, from, to) }
 
                 val paymentSum = payments.await().sumOf { it.amount }
                 val billsSum = bills.await().sumOf { it.priceSum?.toBigDecimal() ?: BigDecimal.ZERO }
@@ -87,7 +88,7 @@ class ClientServiceImpl(
                     from,
                     to,
                     paymentSum.toDouble(),
-                    invoiceSum.toDouble(),
+                    (invoiceSum + billsSum).toDouble(),
                     totalBalance.toDouble(),
                 )
             }
@@ -95,6 +96,42 @@ class ClientServiceImpl(
             println("ClientFinanceDto: $e")
             zeroFinance(clientId, from, to)
         }
+    }
+
+    private suspend fun loadAllPayments(clientId: Long, from: LocalDate, to: LocalDate): List<Payment> {
+        val all = mutableListOf<Payment>()
+        var page = 0
+        while (true) {
+            val chunk = paymentRepo.getPaymentsByClient(page, PAGE_SIZE, clientId, from, to)
+            all += chunk
+            if (chunk.size < PAGE_SIZE) break
+            page++
+        }
+        return all
+    }
+
+    private suspend fun loadAllInvoices(clientId: Long, from: LocalDate, to: LocalDate): List<Invoice> {
+        val all = mutableListOf<Invoice>()
+        var page = 0
+        while (true) {
+            val chunk = invoiceRepo.getInvoicesForClient(page, PAGE_SIZE, clientId, from, to)
+            all += chunk
+            if (chunk.size < PAGE_SIZE) break
+            page++
+        }
+        return all
+    }
+
+    private suspend fun loadAllBills(clientId: Long, from: LocalDate, to: LocalDate): List<Invoice> {
+        val all = mutableListOf<Invoice>()
+        var page = 0
+        while (true) {
+            val chunk = billRepo.getBillsForClient(page, PAGE_SIZE, clientId, from, to)
+            all += chunk
+            if (chunk.size < PAGE_SIZE) break
+            page++
+        }
+        return all
     }
 
     private fun zeroFinance(clientId: Long, from: LocalDate, to: LocalDate) = ClientFinanceDto(
@@ -105,6 +142,10 @@ class ClientServiceImpl(
         documentBalance = 0.0,
         totalBalance = 0.0,
     )
+
+    companion object {
+        private const val PAGE_SIZE = 500
+    }
 }
 
 private fun Client.identityEmails(): List<String> = listOfNotNull(
