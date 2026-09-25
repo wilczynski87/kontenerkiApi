@@ -7,6 +7,7 @@ import com.kontenery.data.Payment
 import com.kontenery.data.PaymentForFinanceTable
 import com.kontenery.data.Product
 import com.kontenery.data.invoice.Invoice
+import com.kontenery.data.utils.balanceToDate
 import com.kontenery.data.utils.historyStart
 import com.kontenery.data.utils.now
 import com.kontenery.data.PaymentsListForFinanceTable
@@ -43,7 +44,7 @@ class ListingServiceImpl(
     private suspend fun clientToClientOnList(client: Client): ClientOnList? {
         if(client.id == null) throw NullPointerException("Client dose not have ID: $client")
         val from: LocalDate = LocalDate.historyStart()
-        val to: LocalDate = LocalDate.now()
+        val to: LocalDate = LocalDate.balanceToDate()
         return try {
             ClientOnList(
                 id = client.id,

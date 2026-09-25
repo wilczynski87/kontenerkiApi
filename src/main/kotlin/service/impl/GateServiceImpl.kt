@@ -4,6 +4,7 @@ import com.kontenery.GateConfig
 import com.kontenery.data.Contract
 import com.kontenery.data.gate.OpenGateResponse
 import com.kontenery.data.invoice.Invoice
+import com.kontenery.data.utils.balanceToDate
 import com.kontenery.data.utils.now
 import com.kontenery.repository.BillRepo
 import com.kontenery.repository.GateEventRepo
@@ -79,7 +80,7 @@ class GateServiceImpl(
         val balance = listingService.clientOverdue(
             clientId,
             LocalDate.now().minus(1, DateTimeUnit.YEAR),
-            LocalDate.now(),
+            LocalDate.balanceToDate(),
         ) ?: BigDecimal.ZERO
         val unAcceptableOverdue = resolveUnAcceptableOverdue(clientId)
         if (balance < -unAcceptableOverdue) {
