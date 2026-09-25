@@ -5,11 +5,8 @@ import com.kontenery.repository.PaymentRepo
 import com.kontenery.repository.entity.*
 import com.kontenery.repository.entity.invoice.InvoiceEntity
 import com.kontenery.repository.entity.invoice.InvoiceTable
-import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.plus
 import org.jetbrains.exposed.dao.with
-import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
@@ -33,20 +30,36 @@ class PaymentRepoImpl: PaymentRepo {
             .map { it.toDomain() }
     }
 
+    override suspend fun findById(paymentId: Long): Payment? = suspendTransaction {
+        PaymentEntity.findById(paymentId)
+            ?.also { it.forInvoices.toList(); it.fromClient }
+            ?.toDomain()
+    }
+
     override suspend fun createPayment(payment: Payment): Payment = suspendTransaction {
-        assert(payment.fromClient?.id != null)
-        val clientEntity: ClientEntity? = payment.fromClient?.id?.let { ClientEntity.findById(it) }
-        assert(clientEntity != null)
+        insertPayment(payment)
+    }
 
-        val invoicesNumber: List<String> = payment.forInvoices.map { it.invoiceNumber!! }
-        val invoices: SizedIterable<InvoiceEntity> = InvoiceEntity.find { InvoiceTable.invoiceNumber inList invoicesNumber }
+    override suspend fun createTransferPair(
+        debit: Payment,
+        credit: Payment,
+    ): Pair<Payment, Payment> = suspendTransaction {
+        insertPayment(debit) to insertPayment(credit)
+    }
 
-//        println("payment in createPayment: $payment")
+    private fun insertPayment(payment: Payment): Payment {
+        val clientId = payment.fromClient?.id
+            ?: error("Payment requires fromClient.id")
+        val clientEntity = ClientEntity.findById(clientId)
+            ?: error("Client $clientId not found")
 
-        PaymentEntity.new {
+        val invoiceNumbers = payment.forInvoices.mapNotNull { it.invoiceNumber }
+        val invoices = InvoiceEntity.find { InvoiceTable.invoiceNumber inList invoiceNumbers }
+
+        return PaymentEntity.new {
             amount = payment.amount
             date = payment.date
-            fromClient = clientEntity!!
+            fromClient = clientEntity
             method = payment.method
             toAccount = payment.toAccount
             fromAccount = payment.fromAccount

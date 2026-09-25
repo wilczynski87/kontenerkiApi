@@ -1,14 +1,20 @@
 package com.kontenery.service.impl
 
+import com.kontenery.data.Client
 import com.kontenery.data.Payment
+import com.kontenery.data.PaymentMethod
+import com.kontenery.data.PaymentTransferRequest
 import com.kontenery.repository.PaymentRepo
 import com.kontenery.service.ClientService
 import com.kontenery.service.InvoiceService
+import com.kontenery.service.PaymentTransferResult
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -38,6 +44,8 @@ class PaymentServiceImplTest {
         referenceNumber = referenceNumber,
         fromAccount = "72114020040000320278657853",
     )
+
+    private fun client(id: Long) = Client(id = id)
 
     @Nested
     inner class IsDuplicated {
@@ -89,6 +97,123 @@ class PaymentServiceImplTest {
             coEvery { paymentRepo.isPaymentWithReferenceNr("REF-2026-001") } returns false
 
             assertFalse(service.isDuplicated(payment))
+        }
+    }
+
+    @Nested
+    inner class TransferPayment {
+
+        @Test
+        fun `creates debit and credit zaliczenie pair`() = runTest {
+            val sourceClient = client(1L)
+            val targetClient = client(2L)
+            val source = Payment(
+                id = 10L,
+                amount = BigDecimal("200.00"),
+                date = LocalDate(2026, 9, 1),
+                fromClient = sourceClient,
+                title = "Wpłata",
+            )
+            coEvery { paymentRepo.findById(10L) } returns source
+            coEvery { clientService.findClientById(2L) } returns targetClient
+
+            val debitSlot = slot<Payment>()
+            val creditSlot = slot<Payment>()
+            coEvery {
+                paymentRepo.createTransferPair(capture(debitSlot), capture(creditSlot))
+            } answers {
+                debitSlot.captured.copy(id = 11L) to creditSlot.captured.copy(id = 12L)
+            }
+
+            val result = service.transferPayment(
+                PaymentTransferRequest(sourcePaymentId = 10L, targetClientId = 2L),
+            )
+
+            assertTrue(result is PaymentTransferResult.Success)
+            assertEquals(BigDecimal("-200.00"), debitSlot.captured.amount)
+            assertEquals(BigDecimal("200.00"), creditSlot.captured.amount)
+            assertEquals(PaymentMethod.ZALICZENIE.polishName, debitSlot.captured.method)
+            assertEquals(PaymentMethod.ZALICZENIE.polishName, creditSlot.captured.method)
+            assertEquals(1L, debitSlot.captured.fromClient?.id)
+            assertEquals(2L, creditSlot.captured.fromClient?.id)
+            assertEquals(debitSlot.captured.referenceNumber, creditSlot.captured.referenceNumber)
+            assertTrue(debitSlot.captured.referenceNumber!!.startsWith("ZAL-10-"))
+        }
+
+        @Test
+        fun `supports partial amount`() = runTest {
+            val source = Payment(
+                id = 10L,
+                amount = BigDecimal("200.00"),
+                date = LocalDate(2026, 9, 1),
+                fromClient = client(1L),
+            )
+            coEvery { paymentRepo.findById(10L) } returns source
+            coEvery { clientService.findClientById(2L) } returns client(2L)
+
+            val debitSlot = slot<Payment>()
+            val creditSlot = slot<Payment>()
+            coEvery {
+                paymentRepo.createTransferPair(capture(debitSlot), capture(creditSlot))
+            } answers {
+                debitSlot.captured to creditSlot.captured
+            }
+
+            service.transferPayment(
+                PaymentTransferRequest(
+                    sourcePaymentId = 10L,
+                    targetClientId = 2L,
+                    amount = 50.0,
+                ),
+            )
+
+            assertEquals(BigDecimal("-50.00"), debitSlot.captured.amount)
+            assertEquals(BigDecimal("50.00"), creditSlot.captured.amount)
+        }
+
+        @Test
+        fun `rejects same source and target client`() = runTest {
+            coEvery { paymentRepo.findById(10L) } returns Payment(
+                id = 10L,
+                amount = BigDecimal("100"),
+                date = LocalDate(2026, 9, 1),
+                fromClient = client(1L),
+            )
+
+            val result = service.transferPayment(
+                PaymentTransferRequest(sourcePaymentId = 10L, targetClientId = 1L),
+            )
+
+            assertTrue(result is PaymentTransferResult.BadRequest)
+            coVerify(exactly = 0) { paymentRepo.createTransferPair(any(), any()) }
+        }
+
+        @Test
+        fun `rejects amount greater than source`() = runTest {
+            coEvery { paymentRepo.findById(10L) } returns Payment(
+                id = 10L,
+                amount = BigDecimal("100"),
+                date = LocalDate(2026, 9, 1),
+                fromClient = client(1L),
+            )
+            coEvery { clientService.findClientById(2L) } returns client(2L)
+
+            val result = service.transferPayment(
+                PaymentTransferRequest(sourcePaymentId = 10L, targetClientId = 2L, amount = 150.0),
+            )
+
+            assertTrue(result is PaymentTransferResult.BadRequest)
+        }
+
+        @Test
+        fun `returns not found when source payment missing`() = runTest {
+            coEvery { paymentRepo.findById(99L) } returns null
+
+            val result = service.transferPayment(
+                PaymentTransferRequest(sourcePaymentId = 99L, targetClientId = 2L),
+            )
+
+            assertTrue(result is PaymentTransferResult.NotFound)
         }
     }
 }

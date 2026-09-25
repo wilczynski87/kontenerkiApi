@@ -14,6 +14,17 @@ internal fun ensureKsefSchemaIfNeeded(apiConfig: ApiConfig) {
     val url = "jdbc:postgresql://${apiConfig.db.host}:${apiConfig.db.port}/${apiConfig.db.name}"
     DriverManager.getConnection(url, apiConfig.db.user, apiConfig.db.password).use { conn ->
         conn.createStatement().use { stmt ->
+            val invoiceExists = stmt.executeQuery(
+                """
+                SELECT 1 FROM information_schema.tables
+                WHERE table_schema = 'public' AND table_name = 'invoice'
+                """.trimIndent(),
+            ).use { it.next() }
+            if (!invoiceExists) {
+                println("KSeF schema migrate skipped: table invoice does not exist yet")
+                return
+            }
+
             stmt.execute(
                 """
                 ALTER TABLE invoice ADD COLUMN IF NOT EXISTS ksef_number VARCHAR(100)

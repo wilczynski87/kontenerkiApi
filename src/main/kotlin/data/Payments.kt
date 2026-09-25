@@ -64,6 +64,7 @@ enum class PaymentMethod(val polishName: String) {
     TRANSFER("przelew"),
     BLIK("blik"),
     CASH("gotówka"),
+    ZALICZENIE("zaliczenie"),
     OTHER("inna");
 
     companion object {
@@ -72,6 +73,24 @@ enum class PaymentMethod(val polishName: String) {
         }
     }
 }
+
+/** Przeksięgowanie (zaliczenie) płatności z jednego klienta na drugiego. */
+@Serializable
+data class PaymentTransferRequest(
+    val sourcePaymentId: Long,
+    val targetClientId: Long,
+    /** Gdy null — przenosi całą kwotę źródłowej płatności. */
+    val amount: Double? = null,
+    @Serializable(with = LocalDateSerializer::class)
+    val date: LocalDate? = null,
+    val title: String? = null,
+)
+
+@Serializable
+data class PaymentTransferResponse(
+    val debit: Payment,
+    val credit: Payment,
+)
 
 @Serializable
 data class PaymentForFinanceTable(

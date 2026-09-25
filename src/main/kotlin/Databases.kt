@@ -54,6 +54,32 @@ fun configureDatabases(apiConfig: ApiConfig) {
     val url = "jdbc:postgresql://$dbHost:$dbPort/$dbName"
     println("Connecting to: $url")
 
+    val connection = {
+        DriverManager.getConnection(url, dbUser, dbPassword)
+    }
+    val database: Database = Database.connect(connection)
+
+    // Fresh Docker / empty DB: create base tables first. Targeted ensure* migrations below
+    // use ALTER/REFERENCES and must not run before those tables exist.
+    if (shouldAutoMigrate(apiConfig)) {
+        transaction(database) {
+            try {
+                SchemaUtils.createMissingTablesAndColumns(tables = applicationTables)
+            } catch (e: Exception) {
+                val tableNames = applicationTables.joinToString(", ") { it.tableName }
+                throw IllegalStateException(
+                    "Database schema migration failed (createMissingTablesAndColumns). " +
+                        "If you imported a SQL dump, restore into an empty database (see scripts/restore-database.sh) " +
+                        "or set DB_AUTO_MIGRATE=false and apply scripts/post-restore-migrations.sql manually. " +
+                        "Expected Exposed tables: $tableNames. Cause: ${e.message}",
+                    e,
+                )
+            }
+        }
+    } else {
+        println("DB_AUTO_MIGRATE disabled — skipping SchemaUtils.createMissingTablesAndColumns")
+    }
+
     ensureKsefSchemaIfNeeded(apiConfig)
     ensureGateEventSchemaIfNeeded(apiConfig)
     ensureSuplaTokenSchemaIfNeeded(apiConfig)
@@ -65,29 +91,4 @@ fun configureDatabases(apiConfig: ApiConfig) {
     ensureWorkerSchemaIfNeeded(apiConfig)
     ensurePaymentToAccountSchemaIfNeeded(apiConfig)
 //    repairInvoiceForeignKeysIfNeeded(apiConfig)
-
-    val connection = {
-        DriverManager.getConnection(url, dbUser, dbPassword)
-    }
-    val database: Database = Database.connect(connection)
-
-    if (!shouldAutoMigrate(apiConfig)) {
-        println("DB_AUTO_MIGRATE disabled — skipping SchemaUtils.createMissingTablesAndColumns")
-        return
-    }
-
-    transaction(database) {
-        try {
-            SchemaUtils.createMissingTablesAndColumns(tables = applicationTables)
-        } catch (e: Exception) {
-            val tableNames = applicationTables.joinToString(", ") { it.tableName }
-            throw IllegalStateException(
-                "Database schema migration failed (createMissingTablesAndColumns). " +
-                    "If you imported a SQL dump, restore into an empty database (see scripts/restore-database.sh) " +
-                    "or set DB_AUTO_MIGRATE=false and apply scripts/post-restore-migrations.sql manually. " +
-                    "Expected Exposed tables: $tableNames. Cause: ${e.message}",
-                e,
-            )
-        }
-    }
 }
