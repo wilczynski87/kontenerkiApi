@@ -1,6 +1,7 @@
 package com.kontenery
 
 import com.kontenery.repository.AddressRepo
+import com.kontenery.repository.AppSettingsRepo
 import com.kontenery.repository.BillRepo
 import com.kontenery.repository.ClientBankAccountRepository
 import com.kontenery.repository.ClientRepo
@@ -15,6 +16,7 @@ import com.kontenery.repository.SuplaTokenRepo
 import com.kontenery.repository.WorkerRepo
 import com.kontenery.repository.UtilitiesRepo
 import com.kontenery.repository.impl.AddressRepoImpl
+import com.kontenery.repository.impl.AppSettingsRepoImpl
 import com.kontenery.repository.impl.BillRepoImpl
 import com.kontenery.repository.impl.ClientBankAccountRepositoryImpl
 import com.kontenery.repository.impl.ClientRepoImpl
@@ -29,6 +31,7 @@ import com.kontenery.repository.impl.SuplaTokenRepoImpl
 import com.kontenery.repository.impl.UtilitiesRepoImpl
 import com.kontenery.repository.impl.WorkerRepoImpl
 import com.kontenery.service.AddressService
+import com.kontenery.service.AppSettingsService
 import com.kontenery.service.AuthService
 import com.kontenery.service.BankAccountService
 import com.kontenery.service.CSVService
@@ -45,6 +48,7 @@ import com.kontenery.service.SuplaTokenProvider
 import com.kontenery.service.UtilitiesService
 import com.kontenery.service.WorkerService
 import com.kontenery.service.impl.AddressServiceImpl
+import com.kontenery.service.impl.AppSettingsServiceImpl
 import com.kontenery.service.impl.AuthServiceImpl
 import com.kontenery.service.impl.GoogleIdTokenVerifierServiceImpl
 import com.kontenery.service.impl.BankAccountServiceImpl
@@ -128,11 +132,23 @@ fun Application.module() {
     val contractRepo: ContractRepo = ContractRepoImpl()
     val contractService: ContractService = ContractServiceImpl(contractRepo, clientService, productService)
 
-    val invoiceService: InvoiceService = InvoiceServiceImpl(invoiceRepo, billRepo, clientService, productService, contractService)
+    val printService: PrintService = PrintServiceImpl(apiConfig.email.host, apiConfig.email.port.toString())
 
-    val printService:PrintService = PrintServiceImpl(apiConfig.email.host, apiConfig.email.port.toString())
+    // Break InvoiceService ↔ KsefService construction cycle via deferred provider.
+    var ksefServiceRef: KsefService? = null
+    val invoiceService: InvoiceService = InvoiceServiceImpl(
+        invoiceRepo,
+        billRepo,
+        clientService,
+        productService,
+        contractService,
+        printService,
+    ) { ksefServiceRef!! }
 
     val paymentService:PaymentService = PaymentServiceImpl(paymentRepo, clientService, invoiceService)
+
+    val appSettingsRepo: AppSettingsRepo = AppSettingsRepoImpl()
+    val appSettingsService: AppSettingsService = AppSettingsServiceImpl(appSettingsRepo)
 
     val clientBankAccountRepository: ClientBankAccountRepository = ClientBankAccountRepositoryImpl()
     val bankAccountService: BankAccountService = BankAccountServiceImpl(clientBankAccountRepository)
@@ -164,7 +180,7 @@ fun Application.module() {
         ksefRepository,
         invoiceService,
         ksefSessionInvoiceStatusRepo,
-    )
+    ).also { ksefServiceRef = it }
 
     val gateEventRepo: GateEventRepo = GateEventRepoImpl()
     val workerService: WorkerService = WorkerServiceImpl(
@@ -254,5 +270,6 @@ fun Application.module() {
         gateHttpClient,
         p24Service,
         workerService,
+        appSettingsService,
     )
 }

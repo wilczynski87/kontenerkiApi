@@ -80,7 +80,7 @@ class InvoiceControllerExtrasTest {
             application {
                 install(ContentNegotiation) { json(json) }
                 routing {
-                    invoiceRoutes(invoiceService, printService, clientService, ksefService)
+                    invoiceRoutes(invoiceService, printService, clientService, ksefService, mockk(relaxed = true))
                 }
             }
             val response = client.post("/invoice/21/custom") {
@@ -129,7 +129,7 @@ class InvoiceControllerExtrasTest {
             application {
                 install(ContentNegotiation) { json(json) }
                 routing {
-                    invoiceRoutes(invoiceService, printService, clientService, ksefService)
+                    invoiceRoutes(invoiceService, printService, clientService, ksefService, mockk(relaxed = true))
                 }
             }
             val response = client.post("/invoice/sendAgain") {

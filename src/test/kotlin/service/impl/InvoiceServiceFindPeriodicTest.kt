@@ -38,6 +38,8 @@ class InvoiceServiceFindPeriodicTest {
             clientService = mockk<ClientService>(),
             productService = mockk<ProductService>(),
             contractService = mockk<ContractService>(),
+            printService = mockk(),
+            ksefService = { mockk() },
         )
     }
 

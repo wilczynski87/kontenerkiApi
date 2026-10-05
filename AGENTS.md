@@ -167,6 +167,42 @@ Endpoints:
 - `GET /p24/transactions/{sessionId}` — status (internal API key)
 - `POST /p24/notification` — P24 webhook (CRC-verified; respond `OK`)
 
+### Periodic invoices (cron)
+
+On the 1st of each month, host cron should call the internal endpoint (no JWT):
+
+`POST /internal/invoice/sendInvoices/forAll` with header `X-Internal-Key: <INTERNAL_API_KEY>`.
+
+The endpoint **skips** (HTTP 200 `{ "skipped": true, "reason": "periodic_auto_send_disabled" }`) unless auto-send is enabled via MagazynkiFat toggle (`GET`/`POST /invoice/settings/periodicAutoSend`, JWT). Default: **disabled**.
+
+Optional query `period` (ISO date); default = current month (`LocalDate.now()` → start of month).
+
+Script: [`scripts/cron-send-periodic-invoices.sh`](scripts/cron-send-periodic-invoices.sh)
+
+Env on the host (or exported before the script):
+
+- `INTERNAL_API_KEY` — required; same value as API `.env`
+- `API_BASE_URL` — optional; default `http://127.0.0.1:8100`
+
+Crontab example (06:00 on day 1):
+
+```
+0 6 1 * * /opt/app/scripts/cron-send-periodic-invoices.sh >> /var/log/kontenerki-periodic-invoices.log 2>&1
+```
+
+Manual test:
+
+```sh
+export INTERNAL_API_KEY=...
+export API_BASE_URL=http://127.0.0.1:8100
+./scripts/cron-send-periodic-invoices.sh
+# or:
+curl -fsS -X POST -H "X-Internal-Key: $INTERNAL_API_KEY" \
+  "$API_BASE_URL/internal/invoice/sendInvoices/forAll"
+```
+
+JWT UI path remains: `POST /invoice/sendInvoices/forAll` (authenticated).
+
 ### Key gotchas
 
 - The `email` service (separate repo at `../kontenerkiEmail`) is optional. The API catches exceptions if it's unavailable -- invoice-sending features won't work but the app runs fine.

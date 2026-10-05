@@ -44,6 +44,13 @@ interface InvoiceService {
         vatApply: Boolean,
     ): Boolean
 
+    /**
+     * Create/save/KSeF/mail PERIODIC documents for all active clients for [period].
+     * If a PERIODIC document already exists for a client — resend email only.
+     * Returns accumulated per-client errors (empty = full success).
+     */
+    suspend fun sendPeriodicInvoicesForAll(period: LocalDate): List<ErrorMessage>
+
     // przerobić save Invoice
     suspend fun createCustomInvoice(invoice: Invoice): Invoice?
 

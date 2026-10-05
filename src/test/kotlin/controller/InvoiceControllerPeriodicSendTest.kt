@@ -70,7 +70,7 @@ class InvoiceControllerPeriodicSendTest {
             application {
                 install(ContentNegotiation) { json(json) }
                 routing {
-                    invoiceRoutes(invoiceService, printService, clientService, ksefService)
+                    invoiceRoutes(invoiceService, printService, clientService, ksefService, mockk(relaxed = true))
                 }
             }
             val response = client.post("/invoice/21")
@@ -102,7 +102,7 @@ class InvoiceControllerPeriodicSendTest {
             application {
                 install(ContentNegotiation) { json(json) }
                 routing {
-                    invoiceRoutes(invoiceService, printService, clientService, ksefService)
+                    invoiceRoutes(invoiceService, printService, clientService, ksefService, mockk(relaxed = true))
                 }
             }
             val response = client.post("/invoice/21")
@@ -149,7 +149,7 @@ class InvoiceControllerPeriodicSendTest {
             application {
                 install(ContentNegotiation) { json(json) }
                 routing {
-                    invoiceRoutes(invoiceService, printService, clientService, ksefService)
+                    invoiceRoutes(invoiceService, printService, clientService, ksefService, mockk(relaxed = true))
                 }
             }
             val response = client.post("/invoice/21?period=2026-08-01")
@@ -165,25 +165,19 @@ class InvoiceControllerPeriodicSendTest {
     }
 
     @Test
-    fun `POST forAll resends for clients that already have PERIODIC`() = runTest {
+    fun `POST forAll delegates to sendPeriodicInvoicesForAll`() = runTest {
         val invoiceService = mockk<InvoiceService>()
         val printService = mockk<PrintService>()
         val clientService = mockk<ClientService>()
         val ksefService = mockk<KsefService>()
 
-        coEvery { clientService.getFilteredClients(true) } returns listOf(vatClient)
-        coEvery {
-            invoiceService.findPeriodicDocumentForClient(21L, any(), true)
-        } returns existingInvoice
-        coEvery { printService.sendInvoiceAgain(existingInvoice) } returns InvoiceSend(
-            invoiceNumber = existingInvoice.invoiceNumber,
-        )
+        coEvery { invoiceService.sendPeriodicInvoicesForAll(any()) } returns emptyList()
 
         testApplication {
             application {
                 install(ContentNegotiation) { json(json) }
                 routing {
-                    invoiceRoutes(invoiceService, printService, clientService, ksefService)
+                    invoiceRoutes(invoiceService, printService, clientService, ksefService, mockk(relaxed = true))
                 }
             }
             val response = client.post("/invoice/sendInvoices/forAll?period=2026-08-01")
@@ -192,44 +186,31 @@ class InvoiceControllerPeriodicSendTest {
             assertEquals("[]", response.bodyAsText())
         }
 
-        coVerify(exactly = 1) { printService.sendInvoiceAgain(existingInvoice) }
-        coVerify(exactly = 0) { invoiceService.createPeriodicInvoiceForClient(any(), any(), any()) }
+        coVerify(exactly = 1) {
+            invoiceService.sendPeriodicInvoicesForAll(LocalDate(2026, 8, 1))
+        }
     }
 
     @Test
-    fun `POST forAll returns 200 with accumulated errors when loop throws`() = runTest {
+    fun `POST forAll returns 200 with service errors`() = runTest {
         val invoiceService = mockk<InvoiceService>()
         val printService = mockk<PrintService>()
         val clientService = mockk<ClientService>()
         val ksefService = mockk<KsefService>()
 
-        val secondClient = vatClient.copy(id = 22L)
-
-        coEvery { clientService.getFilteredClients(true) } returns listOf(vatClient, secondClient)
-        coEvery {
-            invoiceService.findPeriodicDocumentForClient(21L, any(), true)
-        } returns null
-        coEvery {
-            invoiceService.createPeriodicInvoiceForClient(vatClient, any(), any())
-        } answers {
-            arg<MutableList<InvoiceErrorMessage>>(2).add(
-                InvoiceErrorMessage(
-                    title = "partial failure",
-                    message = "client 21 skipped",
-                    clientId = 21L,
-                ),
-            )
-            null
-        }
-        coEvery {
-            invoiceService.findPeriodicDocumentForClient(22L, any(), true)
-        } throws RuntimeException("unexpected loop failure")
+        coEvery { invoiceService.sendPeriodicInvoicesForAll(any()) } returns listOf(
+            InvoiceErrorMessage(
+                title = "partial failure",
+                message = "client 21 skipped",
+                clientId = 21L,
+            ),
+        )
 
         testApplication {
             application {
                 install(ContentNegotiation) { json(json) }
                 routing {
-                    invoiceRoutes(invoiceService, printService, clientService, ksefService)
+                    invoiceRoutes(invoiceService, printService, clientService, ksefService, mockk(relaxed = true))
                 }
             }
             val response = client.post("/invoice/sendInvoices/forAll?period=2026-08-01")

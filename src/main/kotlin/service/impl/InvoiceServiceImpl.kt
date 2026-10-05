@@ -12,12 +12,15 @@ import com.kontenery.data.utils.errors.InvoiceErrorMessage
 import com.kontenery.data.utils.now
 import com.kontenery.data.utils.startOfCurrentMonth
 import com.kontenery.model.invoice.InvoiceNumber
+import com.kontenery.ksef.service.KsefService
 import com.kontenery.repository.BillRepo
 import com.kontenery.repository.InvoiceRepo
 import com.kontenery.service.ClientService
 import com.kontenery.service.ContractService
 import com.kontenery.service.InvoiceService
+import com.kontenery.service.PrintService
 import com.kontenery.service.ProductService
+import com.kontenery.service.saveInvoiceWithOptionalKsef
 import com.kontenery.validator.ObjectValidators
 import io.ktor.util.*
 import kotlinx.coroutines.sync.Mutex
@@ -32,7 +35,10 @@ class InvoiceServiceImpl(
     private val billRepo: BillRepo,
     private val clientService: ClientService,
     private val productService: ProductService,
-    private val contractService: ContractService
+    private val contractService: ContractService,
+    private val printService: PrintService,
+    /** Lazy to break cycle with [KsefService] (which depends on [InvoiceService]). */
+    private val ksefService: () -> KsefService,
 ): InvoiceService {
     private val log = LoggerFactory.getLogger(InvoiceServiceImpl::class.java)
 
@@ -184,6 +190,53 @@ class InvoiceServiceImpl(
         period: LocalDate,
         vatApply: Boolean,
     ): Boolean = findPeriodicDocumentForClient(clientId, period, vatApply) != null
+
+    override suspend fun sendPeriodicInvoicesForAll(period: LocalDate): List<ErrorMessage> {
+        val errorList: MutableList<ErrorMessage> = mutableListOf()
+        try {
+            val allClients: List<Client> = clientService.getFilteredClients(true)
+
+            // Create + save per client so numbers are not burned when a later save fails.
+            // If PERIODIC already exists — resend email only (no new document / KSeF).
+            allClients.forEach { client ->
+                val clientId = client.id ?: return@forEach
+                val existingPeriodic = findPeriodicDocumentForClient(
+                    clientId,
+                    period,
+                    client.needInvoice(),
+                )
+                if (existingPeriodic != null) {
+                    try {
+                        printService.sendInvoiceAgain(existingPeriodic)
+                    } catch (e: Exception) {
+                        errorList.add(
+                            InvoiceErrorMessage(
+                                title = "błąd ponownego wysłania maila",
+                                message = "nie udało się ponownie wysłać ${existingPeriodic.invoiceNumber}: ${e.message}",
+                                clientId = clientId,
+                                period = period,
+                            ),
+                        )
+                    }
+                    return@forEach
+                }
+
+                val createdInvoice = createPeriodicInvoiceForClient(client, period, errorList)
+                    ?: return@forEach
+                val savedInvoice = saveInvoiceWithOptionalKsef(
+                    createdInvoice,
+                    this,
+                    ksefService(),
+                    errorList,
+                ) ?: return@forEach
+                printService.sendPeriodicInvoice(savedInvoice)
+            }
+            return errorList
+        } catch (e: Exception) {
+            if (errorList.isNotEmpty()) return errorList
+            throw e
+        }
+    }
 
     override suspend fun createCustomInvoice(invoice: Invoice): Invoice? {
         return try {

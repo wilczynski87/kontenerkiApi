@@ -34,6 +34,7 @@ fun Application.configureRouting(
     gateHttpClient: io.ktor.client.HttpClient? = null,
     p24Service: com.kontenery.p24.service.P24Service? = null,
     workerService: WorkerService,
+    appSettingsService: AppSettingsService,
 ) {
     routing {
 
@@ -53,7 +54,7 @@ fun Application.configureRouting(
             clientRoute(clientService, workerService)
             productRouting(productService)
             contractRoutes(contractService, clientService, productService)
-            invoiceRoutes(invoiceService, printService, clientService, ksefService)
+            invoiceRoutes(invoiceService, printService, clientService, ksefService, appSettingsService)
             paymentRoute(paymentService)
             CSVController(csvService, paymentService, paymentValidator)
             bankAccountController(bankAccountService, bankAccountValidator)
@@ -75,6 +76,7 @@ fun Application.configureRouting(
         authController(authService)
         bramaController()
         ksefRoutes(ksefService)
+        internalInvoiceRoutes(invoiceService, appSettingsService)
         if (p24Service != null) {
             p24Routes(p24Service)
         }

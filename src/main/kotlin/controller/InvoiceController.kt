@@ -1,6 +1,7 @@
 package com.kontenery.controller
 
 import com.kontenery.data.Client
+import com.kontenery.data.dto.PeriodicAutoSendSettings
 import com.kontenery.data.invoice.Invoice
 import com.kontenery.data.utils.endOfCurrentMonth
 import com.kontenery.data.utils.errors.ErrorMessage
@@ -11,6 +12,7 @@ import com.kontenery.data.utils.startOfCurrentYear
 import com.kontenery.ksef.exception.KsefErrorMessages
 import com.kontenery.ksef.exception.KsefException
 import com.kontenery.ksef.service.KsefService
+import com.kontenery.service.AppSettingsService
 import com.kontenery.service.ClientService
 import com.kontenery.service.InvoiceService
 import com.kontenery.service.PrintService
@@ -32,8 +34,28 @@ fun Route.invoiceRoutes(
     printService: PrintService,
     clientService: ClientService,
     ksefService: KsefService,
+    appSettingsService: AppSettingsService,
 ) {
     route("/invoice") {
+
+        get("/settings/periodicAutoSend") {
+            try {
+                val enabled = appSettingsService.isPeriodicInvoiceAutoSendEnabled()
+                call.respond(PeriodicAutoSendSettings(enabled = enabled))
+            } catch (e: Exception) {
+                call.respondInternalError(e, "Failed to load periodic auto-send setting")
+            }
+        }
+
+        post("/settings/periodicAutoSend") {
+            try {
+                val body = call.receive<PeriodicAutoSendSettings>()
+                val enabled = appSettingsService.setPeriodicInvoiceAutoSendEnabled(body.enabled)
+                call.respond(PeriodicAutoSendSettings(enabled = enabled))
+            } catch (e: Exception) {
+                call.respondInternalError(e, "Failed to update periodic auto-send setting")
+            }
+        }
 
         get("/{invoiceNumber}/id") {
             try {
@@ -168,57 +190,12 @@ fun Route.invoiceRoutes(
             }
         }
         post("/sendInvoices/forAll") {
-            val errorList: MutableList<ErrorMessage> = mutableListOf()
             try {
-                val periodRaw:String = call.queryParameters["period"].toString()
-
+                val periodRaw: String = call.queryParameters["period"].toString()
                 val period: LocalDate = cookRawPeriod(periodRaw, "/sendInvoices/forAll")
-
-                val allClients: List<Client> = clientService.getFilteredClients(true)
-
-                // Create + save per client so numbers are not burned when a later save fails.
-                // If PERIODIC already exists — resend email only (no new document / KSeF).
-                allClients.forEach { client ->
-                    val clientId = client.id ?: return@forEach
-                    val existingPeriodic = invoiceService.findPeriodicDocumentForClient(
-                        clientId,
-                        period,
-                        client.needInvoice(),
-                    )
-                    if (existingPeriodic != null) {
-                        try {
-                            printService.sendInvoiceAgain(existingPeriodic)
-                        } catch (e: Exception) {
-                            errorList.add(
-                                InvoiceErrorMessage(
-                                    title = "błąd ponownego wysłania maila",
-                                    message = "nie udało się ponownie wysłać ${existingPeriodic.invoiceNumber}: ${e.message}",
-                                    clientId = clientId,
-                                    period = period,
-                                ),
-                            )
-                        }
-                        return@forEach
-                    }
-
-                    val createdInvoice = invoiceService.createPeriodicInvoiceForClient(client, period, errorList)
-                        ?: return@forEach
-                    val savedInvoice = saveInvoiceWithOptionalKsef(
-                        createdInvoice,
-                        invoiceService,
-                        ksefService,
-                        errorList,
-                    ) ?: return@forEach
-                    printService.sendPeriodicInvoice(savedInvoice)
-                }
-
-                call.respond(errorList)
-            } catch (e:Exception) {
-                if (errorList.isNotEmpty()) {
-                    call.respond(errorList)
-                } else {
-                    call.respondInternalError(e, "Failed to send invoices")
-                }
+                call.respond(invoiceService.sendPeriodicInvoicesForAll(period))
+            } catch (e: Exception) {
+                call.respondInternalError(e, "Failed to send invoices")
             }
         }
 

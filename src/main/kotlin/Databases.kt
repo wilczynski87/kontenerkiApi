@@ -27,6 +27,7 @@ private val applicationTables: Array<Table> = arrayOf(
     SuplaTokenTable,
     P24TransactionTable,
     WorkerTable,
+    AppSettingsTable,
 )
 
 private fun resolveDbEnv(apiConfig: ApiConfig): Env = when (apiConfig.env.uppercase()) {
@@ -90,5 +91,6 @@ fun configureDatabases(apiConfig: ApiConfig) {
     ensureP24SchemaIfNeeded(apiConfig)
     ensureWorkerSchemaIfNeeded(apiConfig)
     ensurePaymentToAccountSchemaIfNeeded(apiConfig)
+    ensureAppSettingsSchemaIfNeeded(apiConfig)
 //    repairInvoiceForeignKeysIfNeeded(apiConfig)
 }

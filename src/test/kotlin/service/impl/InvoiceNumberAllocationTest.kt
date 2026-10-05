@@ -30,6 +30,8 @@ class InvoiceNumberAllocationTest {
             clientService = mockk(),
             productService = mockk(),
             contractService = mockk(),
+            printService = mockk(),
+            ksefService = { mockk() },
         )
 
         val created = (1..8).map {
@@ -54,6 +56,8 @@ class InvoiceNumberAllocationTest {
             clientService = mockk<ClientService>(),
             productService = mockk<ProductService>(),
             contractService = mockk<ContractService>(),
+            printService = mockk(),
+            ksefService = { mockk() },
         )
 
         val first = service.createCustomInvoice(sampleVatInvoice(vatApply = false).copy(invoiceNumber = null))
