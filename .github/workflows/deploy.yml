@@ -36,78 +36,19 @@ jobs:
         run: |
           ssh vps "mkdir -p /opt/app"
 
-          rsync -az --delete --exclude '.git' --exclude '.github' ./ vps:/opt/app/ || {
+          rsync -az --delete --exclude '.git' --exclude '.github' --exclude '.env' ./ vps:/opt/app/ || {
             echo "rsync failed"
             exit 1
           }
 
-      # Heredoc is local (piped to ssh stdin). Do NOT wrap the remote command in double
-      # quotes — that strips JSON quotes from GATE_REQUEST_BODY (SUPLA then returns
-      # "Invalid json message received").
-      - name: Create .env on VPS
+      # .env is maintained by hand on the VPS. rsync must not delete it, and this
+      # workflow must not rewrite it from GitHub secrets or variables.
+      - name: Require manual .env on VPS
         run: |
-          cat > /tmp/kontenerki.env <<EOF
-          # === SECRETS ===
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          # Gmail (email service): must be ONE OAuth client ID matching CLIENT_SECRET + REFRESH_TOKEN
-          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-          GOOGLE_REFRESH_TOKEN=${{ secrets.GOOGLE_REFRESH_TOKEN }}
-          # Magazynki Sign-In (API): web + Android audiences (comma-separated OK)
-          GOOGLE_CLIENT_IDS=${{ vars.GOOGLE_CLIENT_IDS }}
-          INTERNAL_API_KEY=${{ secrets.INTERNAL_API_KEY }}
-          JWT_AUDIENCE=${{ secrets.JWT_AUDIENCE }}
-          JWT_REALM=${{ secrets.JWT_REALM }}
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          APP_SECRET=${{ secrets.APP_SECRET }}
-          APP_LOGIN=${{ secrets.APP_LOGIN }}
-          KSEF_TOKEN=${{ secrets.KSEF_TOKEN }}
-          KSEF_NIP=${{ secrets.KSEF_NIP }}
-          SUPLA_ID=${{ secrets.SUPLA_ID }}
-          SUPLA_SECRET=${{ secrets.SUPLA_SECRET }}
-          SUPLA_REFRESH_TOKEN=${{ secrets.SUPLA_REFRESH_TOKEN }}
-          P24_MERCHANT_ID=${{ secrets.P24_MERCHANT_ID }}
-          P24_POS_ID=${{ secrets.P24_POS_ID }}
-          P24_CRC=${{ secrets.P24_CRC }}
-          P24_API_KEY=${{ secrets.P24_API_KEY }}
-
-          # === VARIABLES ===
-          API_ENV=${{ vars.API_ENV }}
-          API_NAME=${{ vars.API_NAME }}
-          API_PORT=${{ vars.API_PORT }}
-          DB_HOST=${{ vars.DB_HOST }}
-          DB_NAME=${{ vars.DB_NAME }}
-          DB_PORT=${{ vars.DB_PORT }}
-          DB_USER=${{ vars.DB_USER }}
-          EMAIL_HOST=${{ vars.EMAIL_HOST }}
-          EMAIL_PORT=${{ vars.EMAIL_PORT }}
-          EMAIL_USER=${{ vars.EMAIL_USER }}
-          ENV=${{ vars.ENV }}
-          VALIDITY_MS=${{ vars.VALIDITY_MS }}
-          VALIDITY_REFRESH_MS=${{ vars.VALIDITY_REFRESH_MS }}
-          KSEF_API_SUFFIX=${{ vars.KSEF_API_SUFFIX }}
-          KSEF_BASE_URL=${{ vars.KSEF_BASE_URL }}
-          KSEF_ENV=${{ vars.KSEF_ENV }}
-          PRINT_RECIPIENT=${{ vars.PRINT_RECIPIENT }}
-          GATE_MOCK=${{ vars.GATE_MOCK }}
-          GATE_OPEN_URL=${{ vars.GATE_OPEN_URL }}
-          GATE_OPEN_METHOD=${{ vars.GATE_OPEN_METHOD }}
-          GATE_REQUEST_BODY=${{ vars.GATE_REQUEST_BODY }}
-          GATE_COOLDOWN_SECONDS=${{ vars.GATE_COOLDOWN_SECONDS }}
-          SUPLA_TOKEN_URL=${{ vars.SUPLA_TOKEN_URL }}
-          SUPLA_OAUTH_HELPER=${{ vars.SUPLA_OAUTH_HELPER }}
-          SUPLA_REDIRECT_URI=${{ vars.SUPLA_REDIRECT_URI }}
-          P24_ENV=${{ vars.P24_ENV }}
-          P24_BASE_URL=${{ vars.P24_BASE_URL }}
-          P24_PAYMENT_URL=${{ vars.P24_PAYMENT_URL }}
-          P24_URL_STATUS=${{ vars.P24_URL_STATUS }}
-          P24_MOCK=${{ vars.P24_MOCK }}
-          WEB_IMAGE=${{ vars.WEB_IMAGE }}
-          WEB_PORT=${{ vars.WEB_PORT }}
-          EOF
-          sed -i 's/^[[:space:]]*//' /tmp/kontenerki.env
-          scp /tmp/kontenerki.env vps:/opt/app/.env
-          rm -f /tmp/kontenerki.env
+          ssh vps 'test -s /opt/app/.env' || {
+            echo "Brak /opt/app/.env na VPS. Wklej plik ręcznie. Deploy go nie tworzy i nie nadpisuje."
+            exit 1
+          }
 
       - name: Build and deploy
         run: |

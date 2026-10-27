@@ -2,6 +2,7 @@ package com.kontenery.service.impl
 
 import com.kontenery.data.Client
 import com.kontenery.data.Payment
+import com.kontenery.data.PaymentDto
 import com.kontenery.data.PaymentMethod
 import com.kontenery.data.PaymentTransferRequest
 import com.kontenery.repository.PaymentRepo
@@ -214,6 +215,48 @@ class PaymentServiceImplTest {
             )
 
             assertTrue(result is PaymentTransferResult.NotFound)
+        }
+    }
+
+    @Nested
+    inner class UpdatePayment {
+
+        @Test
+        fun `passes payment id from dto to repository`() = runTest {
+            val dto = PaymentDto(
+                paymentId = "15",
+                amount = 10.0,
+                date = LocalDate(2026, 4, 15),
+                fromClientId = 3,
+            )
+            coEvery { clientService.findClientById(3) } returns client(3)
+            val saved = slot<Payment>()
+            coEvery { paymentRepo.updatePayment(capture(saved)) } answers { saved.captured }
+
+            service.updatePayment(dto)
+
+            assertEquals(15L, saved.captured.id)
+            assertEquals(3L, saved.captured.fromClient?.id)
+            assertEquals(BigDecimal("10.0"), saved.captured.amount)
+        }
+
+        @Test
+        fun `rejects dto without numeric payment id`() = runTest {
+            var thrown = false
+            try {
+                service.updatePayment(
+                    PaymentDto(
+                        paymentId = " ",
+                        amount = 1.0,
+                        date = LocalDate(2026, 4, 15),
+                    ),
+                )
+            } catch (e: IllegalStateException) {
+                thrown = true
+                assertEquals("Payment requires id", e.message)
+            }
+            assertTrue(thrown)
+            coVerify(exactly = 0) { paymentRepo.updatePayment(any()) }
         }
     }
 }

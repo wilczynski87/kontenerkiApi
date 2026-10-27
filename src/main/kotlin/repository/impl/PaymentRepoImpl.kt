@@ -7,6 +7,7 @@ import com.kontenery.repository.entity.invoice.InvoiceEntity
 import com.kontenery.repository.entity.invoice.InvoiceTable
 import kotlinx.datetime.LocalDate
 import org.jetbrains.exposed.dao.with
+import org.jetbrains.exposed.sql.SizedCollection
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
@@ -69,8 +70,34 @@ class PaymentRepoImpl: PaymentRepo {
         }.toDomain()
     }
 
-    override suspend fun updatePayment(payment: Payment): Payment = newSuspendedTransaction {
-        TODO("Not yet implemented")
+    override suspend fun updatePayment(payment: Payment): Payment = suspendTransaction {
+        val paymentId = payment.id ?: error("Payment requires id")
+        val entity = PaymentEntity.findById(paymentId)
+            ?: error("Payment $paymentId not found")
+
+        val clientId = payment.fromClient?.id
+            ?: error("Payment requires fromClient.id")
+        val clientEntity = ClientEntity.findById(clientId)
+            ?: error("Client $clientId not found")
+
+        val invoiceNumbers = payment.forInvoices.mapNotNull { it.invoiceNumber }
+        val invoices = if (invoiceNumbers.isEmpty()) {
+            emptyList()
+        } else {
+            InvoiceEntity.find { InvoiceTable.invoiceNumber inList invoiceNumbers }.toList()
+        }
+
+        entity.amount = payment.amount
+        entity.date = payment.date
+        entity.fromClient = clientEntity
+        entity.method = payment.method
+        entity.toAccount = payment.toAccount
+        entity.fromAccount = payment.fromAccount
+        entity.title = payment.title
+        entity.referenceNumber = payment.referenceNumber
+        entity.forInvoices = SizedCollection(invoices)
+
+        entity.toDomain()
     }
 
     override suspend fun readPaymentsFromStatement(): List<Payment> = newSuspendedTransaction {

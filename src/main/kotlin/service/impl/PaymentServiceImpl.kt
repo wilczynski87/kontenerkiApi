@@ -38,7 +38,9 @@ class PaymentServiceImpl(
         return paymentRepo.createPayment(payment)
     }
     override suspend fun updatePayment(paymentDto: PaymentDto): Payment {
-        val payment: Payment = dtoToPayment(paymentDto)
+        val paymentId = paymentDto.paymentId?.trim()?.toLongOrNull()
+            ?: error("Payment requires id")
+        val payment = dtoToPayment(paymentDto).copy(id = paymentId)
         return paymentRepo.updatePayment(payment)
     }
     override suspend fun deletePayment(paymentId: Long): Boolean {
