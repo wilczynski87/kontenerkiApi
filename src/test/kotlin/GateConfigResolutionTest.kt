@@ -45,6 +45,20 @@ class GateConfigResolutionTest {
     }
 
     @Test
+    fun `expands SERVER_URI in SUPLA redirect`() {
+        val config = resolveGateConfig("PROD") { key ->
+            when (key) {
+                "SERVER_URI" -> "57.131.144.33"
+                "SUPLA_REDIRECT_URI" -> "http://\${SERVER_URI}:8100/gate/returnUrl"
+                "GATE_OPEN_URL" -> "https://svr111.supla.org/api/v3/channels/1"
+                "GATE_MOCK" -> "false"
+                else -> null
+            }
+        }
+        assertEquals("http://57.131.144.33:8100/gate/returnUrl", config.redirectUri)
+    }
+
+    @Test
     fun `defaults request body to OPEN_CLOSE JSON object`() {
         val config = resolveGateConfig("PROD") { key ->
             when (key) {

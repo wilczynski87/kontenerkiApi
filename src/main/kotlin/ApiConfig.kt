@@ -193,7 +193,7 @@ internal fun resolveP24Config(
     val crc = getenv("P24_CRC")?.trim()?.takeIf { it.isNotEmpty() }
         ?: getenv("P24_CRC_KEY")?.trim()?.takeIf { it.isNotEmpty() }
     val apiKey = getenv("P24_API_KEY")?.trim()?.takeIf { it.isNotEmpty() }
-    val urlStatus = getenv("P24_URL_STATUS")?.trim()?.takeIf { it.isNotEmpty() }
+    val urlStatus = expandServerUri(getenv("P24_URL_STATUS"), getenv)
 
     val mockMode = getenv("P24_MOCK")?.toBooleanStrictOrNull()
         ?: (isDev && (merchantId == null || crc.isNullOrBlank() || apiKey.isNullOrBlank()))
@@ -218,8 +218,8 @@ internal fun resolveP24Config(
 
     return P24Config(
         environment = environment,
-        baseUrl = getenv("P24_BASE_URL")?.trim()?.takeIf { it.isNotEmpty() } ?: defaultBase,
-        paymentUrl = getenv("P24_PAYMENT_URL")?.trim()?.takeIf { it.isNotEmpty() } ?: defaultPayment,
+        baseUrl = expandServerUri(getenv("P24_BASE_URL"), getenv) ?: defaultBase,
+        paymentUrl = expandServerUri(getenv("P24_PAYMENT_URL"), getenv) ?: defaultPayment,
         merchantId = merchantId,
         posId = posId,
         crc = crc,
@@ -255,13 +255,22 @@ internal fun resolveGateConfig(
         clientSecret = clientSecret,
         tokenUrl = getenv("SUPLA_TOKEN_URL")?.trim()?.takeIf { it.isNotEmpty() }
             ?: "https://svr111.supla.org/oauth/v2/token",
-        redirectUri = getenv("SUPLA_REDIRECT_URI")?.trim()?.takeIf { it.isNotEmpty() },
+        redirectUri = expandServerUri(getenv("SUPLA_REDIRECT_URI"), getenv),
         oauthHelperEnabled = getenv("SUPLA_OAUTH_HELPER")?.toBooleanStrictOrNull() ?: false,
         requestBody = getenv("GATE_REQUEST_BODY")?.trim()?.takeIf { it.isNotEmpty() }
             ?: """{"action":"OPEN_CLOSE"}""",
         mockMode = mockMode,
         cooldownSeconds = getenv("GATE_COOLDOWN_SECONDS")?.toLongOrNull() ?: 60,
     )
+}
+
+/** Zastępuje `${SERVER_URI}` hostem z env. Wartość bez placeholdera zostaje bez zmian. */
+internal fun expandServerUri(raw: String?, getenv: (String) -> String?): String? {
+    val value = raw?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+    if (!value.contains("\${SERVER_URI}")) return value
+    val host = getenv("SERVER_URI")?.trim()?.takeIf { it.isNotEmpty() }
+        ?: error("Missing SERVER_URI")
+    return value.replace("\${SERVER_URI}", host)
 }
 
 internal fun parseGoogleClientIds(primary: String, extra: String?): List<String> =

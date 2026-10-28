@@ -31,6 +31,19 @@ class P24ConfigResolutionTest {
     }
 
     @Test
+    fun `expands SERVER_URI in public payment urls`() {
+        val env = mapOf(
+            "SERVER_URI" to "57.131.144.33",
+            "P24_URL_STATUS" to "http://\${SERVER_URI}:8100",
+            "P24_PAYMENT_URL" to "http://\${SERVER_URI}:8100",
+            "P24_MOCK" to "true",
+        )
+        val config = resolveP24Config("DEV") { env[it] }
+        assertEquals("http://57.131.144.33:8100", config.urlStatus)
+        assertEquals("http://57.131.144.33:8100", config.paymentUrl)
+    }
+
+    @Test
     fun `DEV rejects production environment`() {
         assertThrows(IllegalStateException::class.java) {
             resolveP24Config("DEV") { if (it == "P24_ENV") "PRODUCTION" else null }
